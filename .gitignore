@@ -1,0 +1,17 @@
+.corepack/
+.corepack*/
+.next/
+node_modules/
+out/
+
+.env
+.env*.local
+
+*.log
+*.tsbuildinfo
+*.zip
+.next-dev*.log
+pnpm-debug.log*
+
+# Local secret/scratch files
+safe.txt
