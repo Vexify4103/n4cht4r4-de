@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import client from "@/lib/db";
-import { syncRiotChallengesForUser } from "@/lib/riot-challenge-sync";
+import { enqueueRiotChallengeSync } from "@/lib/riot-sync-queue";
 
 export const runtime = "nodejs";
 
@@ -11,21 +11,10 @@ export async function GET(request: Request) {
 
 	await client.connect();
 	const db = client.db();
-	const users = await db.collection("users").find({ riotPuuid: { $exists: true, $ne: null } }).toArray();
-	let updated = 0;
-	let matchesChecked = 0;
-	let errors = 0;
-
-	for (const user of users) {
-		try {
-			const result = await syncRiotChallengesForUser(db, user._id.toString(), user.riotPuuid, 30);
-			matchesChecked += result.matchesChecked;
-			if (result.matchesChecked > 0) updated++;
-		} catch (error) {
-			errors++;
-			console.error(`Riot challenge sync failed for ${user._id}:`, error);
-		}
-	}
-
-	return NextResponse.json({ usersProcessed: users.length, usersUpdated: updated, matchesChecked, errors });
+	const users = await db
+		.collection("users")
+		.find({ riotPuuid: { $exists: true, $ne: null } })
+		.toArray();
+	const jobs = await Promise.all(users.map((user) => enqueueRiotChallengeSync(db, user._id.toString(), String(user.riotPuuid), 30)));
+	return NextResponse.json({ usersFound: users.length, jobsQueued: jobs.filter((entry) => entry.created).length, alreadyQueued: jobs.filter((entry) => !entry.created).length });
 }

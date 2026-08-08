@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import next from "next";
 import { startDiscordWorker, stopDiscordWorker } from "./discord-worker";
+import { startRiotWorker, stopRiotWorker } from "./riot-worker";
+import { startChallengeCron, stopChallengeCron } from "@/lib/cron";
 
 const development = process.env.NODE_ENV !== "production";
 const hostname = process.env.APP_HOST || "0.0.0.0";
@@ -11,7 +13,11 @@ const handler = nextApp.getRequestHandler();
 async function start() {
 	await nextApp.prepare();
 	const server = createServer((request, response) => handler(request, response));
-	if (process.env.RUN_BACKGROUND_WORKER !== "false") startDiscordWorker();
+	if (process.env.RUN_BACKGROUND_WORKER !== "false") {
+		startDiscordWorker();
+		startRiotWorker();
+		startChallengeCron();
+	}
 
 	server.listen(port, hostname, () => {
 		console.log(`N4cht4r4 website listening on http://${hostname}:${port}`);
@@ -20,6 +26,8 @@ async function start() {
 	function shutdown(signal: string) {
 		console.log(`Received ${signal}; shutting down.`);
 		stopDiscordWorker();
+		stopRiotWorker();
+		stopChallengeCron();
 		server.close(() => process.exit(0));
 		setTimeout(() => process.exit(1), 10_000).unref();
 	}

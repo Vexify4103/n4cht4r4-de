@@ -8,6 +8,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import useSWR from "swr";
 import {
 	AlertTriangle,
+	Award,
 	Bell,
 	BellOff,
 	Check,
@@ -66,6 +67,8 @@ type WishGroup = {
 };
 type TournamentNotification = { id: string; title: string; body: string; href: string; readAt: string | null; createdAt: string; discordStatus: string };
 type TournamentProfileData = { applications: TournamentApplication[]; groups: WishGroup[]; notifications: TournamentNotification[] };
+type BadgeGrant = { id: string; rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } };
+type BadgeProfileData = { badges: BadgeGrant[]; showcasedBadgeIds: string[] };
 
 const connectionWarnings = {
 	discord: {
@@ -99,6 +102,7 @@ export default function MePage() {
 	const { data: session, status } = useSession();
 	const router = useRouter();
 	const { data: profile, mutate } = useSWR<Profile>(status === "authenticated" ? "/api/user/profile" : null, fetcher);
+	const { data: badgeProfile, mutate: refreshBadges } = useSWR<BadgeProfileData>(status === "authenticated" ? "/api/user/badges" : null, fetcher);
 	const { data: tournamentProfile, mutate: refreshTournamentProfile } = useSWR<TournamentProfileData>(status === "authenticated" ? "/api/user/tournaments" : null, fetcher);
 	const [riotName, setRiotName] = useState("");
 	const [riotTag, setRiotTag] = useState("");
@@ -111,6 +115,7 @@ export default function MePage() {
 	const [wishGroupCode, setWishGroupCode] = useState("");
 	const [tournamentNotice, setTournamentNotice] = useState("");
 	const [tournamentBusy, setTournamentBusy] = useState("");
+	const [badgeNotice, setBadgeNotice] = useState("");
 
 	useEffect(() => {
 		if (status === "unauthenticated") router.replace("/login");
@@ -253,6 +258,16 @@ export default function MePage() {
 
 	function markNotificationRead(notificationId: string) {
 		void fetch(`/api/user/notifications/${notificationId}/read`, { method: "POST", keepalive: true }).then(() => refreshTournamentProfile());
+	}
+
+	async function toggleShowcaseBadge(badgeId: string) {
+		const current = badgeProfile?.showcasedBadgeIds || [];
+		const next = current.includes(badgeId) ? current.filter((id) => id !== badgeId) : [...current, badgeId];
+		if (next.length > 3) return setBadgeNotice("Du kannst höchstens drei Badges gleichzeitig präsentieren.");
+		const response = await fetch("/api/user/badges", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ badgeIds: next }) });
+		const result = await response.json();
+		setBadgeNotice(response.ok ? "Deine Badge-Auswahl wurde gespeichert." : result.error || "Die Auswahl konnte nicht gespeichert werden.");
+		if (response.ok) await refreshBadges();
 	}
 
 	if (status === "loading" || !session)
@@ -420,6 +435,51 @@ export default function MePage() {
 					</div>
 				</section>
 			)}
+
+			<section className="profile-badges">
+				<div className="section-heading">
+					<span>Meine Blütenzeichen</span>
+					<h2>Badges aus deinen Challenges</h2>
+					<p>Wähle bis zu drei Badges für deinen Community-Pass. Neue Badges werden beim Abschluss automatisch freigeschaltet.</p>
+				</div>
+				{badgeNotice && (
+					<p className="profile-tournament-notice">
+						<Award size={15} /> {badgeNotice}
+					</p>
+				)}
+				{badgeProfile?.badges.length ? (
+					<div className="profile-badge-grid">
+						{badgeProfile.badges.map((grant) => {
+							const selected = badgeProfile.showcasedBadgeIds.includes(grant.rewardKey);
+							return (
+								<button
+									type="button"
+									className={`profile-badge ${grant.badge.rarity} ${selected ? "selected" : ""}`}
+									key={grant.id}
+									onClick={() => toggleShowcaseBadge(grant.rewardKey)}
+								>
+									<span>{grant.badge.icon}</span>
+									<div>
+										<small>{grant.badge.rarity === "epic" ? "Episch" : grant.badge.rarity === "rare" ? "Selten" : "Gewöhnlich"}</small>
+										<strong>{grant.badge.name}</strong>
+										<p>{grant.badge.description}</p>
+									</div>
+									<span className="badge-select-mark">{selected ? <Check size={14} /> : <Plus size={14} />}</span>
+								</button>
+							);
+						})}
+					</div>
+				) : (
+					<div className="empty-state compact-empty">
+						<Award size={30} />
+						<h3>Dein erstes Badge wartet</h3>
+						<p>Schließe eine Challenge ab, um hier dein erstes Blütenzeichen freizuschalten.</p>
+						<Link className="text-link" href="/challenges">
+							Challenges öffnen
+						</Link>
+					</div>
+				)}
+			</section>
 
 			<section className="profile-tournaments">
 				<div className="section-heading">

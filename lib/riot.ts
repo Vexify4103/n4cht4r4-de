@@ -1,3 +1,5 @@
+import { riotApiFetch } from "@/lib/riot-rate-limit";
+
 const RIOT_API_KEY = process.env.RIOT_API_KEY;
 const DATA_DRAGON_VERSION = process.env.RIOT_DDRAGON_VERSION || "14.10.1";
 
@@ -30,7 +32,7 @@ export function profileIconUrl(iconId: number) {
 export async function resolveRiotIdentity(gameName: string, tagLine: string, region = "euw"): Promise<RiotIdentity | null> {
 	if (!RIOT_API_KEY) return null;
 
-	const accountResponse = await fetch(
+	const accountResponse = await riotApiFetch(
 		`https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
 		{ headers: { "X-Riot-Token": RIOT_API_KEY } }
 	).catch(() => null);
@@ -49,7 +51,7 @@ export async function resolveRiotIdentity(gameName: string, tagLine: string, reg
 export async function getRiotProfileIcon(puuid: string, platform: string): Promise<number | null> {
 	if (!RIOT_API_KEY) return null;
 
-	const response = await fetch(`https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`, {
+	const response = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`, {
 		headers: { "X-Riot-Token": RIOT_API_KEY },
 	}).catch(() => null);
 

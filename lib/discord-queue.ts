@@ -1,5 +1,6 @@
 import { Db } from "mongodb";
 import { TournamentNotification, userIdCandidates } from "@/lib/tournament-community";
+import { ChallengeRewardGrant } from "@/lib/challenge-rewards";
 
 export type DiscordQueueJobType =
 	| "team.create-role"
@@ -10,7 +11,8 @@ export type DiscordQueueJobType =
 	| "team.rename-role"
 	| "team.rename-text-channel"
 	| "team.rename-voice-channel"
-	| "notification.send-dm";
+	| "notification.send-dm"
+	| "reward.assign-role";
 
 export type DiscordQueueJob = {
 	id: string;
@@ -19,6 +21,7 @@ export type DiscordQueueJob = {
 	teamId: string | null;
 	payload: Record<string, unknown>;
 	status: "queued" | "processing" | "completed" | "failed" | "skipped";
+	activeKey?: string;
 	attempts: number;
 	runAfter: Date;
 	lockedAt?: Date;
@@ -35,14 +38,26 @@ type DiscordConfig = {
 };
 
 type DiscordBotConfig = Pick<DiscordConfig, "botToken">;
+type DiscordGuildConfig = DiscordBotConfig & { guildId: string };
+
+let discordBlockedUntil = 0;
+let queueIndexPromise: Promise<unknown> | null = null;
 
 class DiscordRequestError extends Error {
 	constructor(
 		message: string,
-		readonly retryAfterMs?: number
+		readonly retryAfterMs?: number,
+		readonly retryable = true,
+		readonly status?: number
 	) {
 		super(message);
 	}
+}
+
+function getDiscordGuildConfig(): DiscordGuildConfig | null {
+	const guildId = process.env.DISCORD_GUILD_ID?.trim();
+	const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
+	return guildId && botToken ? { guildId, botToken } : null;
 }
 
 function getDiscordConfig(): DiscordConfig | null {
@@ -71,20 +86,32 @@ function channelSlug(name: string, suffix: "chat" | "voice") {
 }
 
 async function discordRequest<T>(config: DiscordBotConfig, path: string, method: string, body?: Record<string, unknown>) {
+	if (discordBlockedUntil > Date.now()) await new Promise((resolve) => setTimeout(resolve, discordBlockedUntil - Date.now()));
 	const response = await fetch(`https://discord.com/api/v10${path}`, {
 		method,
 		headers: {
 			Authorization: `Bot ${config.botToken}`,
 			"Content-Type": "application/json",
+			"User-Agent": "DiscordBot (https://n4cht4r4.de, 1.0)",
 		},
 		body: body ? JSON.stringify(body) : undefined,
 	}).catch(() => null);
 
-	if (!response) throw new DiscordRequestError("Discord ist nicht erreichbar.");
+	if (!response) throw new DiscordRequestError("Discord ist nicht erreichbar.", undefined, true);
+	const remaining = Number(response.headers.get("X-RateLimit-Remaining"));
+	const resetAfterSeconds = Number(response.headers.get("X-RateLimit-Reset-After"));
+	if (remaining === 0 && Number.isFinite(resetAfterSeconds)) discordBlockedUntil = Math.max(discordBlockedUntil, Date.now() + resetAfterSeconds * 1_000 + 100);
 	if (!response.ok) {
 		const payload = (await response.json().catch(() => null)) as { message?: string; retry_after?: number } | null;
-		const retryAfterMs = response.status === 429 && payload?.retry_after ? Math.ceil(payload.retry_after * 1000) : undefined;
-		throw new DiscordRequestError(payload?.message || `Discord API Fehler ${response.status}`, retryAfterMs);
+		const headerRetry = Number(response.headers.get("Retry-After"));
+		const retryAfterMs = response.status === 429 ? Math.ceil((payload?.retry_after || (Number.isFinite(headerRetry) ? headerRetry : 1)) * 1_000) : undefined;
+		if (retryAfterMs) discordBlockedUntil = Math.max(discordBlockedUntil, Date.now() + retryAfterMs);
+		throw new DiscordRequestError(
+			payload?.message || `Discord API Fehler ${response.status}`,
+			retryAfterMs,
+			response.status === 429 || response.status >= 500,
+			response.status
+		);
 	}
 	return response.status === 204 ? null : (response.json() as Promise<T>);
 }
@@ -101,6 +128,17 @@ export async function enqueueDiscordJob(
 	payload: Record<string, unknown> = {},
 	runAfter = new Date()
 ) {
+	if (!queueIndexPromise) {
+		queueIndexPromise = db
+			.collection<DiscordQueueJob>("discord_queue")
+			.createIndex({ activeKey: 1 }, { unique: true, partialFilterExpression: { activeKey: { $exists: true } } })
+			.catch((error) => {
+				queueIndexPromise = null;
+				throw error;
+			});
+	}
+	await queueIndexPromise;
+	const discriminator = String(payload.notificationId || payload.grantId || payload.discordId || "");
 	const job: DiscordQueueJob = {
 		id: `discord_${crypto.randomUUID()}`,
 		type,
@@ -108,18 +146,31 @@ export async function enqueueDiscordJob(
 		teamId,
 		payload,
 		status: "queued",
+		activeKey: [type, tournamentId || "-", teamId || "-", discriminator].join(":"),
 		attempts: 0,
 		runAfter,
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
-	await db.collection<DiscordQueueJob>("discord_queue").insertOne(job);
+	try {
+		await db.collection<DiscordQueueJob>("discord_queue").insertOne(job);
+	} catch (error) {
+		if (!(error && typeof error === "object" && "code" in error && error.code === 11000)) throw error;
+		const active = await db.collection<DiscordQueueJob>("discord_queue").findOne({ activeKey: job.activeKey });
+		if (active) return active;
+		throw error;
+	}
 	return job;
 }
 
 export async function enqueueDiscordNotification(db: Db, notificationId: string, tournamentId: string | null) {
 	if (!getDiscordBotConfig()) return null;
 	return enqueueDiscordJob(db, "notification.send-dm", tournamentId, null, { notificationId });
+}
+
+export async function queueChallengeRoleGrant(db: Db, grantId: string, discordId: string, roleId: string) {
+	if (!getDiscordGuildConfig()) return null;
+	return enqueueDiscordJob(db, "reward.assign-role", null, null, { grantId, discordId, roleId });
 }
 
 export async function queueTeamProvisioning(db: Db, tournamentId: string, teamId: string) {
@@ -267,6 +318,18 @@ async function processNotificationJob(db: Db, job: DiscordQueueJob, config: Disc
 	return "completed" as const;
 }
 
+async function processRewardRoleJob(db: Db, job: DiscordQueueJob, config: DiscordGuildConfig) {
+	const grantId = typeof job.payload.grantId === "string" ? job.payload.grantId : "";
+	const discordId = typeof job.payload.discordId === "string" ? job.payload.discordId : "";
+	const roleId = typeof job.payload.roleId === "string" ? job.payload.roleId : "";
+	const grant = grantId ? await db.collection<ChallengeRewardGrant>("challenge_reward_grants").findOne({ id: grantId }) : null;
+	if (!grant || !discordId || !roleId) return "skipped" as const;
+	if (grant.status === "granted") return "skipped" as const;
+	await discordRequest(config, `/guilds/${config.guildId}/members/${discordId}/roles/${roleId}`, "PUT");
+	await db.collection<ChallengeRewardGrant>("challenge_reward_grants").updateOne({ id: grant.id }, { $set: { status: "granted", grantedAt: new Date(), updatedAt: new Date() } });
+	return "completed" as const;
+}
+
 export async function processNextDiscordQueueJob(db: Db) {
 	const job = await claimNextDiscordJob(db);
 	if (!job) return { processed: false, reason: "No due jobs." };
@@ -276,24 +339,34 @@ export async function processNextDiscordQueueJob(db: Db) {
 		if (!botConfig) throw new DiscordRequestError("Discord Bot Token ist nicht konfiguriert.");
 		let status;
 		if (job.type === "notification.send-dm") status = await processNotificationJob(db, job, botConfig);
-		else {
+		else if (job.type === "reward.assign-role") {
+			const guildConfig = getDiscordGuildConfig();
+			if (!guildConfig) throw new DiscordRequestError("Discord Guild ist nicht konfiguriert.", undefined, false);
+			status = await processRewardRoleJob(db, job, guildConfig);
+		} else {
 			const teamConfig = getDiscordConfig();
 			if (!teamConfig) throw new DiscordRequestError("Discord Team-Kanäle sind nicht konfiguriert.");
 			status = await processTeamJob(db, job, teamConfig);
 		}
-		await db.collection<DiscordQueueJob>("discord_queue").updateOne({ id: job.id }, { $set: { status, updatedAt: new Date() }, $unset: { lockedAt: "" } });
+		await db.collection<DiscordQueueJob>("discord_queue").updateOne({ id: job.id }, { $set: { status, updatedAt: new Date() }, $unset: { lockedAt: "", activeKey: "" } });
 		return { processed: true, jobId: job.id, status };
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unbekannter Discord Queue Fehler";
 		const retryAfter = error instanceof DiscordRequestError && error.retryAfterMs ? error.retryAfterMs : Math.min(2 ** (job.attempts + 1) * 60_000, 60 * 60 * 1000);
 		const attempts = job.attempts + 1;
+		const failed = attempts >= 5 || (error instanceof DiscordRequestError && !error.retryable);
 		await db.collection<DiscordQueueJob>("discord_queue").updateOne(
 			{ id: job.id },
 			{
-				$set: { status: attempts >= 5 ? "failed" : "queued", attempts, runAfter: new Date(Date.now() + retryAfter), lastError: message, updatedAt: new Date() },
-				$unset: { lockedAt: "" },
+				$set: { status: failed ? "failed" : "queued", attempts, runAfter: new Date(Date.now() + retryAfter), lastError: message, updatedAt: new Date() },
+				$unset: failed ? { lockedAt: "", activeKey: "" } : { lockedAt: "" },
 			}
 		);
-		return { processed: true, jobId: job.id, status: attempts >= 5 ? "failed" : "requeued", error: message };
+		if (failed && job.type === "reward.assign-role" && typeof job.payload.grantId === "string") {
+			await db
+				.collection<ChallengeRewardGrant>("challenge_reward_grants")
+				.updateOne({ id: job.payload.grantId }, { $set: { status: "failed", lastError: message, updatedAt: new Date() } });
+		}
+		return { processed: true, jobId: job.id, status: failed ? "failed" : "requeued", error: message };
 	}
 }

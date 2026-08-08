@@ -4914,6 +4914,321 @@ body.obs-page main {
 	opacity: 0.65;
 }
 
+.challenge-notice {
+	margin: 0 0 18px;
+	padding: 11px 14px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border: 1px solid color-mix(in srgb, var(--blossom) 35%, var(--line));
+	border-radius: 7px;
+	color: var(--heading);
+	background: color-mix(in srgb, var(--blossom-soft) 42%, var(--surface));
+	font-size: 12px;
+}
+
+.challenge-season-line {
+	margin-top: 14px;
+	padding-top: 10px;
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	border-top: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.challenge-reward {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.challenge-reward svg {
+	flex: 0 0 auto;
+	color: var(--blossom);
+}
+
+.challenge-unlocked-badge {
+	margin-top: 14px;
+	padding: 10px;
+	display: grid;
+	grid-template-columns: 34px minmax(0, 1fr) 20px;
+	align-items: center;
+	gap: 9px;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: var(--surface-soft);
+}
+
+.challenge-unlocked-badge > span {
+	font-size: 23px;
+}
+
+.challenge-unlocked-badge > div {
+	display: grid;
+	gap: 2px;
+}
+
+.challenge-unlocked-badge small {
+	color: var(--muted);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.challenge-unlocked-badge strong {
+	font-size: 12px;
+}
+
+.challenge-unlocked-badge > svg {
+	color: var(--blossom);
+}
+
+.challenge-unlocked-badge.rare {
+	border-color: color-mix(in srgb, var(--blossom) 48%, var(--line));
+}
+
+.challenge-unlocked-badge.epic {
+	border-color: color-mix(in srgb, var(--gold) 60%, var(--line));
+	background: color-mix(in srgb, var(--gold) 10%, var(--surface));
+}
+
+.challenge-claim {
+	width: 100%;
+	margin-top: 10px;
+}
+
+.challenge-role-granted {
+	margin: 10px 0 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--success);
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.profile-badges {
+	padding: 28px 0;
+	border-top: 1px solid var(--line);
+}
+
+.profile-badge-grid {
+	margin-top: 20px;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+}
+
+.profile-badge {
+	position: relative;
+	min-height: 132px;
+	padding: 15px;
+	display: grid;
+	grid-template-columns: 38px minmax(0, 1fr) 26px;
+	align-items: start;
+	gap: 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--heading);
+	background: var(--surface);
+	text-align: left;
+	cursor: pointer;
+}
+
+.profile-badge:hover,
+.profile-badge.selected {
+	border-color: var(--blossom);
+	background: color-mix(in srgb, var(--blossom-soft) 36%, var(--surface));
+}
+
+.profile-badge.epic {
+	border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+
+.profile-badge > span:first-child {
+	font-size: 28px;
+}
+
+.profile-badge > div {
+	display: grid;
+	gap: 4px;
+}
+
+.profile-badge small {
+	color: var(--blossom);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.profile-badge strong {
+	font-size: 13px;
+}
+
+.profile-badge p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 10px;
+	line-height: 1.5;
+}
+
+.badge-select-mark {
+	width: 25px;
+	height: 25px;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	color: var(--muted);
+	background: var(--surface-soft);
+}
+
+.profile-badge.selected .badge-select-mark {
+	border-color: var(--blossom);
+	color: white;
+	background: var(--blossom);
+}
+
+.admin-ledger-tools,
+.challenge-queue-health {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+}
+
+.challenge-queue-health {
+	margin-left: auto;
+	align-self: flex-end;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.challenge-queue-health span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 800;
+}
+
+.challenge-admin-ledger {
+	border-block: 1px solid var(--line);
+}
+
+.challenge-admin-ledger > header {
+	padding: 22px 2px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18px;
+}
+
+.challenge-admin-ledger h2 {
+	margin: 4px 0 0;
+}
+
+.challenge-admin-list {
+	display: grid;
+	gap: 12px;
+	padding-bottom: 28px;
+}
+
+.challenge-admin-form {
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.challenge-admin-form.disabled {
+	opacity: 0.66;
+}
+
+.challenge-admin-form > header {
+	padding: 15px 17px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	border-bottom: 1px solid var(--line);
+	background: linear-gradient(100deg, color-mix(in srgb, var(--blossom-soft) 42%, transparent), transparent);
+}
+
+.challenge-admin-form > header > div {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.challenge-admin-form > header > div > span {
+	font-size: 24px;
+}
+
+.challenge-admin-form h3,
+.challenge-admin-form header small {
+	margin: 0;
+}
+
+.challenge-admin-form header small {
+	color: var(--blossom);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.challenge-admin-fields {
+	padding: 15px 17px;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+}
+
+.challenge-admin-fields label {
+	display: grid;
+	gap: 5px;
+	color: var(--muted);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.challenge-admin-fields label.wide {
+	grid-column: span 2;
+}
+
+.challenge-admin-fields input,
+.challenge-admin-fields select,
+.challenge-admin-fields textarea {
+	width: 100%;
+	min-width: 0;
+	text-transform: none;
+}
+
+.challenge-admin-fields textarea {
+	min-height: 76px;
+}
+
+.challenge-admin-form > footer {
+	padding: 11px 17px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	border-top: 1px solid var(--line);
+}
+
+.challenge-admin-form code {
+	overflow: hidden;
+	color: var(--muted);
+	font-size: 9px;
+	text-overflow: ellipsis;
+}
+
 @media (max-width: 900px) {
 	.tournament-principles,
 	.application-guide,
@@ -4956,9 +5271,29 @@ body.obs-page main {
 		max-height: 300px;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
+
+	.profile-badge-grid,
+	.challenge-admin-fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 @media (max-width: 700px) {
+	.profile-badge-grid,
+	.challenge-admin-fields {
+		grid-template-columns: 1fr;
+	}
+
+	.challenge-admin-fields label.wide {
+		grid-column: auto;
+	}
+
+	.challenge-admin-ledger > header,
+	.challenge-admin-form > footer,
+	.admin-ledger-tools {
+		align-items: stretch;
+		flex-direction: column;
+	}
 	.admin-workbench-bar,
 	.admin-roster-statusline,
 	.wish-group-create,

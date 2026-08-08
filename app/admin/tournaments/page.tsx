@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowRight, CalendarDays, Crown, Flower2, ShieldAlert, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Crown, Flower2, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -53,7 +53,12 @@ export default function AdminTournamentsPage() {
 						<span className="kicker">Deine Events</span>
 						<h2>Veröffentlichte und geplante Turniere</h2>
 					</div>
-					<span className="admin-ledger-count">{tournaments.length} Einträge</span>
+					<div className="admin-ledger-tools">
+						<Link className="button button-secondary button-small" href="/admin/challenges">
+							<Sparkles size={14} /> Challenges
+						</Link>
+						<span className="admin-ledger-count">{tournaments.length} Einträge</span>
+					</div>
 				</header>
 				<div className="admin-ledger-lines">
 					{tournaments.map((tournament, index) => (

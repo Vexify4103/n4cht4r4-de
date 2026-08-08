@@ -1,9 +1,9 @@
 import { CronJob } from "cron";
 import client from "@/lib/db";
-import { syncRiotChallengesForUser } from "@/lib/riot-challenge-sync";
-import { startWatchTimeTracker } from "@/lib/watchtime";
+import { enqueueRiotChallengeSync } from "@/lib/riot-sync-queue";
+import { startWatchTimeTracker, stopWatchTimeTracker } from "@/lib/watchtime";
 
-let jobsStarted = false;
+let challengeJob: CronJob | null = null;
 
 async function runChallengeUpdate() {
 	if (!process.env.RIOT_API_KEY) return;
@@ -11,29 +11,38 @@ async function runChallengeUpdate() {
 	try {
 		await client.connect();
 		const db = client.db();
-		const users = await db.collection("users").find({ riotPuuid: { $exists: true, $ne: null } }).toArray();
-		let updated = 0;
+		const users = await db
+			.collection("users")
+			.find({ riotPuuid: { $exists: true, $ne: null } })
+			.toArray();
+		let queued = 0;
 
 		for (const user of users) {
 			try {
-				const result = await syncRiotChallengesForUser(db, user._id.toString(), user.riotPuuid, 30);
-				if (result.matchesChecked > 0) updated++;
+				const result = await enqueueRiotChallengeSync(db, user._id.toString(), String(user.riotPuuid), 30);
+				if (result.created) queued++;
 			} catch (error) {
 				console.error(`Scheduled Riot challenge sync failed for ${user._id}:`, error);
 			}
 		}
 
-		console.log(`[Cron] Challenges updated: ${updated}/${users.length} users`);
+		console.log(`[Cron] Riot challenge jobs queued: ${queued}/${users.length} users`);
 	} catch (error) {
 		console.error("[Cron] Challenge update failed:", error);
 	}
 }
 
 export function startChallengeCron() {
-	if (jobsStarted) return;
-	jobsStarted = true;
+	if (challengeJob) return;
 
-	new CronJob("0 * * * *", runChallengeUpdate, null, true, "Europe/Berlin");
+	challengeJob = new CronJob("0 * * * *", runChallengeUpdate, null, true, "Europe/Berlin");
+	void runChallengeUpdate();
 	startWatchTimeTracker();
 	console.log("[Cron] Challenge update job started (hourly)");
+}
+
+export function stopChallengeCron() {
+	challengeJob?.stop();
+	challengeJob = null;
+	stopWatchTimeTracker();
 }
