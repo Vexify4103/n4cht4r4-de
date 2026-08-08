@@ -33,12 +33,20 @@ type Profile = {
 };
 
 function progressLabel(challenge: Challenge) {
-	if (challenge.type === "watchtime") return `${challenge.progress} / ${challenge.target} Minuten`;
-	if (challenge.type === "community" && challenge.target >= 60) {
-		if (challenge.progress < 60) return `${challenge.progress.toLocaleString("de-DE")} Minuten / ${Math.floor(challenge.target / 60).toLocaleString("de-DE")} Stunden`;
-		return `${Math.floor(challenge.progress / 60).toLocaleString("de-DE")} / ${Math.floor(challenge.target / 60).toLocaleString("de-DE")} Stunden`;
-	}
+	if (challenge.type === "watchtime" || challenge.type === "community") return `${formatMinutes(challenge.progress)} / ${formatMinutes(challenge.target)}`;
 	return `${challenge.progress.toLocaleString("de-DE")} / ${challenge.target.toLocaleString("de-DE")}`;
+}
+
+function formatMinutes(value: number) {
+	const hours = Math.floor(value / 60);
+	const minutes = value % 60;
+	if (!hours) return `${minutes.toLocaleString("de-DE")} Min.`;
+	if (!minutes) return `${hours.toLocaleString("de-DE")} Std.`;
+	return `${hours.toLocaleString("de-DE")} Std. ${minutes.toLocaleString("de-DE")} Min.`;
+}
+
+function rarityLabel(rarity?: "common" | "rare" | "epic") {
+	return rarity === "epic" ? "Episch" : rarity === "rare" ? "Selten" : rarity === "common" ? "Gewöhnlich" : "";
 }
 
 export default function ChallengesPage() {
@@ -185,7 +193,7 @@ export default function ChallengesPage() {
 								<h3>{challenge.title}</h3>
 								<p>{challenge.description}</p>
 								<div className="challenge-season-line">
-									<span>Launch-Saison</span>
+									<span>Launch-Saison{challenge.badge ? ` · ${rarityLabel(challenge.badge.rarity)}` : ""}</span>
 									<time>bis {new Date(challenge.endsAt).toLocaleDateString("de-DE")}</time>
 								</div>
 								{challenge.reward && (
