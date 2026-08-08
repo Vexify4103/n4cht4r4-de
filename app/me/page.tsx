@@ -280,6 +280,9 @@ export default function MePage() {
 	const hasDiscord = profile?.providers.includes("discord");
 	const hasTwitch = profile?.providers.includes("twitch");
 	const challenge = profile?.riotVerificationChallenge;
+	const showcasedBadges = (badgeProfile?.showcasedBadgeIds || [])
+		.map((badgeId) => badgeProfile?.badges.find((grant) => grant.rewardKey === badgeId)?.badge)
+		.filter((badge): badge is BadgeGrant["badge"] => Boolean(badge));
 
 	return (
 		<main className="me-page">
@@ -440,7 +443,26 @@ export default function MePage() {
 				<div className="section-heading">
 					<span>Meine Blütenzeichen</span>
 					<h2>Badges aus deinen Challenges</h2>
-					<p>Wähle bis zu drei Badges für deinen Community-Pass. Neue Badges werden beim Abschluss automatisch freigeschaltet.</p>
+					<p>Wähle bis zu drei Badges für deinen Community-Pass. Der erste ausgewählte Badge ist dein Zeichen am Accountbild.</p>
+				</div>
+				<div className="badge-showcase-preview">
+					<div className="badge-preview-avatar">
+						{session.user?.image ? <Image src={session.user.image} alt="" width={50} height={50} /> : <User size={22} />}
+						{showcasedBadges[0] && <span className={`user-menu-badge ${showcasedBadges[0].rarity}`}>{showcasedBadges[0].icon}</span>}
+					</div>
+					<div>
+						<small>So sieht dich die Community</small>
+						<strong>{session.user?.name || "Community-Mitglied"}</strong>
+						<span>Account-Menü und veröffentlichte Turnierkader</span>
+					</div>
+					<div className="badge-preview-list">
+						{showcasedBadges.map((badge) => (
+							<span className={`public-badge labeled ${badge.rarity}`} title={badge.description} key={badge.id}>
+								<b>{badge.icon}</b> {badge.name}
+							</span>
+						))}
+						{!showcasedBadges.length && <span className="badge-preview-empty">Noch kein Badge präsentiert</span>}
+					</div>
 				</div>
 				{badgeNotice && (
 					<p className="profile-tournament-notice">
@@ -450,7 +472,8 @@ export default function MePage() {
 				{badgeProfile?.badges.length ? (
 					<div className="profile-badge-grid">
 						{badgeProfile.badges.map((grant) => {
-							const selected = badgeProfile.showcasedBadgeIds.includes(grant.rewardKey);
+							const showcaseSlot = badgeProfile.showcasedBadgeIds.indexOf(grant.rewardKey) + 1;
+							const selected = showcaseSlot > 0;
 							return (
 								<button
 									type="button"
@@ -460,11 +483,21 @@ export default function MePage() {
 								>
 									<span>{grant.badge.icon}</span>
 									<div>
-										<small>{grant.badge.rarity === "epic" ? "Episch" : grant.badge.rarity === "rare" ? "Selten" : "Gewöhnlich"}</small>
+										<small>
+											{showcaseSlot === 1
+												? "Hauptbadge"
+												: showcaseSlot > 1
+													? `Schaukasten ${showcaseSlot}`
+													: grant.badge.rarity === "epic"
+														? "Episch"
+														: grant.badge.rarity === "rare"
+															? "Selten"
+															: "Gewöhnlich"}
+										</small>
 										<strong>{grant.badge.name}</strong>
 										<p>{grant.badge.description}</p>
 									</div>
-									<span className="badge-select-mark">{selected ? <Check size={14} /> : <Plus size={14} />}</span>
+									<span className="badge-select-mark">{selected ? showcaseSlot : <Plus size={14} />}</span>
 								</button>
 							);
 						})}

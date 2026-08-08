@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Check, Copy, ExternalLink, Radio, Users } from "lucide-react";
+import type { PublicBadge } from "@/lib/public-badges";
 
 export type PublicTeam = {
 	id: string;
 	name: string;
 	seed?: number | null;
-	members?: { name: string; role?: string; opgg?: string; champs?: string[] }[];
+	members?: { name: string; role?: string; opgg?: string; champs?: string[]; badges?: PublicBadge[] }[];
 };
 
 function playerOpgg(riotId: string) {
@@ -31,7 +32,9 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 	return (
 		<article className="tournament-team-card">
 			<header className="team-card-heading">
-				<span className="team-seal"><Users size={20} /></span>
+				<span className="team-seal">
+					<Users size={20} />
+				</span>
 				<div>
 					<small>{team.seed ? `Seed ${team.seed}` : "Bestätigtes Team"}</small>
 					<h3>{team.name}</h3>
@@ -42,19 +45,36 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 			</header>
 
 			<div className="team-roster">
-				{team.members?.length ? team.members.map((member) => (
-					<div className="team-player" key={`${team.id}-${member.name}`}>
-						<span>{member.role || "Spieler"}</span>
-						<strong>{member.name}</strong>
-						<a href={member.opgg || playerOpgg(member.name)} target="_blank" rel="noreferrer" title={`${member.name} auf op.gg öffnen`}>
-							<ExternalLink size={14} />
-						</a>
-					</div>
-				)) : <p className="muted-note">Der Kader wird noch veröffentlicht.</p>}
+				{team.members?.length ? (
+					team.members.map((member) => (
+						<div className="team-player" key={`${team.id}-${member.name}`}>
+							<span>{member.role || "Spieler"}</span>
+							<div className="team-player-identity">
+								<strong>{member.name}</strong>
+								{Boolean(member.badges?.length) && (
+									<span className="player-badge-showcase" aria-label="Präsentierte Community-Badges">
+										{member.badges?.map((badge) => (
+											<span className={`public-badge ${badge.rarity}`} title={`${badge.name}: ${badge.description}`} key={badge.id}>
+												{badge.icon}
+											</span>
+										))}
+									</span>
+								)}
+							</div>
+							<a href={member.opgg || playerOpgg(member.name)} target="_blank" rel="noreferrer" title={`${member.name} auf op.gg öffnen`}>
+								<ExternalLink size={14} />
+							</a>
+						</div>
+					))
+				) : (
+					<p className="muted-note">Der Kader wird noch veröffentlicht.</p>
+				)}
 			</div>
 
 			<footer className="team-card-footer">
-				<a className="text-link" href={multiOpgg(team.members)} target="_blank" rel="noreferrer">Team op.gg <ExternalLink size={14} /></a>
+				<a className="text-link" href={multiOpgg(team.members)} target="_blank" rel="noreferrer">
+					Team op.gg <ExternalLink size={14} />
+				</a>
 				<button className="obs-copy-button" type="button" onClick={copyObsLink}>
 					{copied ? <Check size={14} /> : <Copy size={14} />}
 					{copied ? "OBS-Link kopiert" : "OBS-Karte kopieren"}

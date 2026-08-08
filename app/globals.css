@@ -6200,3 +6200,185 @@ body.obs-page main {
 		padding-inline: 0;
 	}
 }
+
+/* Public badge showcase */
+.user-avatar-badge-wrap,
+.badge-preview-avatar {
+	position: relative;
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+}
+
+.user-menu-badge {
+	position: absolute;
+	right: -4px;
+	bottom: -3px;
+	width: 18px;
+	height: 18px;
+	display: grid;
+	place-items: center;
+	border: 2px solid var(--surface-solid);
+	border-radius: 50%;
+	background: var(--surface-solid);
+	font-size: 10px;
+	line-height: 1;
+	box-shadow: 0 2px 7px rgba(0, 0, 0, 0.25);
+}
+
+.user-menu-badge.rare,
+.public-badge.rare {
+	border-color: color-mix(in srgb, var(--blossom) 60%, var(--line));
+}
+
+.user-menu-badge.epic,
+.public-badge.epic {
+	border-color: color-mix(in srgb, var(--gold) 72%, var(--line));
+}
+
+.user-dropdown-badges,
+.player-badge-showcase,
+.badge-preview-list {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.user-dropdown-badges {
+	margin-top: 8px;
+}
+
+.public-badge {
+	width: 24px;
+	height: 24px;
+	display: inline-grid;
+	place-items: center;
+	flex: 0 0 auto;
+	border: 1px solid var(--line-strong);
+	border-radius: 50%;
+	background: var(--surface-soft);
+	font-size: 13px;
+	line-height: 1;
+}
+
+.public-badge.labeled {
+	width: auto;
+	height: 29px;
+	padding: 0 9px;
+	display: inline-flex;
+	gap: 5px;
+	border-radius: 15px;
+	color: var(--ink-strong);
+	font-size: 10px;
+	font-weight: 800;
+}
+
+.public-badge.labeled b {
+	font-size: 14px;
+}
+
+.team-player {
+	grid-template-columns: 74px minmax(0, 1fr) 24px;
+}
+
+.team-player-identity {
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.team-player-identity > strong {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+}
+
+.player-badge-showcase {
+	flex: 0 0 auto;
+	flex-wrap: nowrap;
+}
+
+.player-badge-showcase .public-badge {
+	width: 22px;
+	height: 22px;
+	font-size: 12px;
+}
+
+.badge-showcase-preview {
+	margin-top: 20px;
+	padding: 16px 3px;
+	display: grid;
+	grid-template-columns: 56px minmax(190px, 1fr) minmax(240px, auto);
+	align-items: center;
+	gap: 15px;
+	border-block: 1px solid var(--line-strong);
+}
+
+.badge-preview-avatar {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	color: var(--blossom);
+	background: var(--surface-soft);
+}
+
+.badge-preview-avatar > img {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.badge-preview-avatar .user-menu-badge {
+	width: 21px;
+	height: 21px;
+	font-size: 12px;
+}
+
+.badge-showcase-preview > div:nth-child(2) {
+	display: grid;
+	line-height: 1.35;
+}
+
+.badge-showcase-preview small {
+	color: var(--blossom);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.badge-showcase-preview strong {
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 17px;
+}
+
+.badge-showcase-preview > div:nth-child(2) > span,
+.badge-preview-empty {
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.badge-preview-list {
+	justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+	.badge-showcase-preview {
+		grid-template-columns: 56px 1fr;
+	}
+
+	.badge-preview-list {
+		grid-column: 1 / -1;
+		justify-content: flex-start;
+	}
+
+	.team-player-identity {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 3px;
+	}
+}
