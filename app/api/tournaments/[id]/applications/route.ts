@@ -3,6 +3,7 @@ import client from "@/lib/db";
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { resolveTournament } from "@/lib/tournament-slugs";
+import { getRiotRank } from "@/lib/riot";
 
 export const runtime = "nodejs";
 
@@ -29,24 +30,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		.find({ userId: { $in: accountUserIds } })
 		.toArray();
 	const discord = accounts.find((account) => account.provider === "discord");
-	const twitch = accounts.find((account) => account.provider === "twitch");
-	const requiredConnections = Array.isArray(tournament.requiredConnections) ? tournament.requiredConnections : ["discord", "riot"];
-	if (requiredConnections.includes("discord") && !discord) return NextResponse.json({ error: "Für die Anmeldung musst du Discord verbinden." }, { status: 403 });
-	if (requiredConnections.includes("twitch") && !twitch) return NextResponse.json({ error: "Für die Anmeldung musst du Twitch verbinden." }, { status: 403 });
-	if (requiredConnections.includes("riot") && (!user?.riotVerified || !user.riotSummonerName || !user.riotTagLine))
+	if (!discord) return NextResponse.json({ error: "Für die Anmeldung musst du Discord verbinden." }, { status: 403 });
+	if (!user?.riotVerified || !user.riotPuuid || !user.riotSummonerName || !user.riotTagLine)
 		return NextResponse.json({ error: "Für die Anmeldung musst du deine Riot-ID verifizieren." }, { status: 403 });
 	if (tournament.collectRoles !== false && !role) return NextResponse.json({ error: "Bitte wähle deine bevorzugte Rolle." }, { status: 400 });
 	const existing = await db.collection("tournament_applications").findOne({ tournamentId: id, userId: session.user.id, status: { $in: ["pending", "accepted", "waitlisted"] } });
 	if (existing) return NextResponse.json({ error: "Du hast bereits eine aktive Bewerbung für dieses Turnier." }, { status: 409 });
 
 	const riotId = user?.riotSummonerName && user?.riotTagLine ? `${user.riotSummonerName}#${user.riotTagLine}` : "";
+	const rank = await getRiotRank(String(user.riotPuuid), String(user.riotPlatform || "euw1"));
+	const currentRank = rank?.label || String(user.riotRank || "Unranked");
+	if (rank) {
+		await db.collection("users").updateOne({ _id: userId }, { $set: { riotRank: rank.label, riotRankUpdatedAt: new Date() } });
+	}
 	const application = {
 		id: crypto.randomUUID(),
 		tournamentId: id,
 		userId: session.user.id,
 		discordId: discord?.providerAccountId || null,
-		twitchId: twitch?.providerAccountId || null,
 		riotId,
+		currentRank,
 		role,
 		participationMode: "solo",
 		discordDmOptIn: body?.discordDmOptIn === true,

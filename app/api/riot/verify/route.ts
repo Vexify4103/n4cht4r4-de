@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import client from "@/lib/db";
-import { getRiotProfileIcon, profileIconUrl, resolveRiotIdentity, verificationIconIds } from "@/lib/riot";
+import { getRiotProfileIcon, getRiotRank, profileIconUrl, resolveRiotIdentity, verificationIconIds } from "@/lib/riot";
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 
@@ -114,6 +114,7 @@ export async function POST(request: Request) {
 				profileIconUrl: profileIconUrl(challenge.profileIconId),
 			});
 		}
+		const rank = await getRiotRank(challenge.puuid, challenge.platform);
 
 		await users.updateOne(
 			{ _id: userId },
@@ -123,7 +124,10 @@ export async function POST(request: Request) {
 					riotPuuid: challenge.puuid,
 					riotSummonerName: challenge.gameName,
 					riotTagLine: challenge.tagLine,
+					riotPlatform: challenge.platform,
 					riotProfileIconId: currentIcon,
+					riotRank: rank?.label || "Unranked",
+					riotRankUpdatedAt: new Date(),
 					riotVerifiedAt: new Date(),
 				},
 				$unset: { riotVerificationChallenge: "" },

@@ -47,6 +47,7 @@ export async function POST(request: Request) {
 		championRule: "none",
 		published: false,
 		registrationOpen: false,
+		requiredConnections: ["discord", "riot"],
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};

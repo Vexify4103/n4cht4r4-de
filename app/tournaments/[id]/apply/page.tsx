@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import useSWR from "swr";
-import { CheckCircle2, ClipboardList, ShieldCheck, Twitch } from "lucide-react";
+import { CheckCircle2, ClipboardList, ShieldCheck } from "lucide-react";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { DiscordMark } from "@/components/DiscordMark";
 
@@ -20,7 +20,7 @@ export default function TournamentApplyPage() {
 			status: string;
 			registrationOpen?: boolean;
 			applicationModes?: ("solo" | "team")[];
-			requiredConnections?: ("discord" | "twitch" | "riot")[];
+			requiredConnections?: ("discord" | "riot")[];
 			collectRoles?: boolean;
 			registrationNote?: string;
 		};
@@ -32,13 +32,11 @@ export default function TournamentApplyPage() {
 	const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 	const hasDiscord = profile?.providers.includes("discord");
-	const hasTwitch = profile?.providers.includes("twitch");
 	const tournament = tournamentData?.tournament;
 	const requiredConnections = tournament?.requiredConnections || ["discord", "riot"];
 	const requiresDiscord = requiredConnections.includes("discord");
-	const requiresTwitch = requiredConnections.includes("twitch");
 	const requiresRiot = requiredConnections.includes("riot");
-	const connectionsReady = (!requiresDiscord || hasDiscord) && (!requiresTwitch || hasTwitch) && (!requiresRiot || profile?.riotVerified);
+	const connectionsReady = (!requiresDiscord || hasDiscord) && (!requiresRiot || profile?.riotVerified);
 
 	async function submit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -89,16 +87,6 @@ export default function TournamentApplyPage() {
 								<span>Kontakt und Turnierorganisation</span>
 							</div>
 							{hasDiscord && <CheckCircle2 size={18} />}
-						</div>
-					)}
-					{requiresTwitch && (
-						<div className={`requirement-row ${hasTwitch ? "done" : ""}`}>
-							<Twitch size={19} />
-							<div>
-								<strong>Twitch</strong>
-								<span>Streamkonto und Community-Zuordnung</span>
-							</div>
-							{hasTwitch && <CheckCircle2 size={18} />}
 						</div>
 					)}
 					{requiresRiot && (

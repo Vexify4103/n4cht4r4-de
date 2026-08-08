@@ -100,13 +100,14 @@ export default function ChallengesPage() {
 	return (
 		<>
 			<PageHero
+				className="challenge-page-hero"
 				kicker="Community-Challenges"
-				title="Kleine Ziele, gemeinsam gesammelt."
-				copy="Deine League-Matches und Live-Watchtime werden nach dem Verknüpfen automatisch gezählt. Community-Ziele wachsen mit allen zusammen."
+				title="Unser kleines Challenge-Tagebuch."
+				copy="League-Momente, gemeinsame Streamzeit und kleine Meilensteine wachsen hier Blüte für Blüte."
 				icon={<Target size={44} strokeWidth={1.6} />}
 			/>
 
-			<section className="content-band">
+			<section className="content-band challenge-connections-band">
 				<div className="requirements-strip">
 					<strong>Deine Verbindungen</strong>
 					<div>
@@ -135,7 +136,7 @@ export default function ChallengesPage() {
 				</div>
 			</section>
 
-			<section className="content-band">
+			<section className="content-band challenge-journal-band">
 				{notice && (
 					<p className="challenge-notice">
 						<Sparkles size={15} /> {notice}
@@ -156,9 +157,14 @@ export default function ChallengesPage() {
 						</button>
 					)}
 				</div>
+				<div className="challenge-journal-heading">
+					<span className="kicker">{tab === "community" ? "Unser gemeinsamer Hanami" : "Deine Saison"}</span>
+					<h2>{tab === "community" ? "Was die ganze Community zusammen schafft" : "Deine persönlichen Blütenwege"}</h2>
+					<p>{tab === "community" ? "Jede verknüpfte Minute zählt in dieselbe Richtung." : "Twitch- und Riot-Ziele werden unabhängig voneinander gesammelt."}</p>
+				</div>
 
 				{tab === "personal" && !session && (
-					<div className="empty-state">
+					<div className="empty-state challenge-login-note">
 						<LockKeyhole size={38} />
 						<h3>Deine Challenges warten auf dich</h3>
 						<p>Melde dich zuerst mit Discord an. Twitch und Riot kannst du danach sicher mit deinem Profil verbinden.</p>
@@ -167,13 +173,13 @@ export default function ChallengesPage() {
 						</button>
 					</div>
 				)}
-				<div className="challenge-grid">
+				<div className="challenge-journal">
 					{challenges.map((challenge) => {
 						const percent = Math.min(100, Math.round((challenge.progress / challenge.target) * 100));
 						const complete = challenge.progress >= challenge.target;
 						const roleReward = challenge.rewards?.find((reward) => reward.type === "discord_role");
 						return (
-							<article className={`challenge-card ${challenge.type === "community" ? "community" : ""}`} key={challenge.id}>
+							<article className={`challenge-journal-entry ${challenge.type === "community" ? "community" : ""}`} key={challenge.id}>
 								<div className="challenge-card-top">
 									<span className="challenge-icon" aria-hidden="true">
 										{challenge.icon}

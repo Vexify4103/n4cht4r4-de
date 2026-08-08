@@ -1,28 +1,18 @@
-import Image from "next/image";
-
-const sources = {
-	white: "/brands/discord-symbol.svg",
-	blurple: "/brands/discord-symbol-blurple.svg",
-	black: "/brands/discord-symbol-black.svg",
-} as const;
-
-export function DiscordMark({
-	size = 18,
-	variant = "white",
-	className = "",
-}: {
-	size?: number;
-	variant?: keyof typeof sources;
-	className?: string;
-}) {
+export function DiscordMark({ size = 18, variant = "current", className = "" }: { size?: number; variant?: "current" | "white" | "blurple" | "black"; className?: string }) {
+	const color = variant === "white" ? "#ffffff" : variant === "blurple" ? "#5865f2" : variant === "black" ? "#000000" : "currentColor";
 	return (
-		<Image
+		<svg
 			className={`discord-mark ${className}`.trim()}
-			src={sources[variant]}
-			alt=""
+			viewBox="0 0 64 48"
 			aria-hidden="true"
-			width={Math.round(size * 4 / 3)}
-			height={size}
-		/>
+			focusable="false"
+			style={{ width: Math.round((size * 4) / 3), height: size, color }}
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				fill="currentColor"
+				d="M40.575 0c-.619 1.099-1.174 2.235-1.68 3.397a48.784 48.784 0 0 0-14.497 0A29.913 29.913 0 0 0 22.719 0a47.744 47.744 0 0 0-13.07 4.028C1.39 16.265-.846 28.186.266 39.943a53.088 53.088 0 0 0 16.025 8.044 40.85 40.85 0 0 0 3.435-5.531 32.39 32.39 0 0 1-5.405-2.576c.455-.328.897-.669 1.326-.998 10.14 4.774 21.885 4.774 32.038 0 .429.354.871.695 1.326.998a32.605 32.605 0 0 1-5.418 2.589 40.85 40.85 0 0 0 3.435 5.531 53.084 53.084 0 0 0 16.025-8.032c1.313-13.638-2.248-25.458-9.408-35.927A47.856 47.856 0 0 0 40.587.025L40.575 0ZM21.14 32.707c-3.119 0-5.708-2.829-5.708-6.327 0-3.498 2.488-6.339 5.696-6.339 3.207 0 5.758 2.854 5.707 6.339-.05 3.486-2.513 6.327-5.695 6.327Zm21.039 0c-3.132 0-5.696-2.829-5.696-6.327 0-3.498 2.488-6.339 5.696-6.339 3.207 0 5.746 2.854 5.695 6.339-.05 3.486-2.513 6.327-5.695 6.327Z"
+			/>
+		</svg>
 	);
 }

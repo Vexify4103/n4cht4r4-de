@@ -35,10 +35,10 @@ async function runChallengeUpdate() {
 export function startChallengeCron() {
 	if (challengeJob) return;
 
-	challengeJob = new CronJob("0 * * * *", runChallengeUpdate, null, true, "Europe/Berlin");
+	challengeJob = new CronJob("*/15 * * * *", runChallengeUpdate, null, true, "Europe/Berlin");
 	void runChallengeUpdate();
 	startWatchTimeTracker();
-	console.log("[Cron] Challenge update job started (hourly)");
+	console.log("[Cron] Challenge update job started (every 15 minutes)");
 }
 
 export function stopChallengeCron() {

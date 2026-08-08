@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { ArrowRight, CalendarDays, Check, Clock3, Link2, ShieldCheck, Swords, Twitch, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Clock3, Link2, ShieldCheck, Swords, Users } from "lucide-react";
 import { DiscordMark } from "@/components/DiscordMark";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { PublicTeam, TournamentTeamCard } from "@/components/TournamentTeamCard";
@@ -31,7 +31,7 @@ type Tournament = {
 	teamSize?: number;
 	gameMode?: string;
 	applicationModes?: ("solo" | "team")[];
-	requiredConnections?: ("discord" | "twitch" | "riot")[];
+	requiredConnections?: ("discord" | "riot")[];
 };
 
 type Match = {
@@ -142,11 +142,6 @@ export default function TournamentDetailPage() {
 							{requiredConnections.includes("discord") && (
 								<span>
 									<DiscordMark size={13} /> Discord
-								</span>
-							)}
-							{requiredConnections.includes("twitch") && (
-								<span>
-									<Twitch size={14} /> Twitch
 								</span>
 							)}
 							{requiredConnections.includes("riot") && (

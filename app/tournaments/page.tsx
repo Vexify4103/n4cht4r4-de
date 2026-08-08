@@ -106,7 +106,7 @@ export default function TournamentsPage() {
 				<div>
 					<ShieldCheck size={20} />
 					<strong>Faire Teilnahme</strong>
-					<span>mit Discord, Twitch und Riot-Verifizierung</span>
+					<span>mit Discord und Riot-Verifizierung</span>
 				</div>
 				<div>
 					<Swords size={20} />

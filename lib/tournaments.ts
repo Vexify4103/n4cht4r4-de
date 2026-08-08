@@ -1,5 +1,5 @@
 export type TournamentStatus = "announcement" | "registration" | "live" | "completed";
-export type TournamentConnection = "discord" | "twitch" | "riot";
+export type TournamentConnection = "discord" | "riot";
 export type TournamentApplicationMode = "solo" | "team";
 
 export interface TournamentRecord {
@@ -41,9 +41,7 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 	const applicationModes = Array.isArray(value.applicationModes)
 		? value.applicationModes.filter((mode): mode is TournamentApplicationMode => mode === "solo" || mode === "team")
 		: undefined;
-	const requiredConnections = Array.isArray(value.requiredConnections)
-		? value.requiredConnections.filter((provider): provider is TournamentConnection => provider === "discord" || provider === "twitch" || provider === "riot")
-		: undefined;
+	const requiredConnections: TournamentConnection[] = ["discord", "riot"];
 
 	return {
 		id: value.id,
@@ -63,7 +61,7 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		...(typeof value.gameMode === "string" ? { gameMode: value.gameMode } : {}),
 		...(applicationModes?.length ? { applicationModes } : {}),
 		...(value.wishGroupMode === "disabled" || value.wishGroupMode === "duo" || value.wishGroupMode === "team" ? { wishGroupMode: value.wishGroupMode } : {}),
-		...(requiredConnections?.length ? { requiredConnections } : {}),
+		requiredConnections,
 		...(typeof value.collectRoles === "boolean" ? { collectRoles: value.collectRoles } : {}),
 		...(value.bracketType === "single_elimination" || value.bracketType === "double_elimination" || value.bracketType === "groups" ? { bracketType: value.bracketType } : {}),
 		...(typeof value.seriesBestOf === "number" || value.seriesBestOf === null ? { seriesBestOf: value.seriesBestOf as number | null } : {}),

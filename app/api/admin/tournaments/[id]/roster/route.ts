@@ -1,7 +1,7 @@
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import { recordTournamentAudit } from "@/lib/tournament-audit";
 import { createTournamentNotification } from "@/lib/tournament-notifications";
-import { queueMemberRoleAssignment, queueMemberRoleRemoval } from "@/lib/discord-queue";
+import { isDiscordQueueConfigured, queueMemberRoleAssignment, queueMemberRoleRemoval, queueTeamProvisioning, queueTeamRename } from "@/lib/discord-queue";
 import client from "@/lib/db";
 import { publicTournamentId, resolveTournament } from "@/lib/tournament-slugs";
 import { NextResponse } from "next/server";
@@ -19,10 +19,12 @@ type RosterMember = {
 type RosterTeam = {
 	id: string;
 	name: string;
-	seed?: number;
+	seed?: number | null;
 	members?: RosterMember[];
 	publicMembers?: RosterMember[];
+	publicName?: string;
 	discordManaged?: boolean;
+	discord?: { roleId?: string };
 };
 
 function rosterSnapshot(teams: RosterTeam[]) {
@@ -68,17 +70,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	}
 
 	const snapshot = rosterSnapshot(teams);
-	const previous = Array.isArray(tournament.publishedRoster) ? (tournament.publishedRoster as { userId?: string; teamId?: string; role?: string }[]) : [];
+	const previous = Array.isArray(tournament.publishedRoster) ? (tournament.publishedRoster as { userId?: string; teamId?: string; teamName?: string; role?: string }[]) : [];
 	const changed =
 		body.action === "renotify"
 			? snapshot
-			: snapshot.filter((entry) => !previous.some((old) => old.userId === entry.userId && old.teamId === entry.teamId && old.role === entry.role));
+			: snapshot.filter(
+					(entry) => !previous.some((old) => old.userId === entry.userId && old.teamId === entry.teamId && old.teamName === entry.teamName && old.role === entry.role)
+				);
 
 	if (body.action === "publish") {
 		const publishedAt = new Date();
 		const teamById = new Map(teams.map((team) => [team.id, team]));
 		const removed = previous.filter((entry) => entry.userId && !snapshot.some((current) => current.userId === entry.userId));
 		const roleJobs: Promise<unknown>[] = [];
+		const discordSetupJobs: Promise<unknown>[] = [];
+		const discordConfigured = isDiscordQueueConfigured();
+		for (const team of teams) {
+			if (!discordConfigured) break;
+			if (!team.discord?.roleId) discordSetupJobs.push(queueTeamProvisioning(db, id, team.id));
+			else if (team.publicName && team.publicName !== team.name) discordSetupJobs.push(queueTeamRename(db, id, team.id));
+		}
+		await Promise.all(discordSetupJobs);
 		for (const entry of changed) {
 			const team = teamById.get(entry.teamId);
 			const member = team?.members?.find((candidate) => candidate.userId === entry.userId);
@@ -87,7 +99,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 			if (previousEntry?.teamId && previousEntry.teamId !== entry.teamId && previousTeam?.discordManaged && member?.discordId) {
 				roleJobs.push(queueMemberRoleRemoval(db, id, previousEntry.teamId, member.discordId));
 			}
-			if (team?.discordManaged && member?.discordId) roleJobs.push(queueMemberRoleAssignment(db, id, entry.teamId, member.discordId));
+			if (member?.discordId) roleJobs.push(queueMemberRoleAssignment(db, id, entry.teamId, member.discordId));
 		}
 		for (const entry of removed) {
 			const previousTeam = entry.teamId ? teamById.get(entry.teamId) : undefined;
@@ -96,12 +108,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		}
 		await Promise.all(
 			teams.map((team) =>
-				db
-					.collection("tournament_teams")
-					.updateOne(
-						{ id: team.id, tournamentId: id },
-						{ $set: { published: true, publishedAt, publicName: team.name, publicSeed: team.seed, publicMembers: team.members || [] } }
-					)
+				db.collection("tournament_teams").updateOne(
+					{ id: team.id, tournamentId: id },
+					{
+						$set: {
+							published: true,
+							publishedAt,
+							publicName: team.name,
+							publicSeed: team.seed,
+							publicMembers: team.members || [],
+							discordManaged: discordConfigured || Boolean(team.discordManaged),
+						},
+					}
+				)
 			)
 		);
 		await db.collection("tournaments").updateOne({ id }, { $set: { publishedRoster: snapshot, rosterPublishedAt: publishedAt, rosterDirty: false } });

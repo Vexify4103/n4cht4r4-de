@@ -35,7 +35,7 @@ const tournamentSeeds = [
 		championRule: "none",
 		applicationModes: ["solo"],
 		wishGroupMode: "team",
-		requiredConnections: ["discord", "twitch", "riot"],
+		requiredConnections: ["discord", "riot"],
 		collectRoles: false,
 		registrationOpen: false,
 		registrationNote: "Der Start der Anmeldung und die maximale Teamanzahl werden noch bekannt gegeben.",

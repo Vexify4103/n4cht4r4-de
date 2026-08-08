@@ -40,7 +40,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 		"gameMode",
 		"applicationModes",
 		"wishGroupMode",
-		"requiredConnections",
 		"collectRoles",
 	];
 	const update: Record<string, unknown> = {};

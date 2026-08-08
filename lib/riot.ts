@@ -25,6 +25,14 @@ export type RiotIdentity = {
 	platform: string;
 };
 
+export type RiotRank = {
+	queueType: string;
+	tier: string;
+	rank: string;
+	leaguePoints: number;
+	label: string;
+};
+
 export function profileIconUrl(iconId: number) {
 	return `https://ddragon.leagueoflegends.com/cdn/${DATA_DRAGON_VERSION}/img/profileicon/${iconId}.png`;
 }
@@ -58,4 +66,23 @@ export async function getRiotProfileIcon(puuid: string, platform: string): Promi
 	if (!response?.ok) return null;
 	const summoner = await response.json();
 	return typeof summoner.profileIconId === "number" ? summoner.profileIconId : null;
+}
+
+export async function getRiotRank(puuid: string, platform: string): Promise<RiotRank | null> {
+	if (!RIOT_API_KEY) return null;
+	const headers = { "X-Riot-Token": RIOT_API_KEY };
+	const summonerResponse = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`, { headers }).catch(() => null);
+	if (!summonerResponse?.ok) return null;
+	const summoner = (await summonerResponse.json()) as { id?: string };
+	if (!summoner.id) return null;
+	const entriesResponse = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`, { headers }).catch(() => null);
+	if (!entriesResponse?.ok) return null;
+	const entries = (await entriesResponse.json()) as Array<{ queueType?: string; tier?: string; rank?: string; leaguePoints?: number }>;
+	const entry = entries.find((candidate) => candidate.queueType === "RANKED_SOLO_5x5") || entries.find((candidate) => candidate.queueType === "RANKED_FLEX_SR");
+	if (!entry?.tier) return null;
+	const tier = entry.tier.toUpperCase();
+	const rank = entry.rank || "I";
+	const leaguePoints = Math.max(0, Number(entry.leaguePoints || 0));
+	const tierLabel = `${tier.charAt(0)}${tier.slice(1).toLowerCase()}`;
+	return { queueType: entry.queueType || "", tier, rank, leaguePoints, label: `${tierLabel} ${rank} · ${leaguePoints} LP` };
 }

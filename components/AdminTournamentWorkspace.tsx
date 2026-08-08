@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import {
 	ArrowLeft,
+	ArrowDown,
+	ArrowUp,
 	BellRing,
 	Check,
 	ClipboardList,
@@ -14,6 +16,8 @@ import {
 	Flower2,
 	Pencil,
 	Plus,
+	Save,
+	Search,
 	Send,
 	Settings,
 	ShieldAlert,
@@ -25,6 +29,7 @@ import {
 	UsersRound,
 	X,
 } from "lucide-react";
+import { averageLeagueRank, leagueRankScore } from "@/lib/rank";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -49,7 +54,7 @@ type Tournament = {
 	rosterDirty?: boolean;
 };
 type Member = { applicationId?: string; userId?: string; name: string; role?: string; discordId?: string };
-type Team = { id: string; name: string; seed: number; members: Member[]; discordManaged?: boolean; published?: boolean };
+type Team = { id: string; name: string; seed: number | null; members: Member[]; discordManaged?: boolean; published?: boolean };
 type Match = {
 	id: string;
 	stage: "group" | "playoff";
@@ -69,7 +74,7 @@ type Application = {
 	userId: string;
 	riotId: string;
 	discordId?: string | null;
-	twitchId?: string | null;
+	currentRank?: string | null;
 	role?: string;
 	note: string;
 	discordDmOptIn?: boolean;
@@ -120,6 +125,9 @@ export function AdminTournamentWorkspace() {
 	const [notice, setNotice] = useState("");
 	const [dialog, setDialog] = useState<"team" | { edit: Team } | { team: Team; role: string } | null>(null);
 	const [publishing, setPublishing] = useState(false);
+	const [poolQuery, setPoolQuery] = useState("");
+	const [poolSort, setPoolSort] = useState<"rank-desc" | "rank-asc" | "name">("rank-desc");
+	const [seedOrder, setSeedOrder] = useState<string[] | null>(null);
 	const { data: access, error: accessError } = useSWR<{ role: string }>("/api/admin/access", fetcher);
 	const { data: tournamentData, mutate: refreshTournament } = useSWR<{ tournament: Tournament }>(access ? `/api/admin/tournaments/${id}` : null, fetcher);
 	const { data: teamsData, mutate: refreshTeams } = useSWR<{ teams: Team[] }>(access ? `/api/admin/tournaments/${id}/teams` : null, fetcher);
@@ -129,12 +137,24 @@ export function AdminTournamentWorkspace() {
 		fetcher
 	);
 	const tournament = tournamentData?.tournament;
-	const teams = teamsData?.teams || [];
+	const teams = useMemo(() => teamsData?.teams || [], [teamsData]);
 	const matches = matchesData?.matches || [];
-	const applications = applicationData?.applications || [];
+	const applications = useMemo(() => applicationData?.applications || [], [applicationData]);
 	const wishGroups = applicationData?.wishGroups || [];
 	const assignedApplicationIds = new Set(teams.flatMap((team) => team.members.map((member) => member.applicationId).filter(Boolean)));
 	const availableApplications = applications.filter((application) => application.status !== "rejected" && !assignedApplicationIds.has(application.id));
+	const applicationById = useMemo(() => new Map(applications.map((application) => [application.id, application])), [applications]);
+	const visibleApplications = useMemo(() => {
+		const query = poolQuery.trim().toLowerCase();
+		return availableApplications
+			.filter((application) => !query || `${application.riotId} ${application.role || ""} ${application.currentRank || ""}`.toLowerCase().includes(query))
+			.sort((left, right) => {
+				if (poolSort === "name") return left.riotId.localeCompare(right.riotId, "de");
+				const leftScore = leagueRankScore(left.currentRank || "") ?? -1;
+				const rightScore = leagueRankScore(right.currentRank || "") ?? -1;
+				return poolSort === "rank-asc" ? leftScore - rightScore : rightScore - leftScore;
+			});
+	}, [availableApplications, poolQuery, poolSort]);
 	const groupByUserId = new Map(wishGroups.flatMap((group) => group.memberUserIds.map((userId) => [userId, group] as const)));
 	const teamSize = tournament?.teamSize || 5;
 	const slots =
@@ -142,6 +162,17 @@ export function AdminTournamentWorkspace() {
 			? Array.from({ length: teamSize }, (_, index) => `Spieler ${index + 1}`)
 			: ["Top", "Jungle", "Mid", "Bot", "Support"].slice(0, teamSize);
 	const names = new Map(teams.map((team) => [team.id, team.name]));
+	const orderedTeams = useMemo(() => {
+		const fallback = [...teams].sort((left, right) => {
+			if (left.seed !== null && right.seed !== null) return left.seed - right.seed;
+			if (left.seed !== null) return -1;
+			if (right.seed !== null) return 1;
+			return left.name.localeCompare(right.name, "de");
+		});
+		if (!seedOrder || seedOrder.length !== teams.length || seedOrder.some((teamId) => !teams.some((team) => team.id === teamId))) return fallback;
+		return seedOrder.map((teamId) => teams.find((team) => team.id === teamId)).filter((team): team is Team => Boolean(team));
+	}, [seedOrder, teams]);
+	const teamAverage = (team: Team) => averageLeagueRank(team.members.map((member) => (member.applicationId ? applicationById.get(member.applicationId)?.currentRank || "" : "")));
 	const winsNeeded = Math.ceil((tournament?.seriesBestOf || 1) / 2);
 	const firstRoundMatches = matches.filter(
 		(match) => match.stage === "playoff" && match.round === 1 && !match.placement && match.bracket !== "lower" && match.bracket !== "finals"
@@ -158,17 +189,14 @@ export function AdminTournamentWorkspace() {
 		event.preventDefault();
 		const form = new FormData(event.currentTarget);
 		try {
-			const result = await request(`/api/admin/tournaments/${id}/teams`, "POST", {
+			await request(`/api/admin/tournaments/${id}/teams`, "POST", {
 				name: form.get("name"),
-				seed: Number(form.get("seed")),
 				members: [],
-				createDiscordResources: form.get("createDiscordResources") === "on",
 			});
-			await Promise.all([refreshTeams(), refreshMatches()]);
+			await refreshTeams();
+			setSeedOrder(null);
 			setDialog(null);
-			setNotice(
-				result.discordJobQueued ? "Team gespeichert. Discord-Rolle und Kanäle wurden in die Queue gelegt." : "Team gespeichert. Du kannst jetzt die Rollen besetzen."
-			);
+			setNotice("Team als stiller Entwurf angelegt. Du kannst jetzt die freien Plätze besetzen.");
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : "Team konnte nicht angelegt werden.");
 		}
@@ -178,12 +206,32 @@ export function AdminTournamentWorkspace() {
 		event.preventDefault();
 		const form = new FormData(event.currentTarget);
 		try {
-			const result = await request(`/api/admin/tournaments/${id}/teams`, "PATCH", { teamId: team.id, name: form.get("name"), seed: Number(form.get("seed")) });
+			await request(`/api/admin/tournaments/${id}/teams`, "PATCH", { teamId: team.id, name: form.get("name") });
 			await refreshTeams();
 			setDialog(null);
-			setNotice(result.discordRenameJobsQueued ? "Team gespeichert. Die Discord-Umbenennungen laufen nacheinander über die Queue." : "Teamname und Seed wurden gespeichert.");
+			setNotice("Teamname im Entwurf gespeichert. Discord wird erst beim Veröffentlichen aktualisiert.");
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : "Team konnte nicht gespeichert werden.");
+		}
+	}
+
+	function moveSeed(teamId: string, direction: -1 | 1) {
+		const ids = orderedTeams.map((team) => team.id);
+		const index = ids.indexOf(teamId);
+		const target = index + direction;
+		if (index < 0 || target < 0 || target >= ids.length) return;
+		[ids[index], ids[target]] = [ids[target], ids[index]];
+		setSeedOrder(ids);
+	}
+
+	async function saveSeedOrder() {
+		try {
+			await request(`/api/admin/tournaments/${id}/teams`, "PATCH", { action: "reorder", orderedTeamIds: orderedTeams.map((team) => team.id) });
+			await refreshTeams();
+			setSeedOrder(null);
+			setNotice("Setzliste gespeichert. Die Reihenfolge bleibt bis zur Veröffentlichung ein Entwurf.");
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : "Die Setzliste konnte nicht gespeichert werden.");
 		}
 	}
 
@@ -368,7 +416,7 @@ export function AdminTournamentWorkspace() {
 								</button>
 							)}
 							<button className="button button-primary" disabled={publishing || !teams.length} onClick={() => publishRoster("publish")}>
-								<Send size={16} /> {tournament.rosterPublishedAt ? "Änderungen veröffentlichen" : "Roster veröffentlichen"}
+								<Send size={16} /> {tournament.rosterPublishedAt ? "Veröffentlichen & informieren" : "Roster veröffentlichen & informieren"}
 							</button>
 						</div>
 					)}
@@ -388,14 +436,32 @@ export function AdminTournamentWorkspace() {
 								</span>
 								<strong>{availableApplications.length}</strong>
 							</header>
-							<p>Freie Plätze werden aus diesen verifizierten Solo-Anmeldungen besetzt.</p>
+							<p>Freie Plätze werden aus verifizierten Solo-Anmeldungen besetzt. Discord und Riot sind dafür verpflichtend.</p>
+							<div className="admin-pool-tools">
+								<label>
+									<Search size={14} />
+									<input
+										aria-label="Bewerber suchen"
+										value={poolQuery}
+										onChange={(event) => setPoolQuery(event.target.value)}
+										placeholder="Name, Rolle oder Rang"
+									/>
+								</label>
+								<select aria-label="Bewerber sortieren" value={poolSort} onChange={(event) => setPoolSort(event.target.value as typeof poolSort)}>
+									<option value="rank-desc">Rang absteigend</option>
+									<option value="rank-asc">Rang aufsteigend</option>
+									<option value="name">Name</option>
+								</select>
+							</div>
 							<div className="admin-applicant-stack">
-								{availableApplications.map((application) => {
+								{visibleApplications.map((application) => {
 									const group = groupByUserId.get(application.userId);
 									return (
 										<div className="admin-applicant-chip" key={application.id}>
 											<strong>{application.riotId}</strong>
-											<span>{application.role || "Rolle frei"}</span>
+											<span>
+												{application.role || "Rolle frei"} · {application.currentRank || "Unranked"}
+											</span>
 											{group && (
 												<small title={group.inviteCode}>
 													<Flower2 size={12} /> {group.name}
@@ -404,7 +470,7 @@ export function AdminTournamentWorkspace() {
 										</div>
 									);
 								})}
-								{!availableApplications.length && <span className="admin-pool-empty">Alle aktiven Bewerber sind zugewiesen.</span>}
+								{!visibleApplications.length && <span className="admin-pool-empty">Keine passenden freien Bewerber gefunden.</span>}
 							</div>
 							<div className="admin-pool-disclosure">
 								<Flower2 size={15} />
@@ -412,6 +478,15 @@ export function AdminTournamentWorkspace() {
 							</div>
 						</aside>
 						<div className="admin-roster-main">
+							<div className="admin-draft-note">
+								<Flower2 size={18} />
+								<div>
+									<strong>Stiller Arbeitsstand</strong>
+									<span>
+										Teams, Rollen und Namen werden sofort als Entwurf gespeichert. Erst „Veröffentlichen & informieren“ gleicht Discord ab und verschickt DMs.
+									</span>
+								</div>
+							</div>
 							<div className="admin-roster-statusline">
 								<span>
 									{teams.length} Teams · {teams.reduce((sum, team) => sum + team.members.length, 0)} zugewiesen
@@ -425,16 +500,16 @@ export function AdminTournamentWorkspace() {
 								</strong>
 							</div>
 							<div className="admin-roster-grid">
-								{teams.map((team) => (
+								{orderedTeams.map((team) => (
 									<article className="admin-team-sheet" key={team.id}>
 										<header>
 											<div>
 												<small>
-													Seed {team.seed} · {team.members.length}/{teamSize}
+													{team.seed ? `Setzplatz ${team.seed}` : "Setzplatz offen"} · {team.members.length}/{teamSize}
 												</small>
 												<h2>{team.name}</h2>
 											</div>
-											<button className="icon-action" onClick={() => setDialog({ edit: team })} title="Name und Seed bearbeiten">
+											<button className="icon-action" onClick={() => setDialog({ edit: team })} title="Teamname bearbeiten">
 												<Pencil size={16} />
 											</button>
 										</header>
@@ -460,8 +535,8 @@ export function AdminTournamentWorkspace() {
 											})}
 										</div>
 										<footer>
-											<span className={`status-pill ${team.discordManaged ? "registration" : ""}`}>
-												{team.discordManaged ? "Discord verwaltet" : "Nur Website"}
+											<span>
+												Ø Rang: {teamAverage(team).label} ({teamAverage(team).rankedPlayers}/{team.members.length})
 											</span>
 											<span>{team.published ? "Öffentlich" : "Entwurf"}</span>
 										</footer>
@@ -475,6 +550,56 @@ export function AdminTournamentWorkspace() {
 									</div>
 								)}
 							</div>
+							{orderedTeams.length > 1 && (
+								<section className="admin-seeding-sheet">
+									<header>
+										<div>
+											<span className="kicker">Setzliste</span>
+											<h2>Reihenfolge nach Teamstärke</h2>
+											<p>Der durchschnittliche offizielle Riot-Rang hilft bei der Einordnung. Die endgültige Reihenfolge bleibt eure Entscheidung.</p>
+										</div>
+										<button className="button button-secondary button-small" type="button" onClick={saveSeedOrder}>
+											<Save size={14} /> Setzliste speichern
+										</button>
+									</header>
+									<div className="admin-seeding-list">
+										{orderedTeams.map((team, index) => {
+											const average = teamAverage(team);
+											return (
+												<div className="admin-seeding-row" key={team.id}>
+													<strong>{index + 1}</strong>
+													<span>
+														<b>{team.name}</b>
+														<small>
+															Ø {average.label} · {average.rankedPlayers} gewertet
+														</small>
+													</span>
+													<div>
+														<button
+															className="icon-action"
+															type="button"
+															disabled={index === 0}
+															onClick={() => moveSeed(team.id, -1)}
+															title="Nach oben"
+														>
+															<ArrowUp size={15} />
+														</button>
+														<button
+															className="icon-action"
+															type="button"
+															disabled={index === orderedTeams.length - 1}
+															onClick={() => moveSeed(team.id, 1)}
+															title="Nach unten"
+														>
+															<ArrowDown size={15} />
+														</button>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</section>
+							)}
 						</div>
 					</div>
 				)}
@@ -496,7 +621,7 @@ export function AdminTournamentWorkspace() {
 								</header>
 								<div className="admin-application-connections">
 									<span>Discord: {application.discordId || "fehlt"}</span>
-									<span>Twitch: {application.twitchId || "fehlt"}</span>
+									<span>Riot-Rang: {application.currentRank || "Unranked"}</span>
 									{application.role && <span>Rolle: {application.role}</span>}
 									<span>Bot-DMs: {application.discordDmOptIn ? "aktiv" : "aus"}</span>
 									{application.teamId && <span>Bereits zugewiesen</span>}
@@ -668,14 +793,9 @@ export function AdminTournamentWorkspace() {
 							Teamname
 							<input name="name" required autoFocus />
 						</label>
-						<label>
-							Seed
-							<input name="seed" type="number" min="1" defaultValue={teams.length + 1} required />
-						</label>
-						<label className="form-checkbox">
-							<input name="createDiscordResources" type="checkbox" />
-							<span>Discord-Rolle sowie private Text- und Voice-Kanäle über die Queue anlegen.</span>
-						</label>
+						<p className="muted-note">
+							Das Team beginnt als stiller Entwurf. Setzplatz, Discord-Rolle und Kanäle folgen erst später über Setzliste und Veröffentlichung.
+						</p>
 						<button className="button button-primary" type="submit">
 							Team erstellen
 						</button>
@@ -689,11 +809,7 @@ export function AdminTournamentWorkspace() {
 							Teamname
 							<input name="name" defaultValue={dialog.edit.name} required autoFocus />
 						</label>
-						<label>
-							Seed
-							<input name="seed" type="number" min="1" defaultValue={dialog.edit.seed} required />
-						</label>
-						<p className="muted-note">Bei Discord-verwalteten Teams werden Rolle und Kanäle zeitversetzt über die Queue umbenannt.</p>
+						<p className="muted-note">Diese Änderung bleibt still, bis du den Roster veröffentlichst. Dann werden Discord-Rolle und Kanäle über die Queue umbenannt.</p>
 						<button className="button button-primary" type="submit">
 							Änderungen speichern
 						</button>
@@ -743,7 +859,7 @@ export function AdminTournamentWorkspace() {
 											<span>
 												<strong>{application.riotId}</strong>
 												<small>
-													{application.role || "Rolle frei"}
+													{application.role || "Rolle frei"} · {application.currentRank || "Unranked"}
 													{group ? ` · ${group.name}` : ""}
 												</small>
 											</span>
