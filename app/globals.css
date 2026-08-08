@@ -4403,6 +4403,517 @@ body.obs-page main {
 	padding: 24px;
 }
 
+.admin-roster-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.admin-roster-builder {
+	margin-top: 24px;
+	display: grid;
+	grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+	gap: 22px;
+	align-items: start;
+}
+
+.admin-applicant-pool {
+	position: sticky;
+	top: 98px;
+	border: 1px solid color-mix(in srgb, var(--blossom) 32%, var(--line));
+	border-radius: 8px;
+	background: linear-gradient(180deg, color-mix(in srgb, var(--blossom-soft) 45%, transparent), transparent 150px), var(--surface);
+	overflow: hidden;
+}
+
+.admin-applicant-pool > header {
+	padding: 16px 17px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line);
+}
+
+.admin-applicant-pool > header span,
+.admin-applicant-pool > header strong {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--heading);
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.admin-applicant-pool > header svg,
+.admin-applicant-pool > header strong {
+	color: var(--blossom);
+}
+
+.admin-applicant-pool > p {
+	margin: 0;
+	padding: 13px 17px;
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.55;
+}
+
+.admin-applicant-stack {
+	max-height: 560px;
+	padding: 0 10px 10px;
+	display: grid;
+	gap: 7px;
+	overflow-y: auto;
+}
+
+.admin-applicant-chip {
+	padding: 10px 11px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 2px 8px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--surface-soft);
+}
+
+.admin-applicant-chip strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
+.admin-applicant-chip > span {
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.admin-applicant-chip small {
+	grid-column: 1 / -1;
+	margin-top: 4px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--blossom);
+	font-size: 10px;
+	font-weight: 800;
+}
+
+.admin-pool-empty {
+	padding: 18px 10px;
+	color: var(--muted);
+	font-size: 11px;
+	text-align: center;
+}
+
+.admin-pool-disclosure {
+	padding: 13px 15px;
+	display: flex;
+	gap: 8px;
+	border-top: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 10px;
+	line-height: 1.5;
+}
+
+.admin-pool-disclosure svg {
+	flex: 0 0 auto;
+	color: var(--blossom);
+}
+
+.admin-roster-main {
+	min-width: 0;
+}
+
+.admin-roster-statusline {
+	min-height: 38px;
+	padding: 0 2px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.admin-roster-statusline strong {
+	color: var(--blossom);
+}
+
+.admin-roster-main .admin-roster-grid {
+	margin-top: 14px;
+}
+
+.admin-team-sheet {
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.admin-team-sheet > header {
+	background: linear-gradient(100deg, color-mix(in srgb, var(--blossom-soft) 42%, transparent), transparent);
+}
+
+.admin-role-slot {
+	grid-template-columns: 76px minmax(0, 1fr) auto;
+	border-radius: 7px;
+}
+
+.admin-role-slot small {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	color: var(--blossom);
+	font-size: 9px;
+	font-weight: 800;
+}
+
+.admin-team-sheet > footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.roster-candidate-list {
+	padding: 20px;
+	display: grid;
+	gap: 8px;
+}
+
+.roster-candidate-list > p {
+	margin: 0 0 5px;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.roster-candidate {
+	width: 100%;
+	padding: 12px 13px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	color: var(--heading);
+	background: var(--surface-soft);
+	text-align: left;
+	cursor: pointer;
+}
+
+.roster-candidate:hover {
+	border-color: var(--blossom);
+	background: color-mix(in srgb, var(--blossom-soft) 55%, var(--surface));
+}
+
+.roster-candidate span {
+	display: grid;
+	gap: 3px;
+}
+
+.roster-candidate small {
+	color: var(--muted);
+}
+
+.roster-candidate > svg {
+	color: var(--blossom);
+}
+
+.roster-current-player {
+	padding: 24px;
+	display: grid;
+	gap: 24px;
+}
+
+.roster-current-player h3,
+.roster-current-player p {
+	margin: 4px 0 0;
+}
+
+.roster-current-player p {
+	color: var(--muted);
+}
+
+.wish-group-disclosure {
+	padding: 14px 16px;
+	display: grid;
+	gap: 5px;
+	border-left: 3px solid var(--blossom);
+	border-radius: 0 7px 7px 0;
+	color: var(--muted);
+	background: color-mix(in srgb, var(--blossom-soft) 38%, var(--surface));
+	font-size: 12px;
+	line-height: 1.55;
+}
+
+.wish-group-disclosure strong,
+.wish-group-disclosure a {
+	color: var(--heading);
+}
+
+.profile-tournaments {
+	padding: 28px 0;
+	border-top: 1px solid var(--line);
+}
+
+.profile-tournament-notice {
+	margin: 18px 0;
+	padding: 11px 14px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border: 1px solid color-mix(in srgb, var(--blossom) 35%, var(--line));
+	border-radius: 7px;
+	color: var(--heading);
+	background: color-mix(in srgb, var(--blossom-soft) 38%, var(--surface));
+	font-size: 12px;
+}
+
+.wish-group-join {
+	margin-top: 22px;
+	padding: 15px 17px;
+	display: grid;
+	grid-template-columns: minmax(180px, 1fr) minmax(160px, 240px) auto;
+	align-items: center;
+	gap: 12px;
+	border-block: 1px solid var(--line);
+}
+
+.wish-group-join > div {
+	display: grid;
+	gap: 3px;
+}
+
+.profile-tournament-list {
+	display: grid;
+	gap: 14px;
+	padding-top: 18px;
+}
+
+.profile-tournament-sheet {
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.profile-tournament-sheet > header {
+	padding: 18px 20px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 18px;
+	border-bottom: 1px solid var(--line);
+	background: linear-gradient(100deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 62%);
+}
+
+.profile-tournament-sheet h3,
+.profile-tournament-sheet header p {
+	margin: 3px 0 0;
+}
+
+.profile-tournament-sheet header p {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.tournament-dm-setting {
+	padding: 14px 20px;
+	display: grid;
+	grid-template-columns: 32px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 10px;
+	border-bottom: 1px solid var(--line);
+}
+
+.tournament-dm-setting > div {
+	display: grid;
+	gap: 2px;
+}
+
+.tournament-dm-setting small {
+	color: var(--muted);
+}
+
+.dm-icon {
+	width: 30px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border-radius: 50%;
+	color: var(--muted);
+	background: var(--surface-soft);
+}
+
+.dm-icon.enabled {
+	color: var(--blossom);
+}
+
+.switch-control {
+	position: relative;
+	width: 42px;
+	height: 23px;
+}
+
+.switch-control input {
+	position: absolute;
+	opacity: 0;
+}
+
+.switch-control span {
+	position: absolute;
+	inset: 0;
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	background: var(--surface-soft);
+	cursor: pointer;
+}
+
+.switch-control span::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 15px;
+	height: 15px;
+	border-radius: 50%;
+	background: var(--muted);
+	transition:
+		transform 160ms ease,
+		background 160ms ease;
+}
+
+.switch-control input:checked + span {
+	border-color: var(--blossom);
+	background: var(--blossom-soft);
+}
+
+.switch-control input:checked + span::after {
+	transform: translateX(19px);
+	background: var(--blossom);
+}
+
+.wish-group-sheet,
+.wish-group-create {
+	margin: 16px 20px 20px;
+	padding: 16px;
+	border: 1px solid color-mix(in srgb, var(--blossom) 35%, var(--line));
+	border-radius: 7px;
+	background: color-mix(in srgb, var(--blossom-soft) 35%, var(--surface));
+}
+
+.wish-group-heading,
+.wish-group-create,
+.wish-group-create > div:last-child {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.wish-group-heading span {
+	color: var(--blossom);
+	font-size: 10px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.wish-group-heading h4,
+.wish-group-create p {
+	margin: 3px 0 0;
+}
+
+.wish-code {
+	padding: 8px 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--heading);
+	background: var(--surface);
+	cursor: pointer;
+}
+
+.wish-group-members {
+	margin: 13px 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.wish-group-members span {
+	padding: 5px 8px;
+	border-radius: 5px;
+	color: var(--heading);
+	background: var(--surface);
+	font-size: 11px;
+}
+
+.wish-group-sheet > p {
+	margin: 12px 0 0;
+	display: flex;
+	align-items: flex-start;
+	gap: 7px;
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.wish-group-create > div:first-child {
+	max-width: 480px;
+}
+
+.wish-group-create p {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.wish-group-locked {
+	margin: 16px 20px 20px;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.profile-notification-list {
+	margin-top: 28px;
+	display: grid;
+	border-top: 1px solid var(--line);
+}
+
+.profile-notification-list > .kicker {
+	padding: 16px 2px 8px;
+}
+
+.profile-notification-list > a {
+	padding: 12px 4px;
+	display: grid;
+	grid-template-columns: 24px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 9px;
+	border-bottom: 1px solid var(--line);
+	color: var(--heading);
+}
+
+.profile-notification-list > a > span {
+	display: grid;
+	gap: 3px;
+}
+
+.profile-notification-list small,
+.profile-notification-list time {
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.profile-notification-list a.read {
+	opacity: 0.65;
+}
+
 @media (max-width: 900px) {
 	.tournament-principles,
 	.application-guide,
@@ -4432,9 +4943,46 @@ body.obs-page main {
 	.tournament-team-grid {
 		grid-template-columns: 1fr;
 	}
+
+	.admin-roster-builder {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-applicant-pool {
+		position: static;
+	}
+
+	.admin-applicant-stack {
+		max-height: 300px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 @media (max-width: 700px) {
+	.admin-workbench-bar,
+	.admin-roster-statusline,
+	.wish-group-create,
+	.wish-group-heading,
+	.profile-tournament-sheet > header {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.admin-roster-actions,
+	.admin-roster-actions .button {
+		width: 100%;
+	}
+
+	.admin-applicant-stack,
+	.wish-group-join {
+		grid-template-columns: 1fr;
+	}
+
+	.wish-group-create > div:last-child {
+		width: 100%;
+		align-items: stretch;
+		flex-direction: column;
+	}
 	.tournament-principles,
 	.application-guide,
 	.tournament-facts,

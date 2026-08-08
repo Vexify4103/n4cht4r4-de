@@ -19,6 +19,7 @@ export interface TournamentRecord {
 	teamSize?: number;
 	gameMode?: string;
 	applicationModes?: TournamentApplicationMode[];
+	wishGroupMode?: "disabled" | "duo" | "team";
 	requiredConnections?: TournamentConnection[];
 	collectRoles?: boolean;
 	bracketType?: "single_elimination" | "double_elimination" | "groups";
@@ -61,6 +62,7 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		...(typeof value.teamSize === "number" ? { teamSize: value.teamSize } : {}),
 		...(typeof value.gameMode === "string" ? { gameMode: value.gameMode } : {}),
 		...(applicationModes?.length ? { applicationModes } : {}),
+		...(value.wishGroupMode === "disabled" || value.wishGroupMode === "duo" || value.wishGroupMode === "team" ? { wishGroupMode: value.wishGroupMode } : {}),
 		...(requiredConnections?.length ? { requiredConnections } : {}),
 		...(typeof value.collectRoles === "boolean" ? { collectRoles: value.collectRoles } : {}),
 		...(value.bracketType === "single_elimination" || value.bracketType === "double_elimination" || value.bracketType === "groups" ? { bracketType: value.bracketType } : {}),

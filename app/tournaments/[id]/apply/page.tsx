@@ -31,7 +31,6 @@ export default function TournamentApplyPage() {
 	);
 	const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
 	const [submitting, setSubmitting] = useState(false);
-	const [participationMode, setParticipationMode] = useState<"solo" | "team">("solo");
 	const hasDiscord = profile?.providers.includes("discord");
 	const hasTwitch = profile?.providers.includes("twitch");
 	const tournament = tournamentData?.tournament;
@@ -51,9 +50,7 @@ export default function TournamentApplyPage() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				role: form.get("role"),
-				participationMode: form.get("participationMode"),
-				teamName: form.get("teamName"),
-				teammates: form.get("teammates"),
+				discordDmOptIn: form.get("discordDmOptIn") === "on",
 				note: form.get("note"),
 				accepted: form.get("accepted") === "on",
 			}),
@@ -69,7 +66,6 @@ export default function TournamentApplyPage() {
 
 	const title = tournament?.title || "Turnier";
 	const closed = tournamentData && tournament?.registrationOpen !== true;
-	const applicationModes = tournament?.applicationModes?.length ? tournament.applicationModes : ["solo"];
 
 	return (
 		<>
@@ -77,7 +73,7 @@ export default function TournamentApplyPage() {
 				id={id}
 				kicker={`${title} · Bewerbung`}
 				title="Dein Platz im Teilnehmerfeld"
-				copy="Verbinde die für dieses Turnier benötigten Konten und entscheide, ob du allein oder mit deinem Team antrittst."
+				copy="Alle melden sich einzeln an. Danach kannst du auf deinem Profil eine unverbindliche Wunschgruppe mit Freunden bilden."
 			/>
 			<section className="content-band application-layout">
 				<aside className="application-requirements">
@@ -158,37 +154,6 @@ export default function TournamentApplyPage() {
 							<label htmlFor="riotId">Verifizierte Riot-ID</label>
 							<input id="riotId" value={profile?.riotVerified ? `${profile.riotSummonerName}#${profile.riotTagLine}` : "Noch nicht verifiziert"} readOnly />
 						</div>
-						{applicationModes.length > 1 && (
-							<div className="form-group">
-								<label htmlFor="participationMode">Wie möchtest du teilnehmen?</label>
-								<select
-									id="participationMode"
-									name="participationMode"
-									value={participationMode}
-									onChange={(event) => setParticipationMode(event.target.value as "solo" | "team")}
-								>
-									<option value="solo">Alleine anmelden</option>
-									<option value="team">Mit festem Team anmelden</option>
-								</select>
-							</div>
-						)}
-						{applicationModes.length === 1 && <input type="hidden" name="participationMode" value={applicationModes[0]} />}
-						{participationMode === "team" && applicationModes.includes("team") && (
-							<>
-								<div className="form-group">
-									<label htmlFor="teamName">Teamname</label>
-									<input id="teamName" name="teamName" placeholder="Euer Teamname" required />
-								</div>
-								<div className="form-group">
-									<label htmlFor="teammates">Mitspieler</label>
-									<textarea
-										id="teammates"
-										name="teammates"
-										placeholder="Discord-Namen deiner vier Mitspieler. Jede Person meldet sich zusätzlich mit dem eigenen verknüpften Profil an."
-									/>
-								</div>
-							</>
-						)}
 						{tournament?.collectRoles !== false && (
 							<div className="form-group">
 								<label htmlFor="role">Bevorzugte Rolle</label>
@@ -207,6 +172,21 @@ export default function TournamentApplyPage() {
 							<label htmlFor="note">Kurzvorstellung</label>
 							<textarea id="note" name="note" placeholder="Verfügbarkeit, Erfahrung und alles, was die Turnierleitung wissen sollte." required />
 						</div>
+						<div className="wish-group-disclosure">
+							<strong>Wunschgruppen sind keine festen Teams.</strong>
+							<span>
+								Nach deiner Solo-Anmeldung kannst du auf <Link href="/me">/me</Link> eine Gruppe erstellen oder per Code beitreten. Die Turnierleitung versucht
+								Wünsche zu berücksichtigen, kann sie bei zu großen Skill-Unterschieden für faire Teams aber nicht garantieren.
+							</span>
+						</div>
+						<label className="form-checkbox">
+							<input name="discordDmOptIn" type="checkbox" />
+							<span>
+								Der N4cht4r4 Discord-Bot darf mir Nachrichten zu Team-Zuteilung und wichtigen Änderungen dieses Turniers senden. Das kann ich später auf{" "}
+								<Link href="/me">/me</Link>
+								ändern.
+							</span>
+						</label>
 						<label className="form-checkbox">
 							<input name="accepted" type="checkbox" required />
 							<span>

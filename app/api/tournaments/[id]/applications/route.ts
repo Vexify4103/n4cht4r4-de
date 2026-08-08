@@ -13,9 +13,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	const body = await request.json().catch(() => null);
 	const role = typeof body?.role === "string" ? body.role.trim().slice(0, 24) : "";
 	const note = typeof body?.note === "string" ? body.note.trim().slice(0, 1_500) : "";
-	const participationMode = body?.participationMode === "team" ? "team" : "solo";
-	const teamName = typeof body?.teamName === "string" ? body.teamName.trim().slice(0, 64) : "";
-	const teammates = typeof body?.teammates === "string" ? body.teammates.trim().slice(0, 500) : "";
 	if (note.length < 20 || body?.accepted !== true) return NextResponse.json({ error: "Bitte fülle alle Pflichtfelder aus und akzeptiere die Bedingungen." }, { status: 400 });
 
 	await client.connect();
@@ -38,9 +35,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	if (requiredConnections.includes("twitch") && !twitch) return NextResponse.json({ error: "Für die Anmeldung musst du Twitch verbinden." }, { status: 403 });
 	if (requiredConnections.includes("riot") && (!user?.riotVerified || !user.riotSummonerName || !user.riotTagLine))
 		return NextResponse.json({ error: "Für die Anmeldung musst du deine Riot-ID verifizieren." }, { status: 403 });
-	const allowedModes = Array.isArray(tournament.applicationModes) && tournament.applicationModes.length ? tournament.applicationModes : ["solo"];
-	if (!allowedModes.includes(participationMode)) return NextResponse.json({ error: "Diese Anmeldeart ist für das Turnier nicht verfügbar." }, { status: 400 });
-	if (participationMode === "team" && !teamName) return NextResponse.json({ error: "Bitte gib den Namen deines Teams an." }, { status: 400 });
 	if (tournament.collectRoles !== false && !role) return NextResponse.json({ error: "Bitte wähle deine bevorzugte Rolle." }, { status: 400 });
 	const existing = await db.collection("tournament_applications").findOne({ tournamentId: id, userId: session.user.id, status: { $in: ["pending", "accepted", "waitlisted"] } });
 	if (existing) return NextResponse.json({ error: "Du hast bereits eine aktive Bewerbung für dieses Turnier." }, { status: 409 });
@@ -54,9 +48,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		twitchId: twitch?.providerAccountId || null,
 		riotId,
 		role,
-		participationMode,
-		teamName: participationMode === "team" ? teamName : "",
-		teammates,
+		participationMode: "solo",
+		discordDmOptIn: body?.discordDmOptIn === true,
+		teamId: null,
 		note,
 		status: "pending",
 		consent: { version: "2026-08", acceptedAt: new Date() },

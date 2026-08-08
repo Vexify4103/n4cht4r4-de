@@ -1,0 +1,131 @@
+import { hasTournamentPermission } from "@/lib/tournament-admin";
+import { recordTournamentAudit } from "@/lib/tournament-audit";
+import { createTournamentNotification } from "@/lib/tournament-notifications";
+import { queueMemberRoleAssignment, queueMemberRoleRemoval } from "@/lib/discord-queue";
+import client from "@/lib/db";
+import { publicTournamentId, resolveTournament } from "@/lib/tournament-slugs";
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+
+type RosterMember = {
+	applicationId?: string;
+	userId?: string;
+	name?: string;
+	role?: string;
+	discordId?: string;
+};
+
+type RosterTeam = {
+	id: string;
+	name: string;
+	seed?: number;
+	members?: RosterMember[];
+	publicMembers?: RosterMember[];
+	discordManaged?: boolean;
+};
+
+function rosterSnapshot(teams: RosterTeam[]) {
+	return teams.flatMap((team) =>
+		(team.members || [])
+			.filter((member) => member.userId)
+			.map((member) => ({
+				userId: String(member.userId),
+				applicationId: String(member.applicationId || ""),
+				teamId: team.id,
+				teamName: team.name,
+				role: String(member.role || "Spieler"),
+			}))
+	);
+}
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+	const staff = await hasTournamentPermission("referee");
+	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Veröffentlichen des Rosters." }, { status: 403 });
+	const body = await request.json().catch(() => null);
+	if (!body || !["publish", "renotify"].includes(body.action)) {
+		return NextResponse.json({ error: "Ungültige Roster-Aktion." }, { status: 400 });
+	}
+
+	let { id } = await params;
+	await client.connect();
+	const db = client.db();
+	const tournament = await resolveTournament(db, id);
+	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
+	id = String(tournament.id);
+	const teams = (await db.collection<RosterTeam>("tournament_teams").find({ tournamentId: id }).sort({ seed: 1, name: 1 }).toArray()) as RosterTeam[];
+	if (!teams.length) return NextResponse.json({ error: "Lege zuerst mindestens ein Team an." }, { status: 409 });
+
+	const teamSize = typeof tournament.teamSize === "number" ? tournament.teamSize : 5;
+	const incompleteTeams = teams.filter((team) => (team.members || []).length !== teamSize);
+	if (body.action === "publish" && incompleteTeams.length) {
+		return NextResponse.json(
+			{
+				error: `Noch nicht vollständig: ${incompleteTeams.map((team) => `${team.name} (${team.members?.length || 0}/${teamSize})`).join(", ")}.`,
+			},
+			{ status: 409 }
+		);
+	}
+
+	const snapshot = rosterSnapshot(teams);
+	const previous = Array.isArray(tournament.publishedRoster) ? (tournament.publishedRoster as { userId?: string; teamId?: string; role?: string }[]) : [];
+	const changed =
+		body.action === "renotify"
+			? snapshot
+			: snapshot.filter((entry) => !previous.some((old) => old.userId === entry.userId && old.teamId === entry.teamId && old.role === entry.role));
+
+	if (body.action === "publish") {
+		const publishedAt = new Date();
+		const teamById = new Map(teams.map((team) => [team.id, team]));
+		const removed = previous.filter((entry) => entry.userId && !snapshot.some((current) => current.userId === entry.userId));
+		const roleJobs: Promise<unknown>[] = [];
+		for (const entry of changed) {
+			const team = teamById.get(entry.teamId);
+			const member = team?.members?.find((candidate) => candidate.userId === entry.userId);
+			const previousEntry = previous.find((candidate) => candidate.userId === entry.userId);
+			const previousTeam = previousEntry?.teamId ? teamById.get(previousEntry.teamId) : undefined;
+			if (previousEntry?.teamId && previousEntry.teamId !== entry.teamId && previousTeam?.discordManaged && member?.discordId) {
+				roleJobs.push(queueMemberRoleRemoval(db, id, previousEntry.teamId, member.discordId));
+			}
+			if (team?.discordManaged && member?.discordId) roleJobs.push(queueMemberRoleAssignment(db, id, entry.teamId, member.discordId));
+		}
+		for (const entry of removed) {
+			const previousTeam = entry.teamId ? teamById.get(entry.teamId) : undefined;
+			const member = previousTeam?.publicMembers?.find((candidate) => candidate.userId === entry.userId);
+			if (previousTeam?.discordManaged && member?.discordId) roleJobs.push(queueMemberRoleRemoval(db, id, previousTeam.id, member.discordId));
+		}
+		await Promise.all(
+			teams.map((team) =>
+				db
+					.collection("tournament_teams")
+					.updateOne(
+						{ id: team.id, tournamentId: id },
+						{ $set: { published: true, publishedAt, publicName: team.name, publicSeed: team.seed, publicMembers: team.members || [] } }
+					)
+			)
+		);
+		await db.collection("tournaments").updateOne({ id }, { $set: { publishedRoster: snapshot, rosterPublishedAt: publishedAt, rosterDirty: false } });
+		await Promise.all(roleJobs);
+	}
+
+	const href = `/tournaments/${publicTournamentId(tournament)}/teams`;
+	const notifications = await Promise.all(
+		changed.map((entry) =>
+			createTournamentNotification(db, {
+				userId: entry.userId,
+				tournamentId: id,
+				type: body.action === "renotify" ? "roster.reminder" : "roster.published",
+				title: body.action === "renotify" ? `Erinnerung: Dein Team für ${tournament.title}` : `Dein Team für ${tournament.title} steht fest`,
+				body: `Du spielst in ${entry.teamName} auf dem Platz ${entry.role}. Deine Einteilung findest du jetzt im Turnierhub.`,
+				href,
+			})
+		)
+	);
+
+	await recordTournamentAudit(db, staff, id, body.action === "renotify" ? "roster.renotified" : "roster.published", {
+		teamCount: teams.length,
+		playerCount: snapshot.length,
+		notificationCount: notifications.length,
+	});
+	return NextResponse.json({ published: body.action === "publish", teamCount: teams.length, playerCount: snapshot.length, notificationCount: notifications.length });
+}

@@ -39,6 +39,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 		"teamSize",
 		"gameMode",
 		"applicationModes",
+		"wishGroupMode",
 		"requiredConnections",
 		"collectRoles",
 	];
@@ -56,6 +57,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 		return NextResponse.json({ error: "Das Teamlimit muss zwischen 2 und 128 liegen oder offen bleiben." }, { status: 400 });
 	if (update.bracketType !== undefined && !["single_elimination", "double_elimination", "groups"].includes(String(update.bracketType)))
 		return NextResponse.json({ error: "Ungültiges Turnierformat." }, { status: 400 });
+	if (update.wishGroupMode !== undefined && !["disabled", "duo", "team"].includes(String(update.wishGroupMode)))
+		return NextResponse.json({ error: "Ungültige Wunschgruppen-Einstellung." }, { status: 400 });
 	if (update.championRule !== undefined && !["none", "light_fearless"].includes(String(update.championRule)))
 		return NextResponse.json({ error: "Ungueltige Champion-Regel." }, { status: 400 });
 	if (!Object.keys(update).length) return NextResponse.json({ error: "Keine Änderungen übergeben." }, { status: 400 });

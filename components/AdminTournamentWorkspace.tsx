@@ -4,14 +4,33 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { ArrowLeft, Check, ClipboardList, Clock3, Crown, Flower2, Pencil, Plus, Settings, ShieldAlert, Shuffle, Swords, Users, X } from "lucide-react";
+import {
+	ArrowLeft,
+	BellRing,
+	Check,
+	ClipboardList,
+	Clock3,
+	Crown,
+	Flower2,
+	Pencil,
+	Plus,
+	Send,
+	Settings,
+	ShieldAlert,
+	Shuffle,
+	Swords,
+	UserMinus,
+	UserPlus,
+	Users,
+	UsersRound,
+	X,
+} from "lucide-react";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
 		if (!response.ok) throw new Error(await response.text());
 		return response.json();
 	});
-const roles = ["Top", "Jungle", "Mid", "Bot", "Support"];
 type Tab = "teams" | "applications" | "matches" | "settings";
 type Tournament = {
 	id: string;
@@ -23,9 +42,14 @@ type Tournament = {
 	registrationOpen?: boolean;
 	registrationNote?: string;
 	bracketType?: "single_elimination" | "double_elimination" | "groups";
+	teamSize?: number;
+	collectRoles?: boolean;
+	gameMode?: string;
+	rosterPublishedAt?: string | null;
+	rosterDirty?: boolean;
 };
-type Member = { name: string; role?: string };
-type Team = { id: string; name: string; seed: number; members: Member[]; discordManaged?: boolean };
+type Member = { applicationId?: string; userId?: string; name: string; role?: string; discordId?: string };
+type Team = { id: string; name: string; seed: number; members: Member[]; discordManaged?: boolean; published?: boolean };
 type Match = {
 	id: string;
 	stage: "group" | "playoff";
@@ -42,16 +66,23 @@ type Match = {
 };
 type Application = {
 	id: string;
+	userId: string;
 	riotId: string;
 	discordId?: string | null;
 	twitchId?: string | null;
-	participationMode?: "solo" | "team";
-	teamName?: string;
-	teammates?: string;
 	role?: string;
 	note: string;
+	discordDmOptIn?: boolean;
+	teamId?: string | null;
 	status: "pending" | "accepted" | "waitlisted" | "rejected";
 	createdAt: string;
+};
+type WishGroup = {
+	id: string;
+	name: string;
+	inviteCode: string;
+	ownerUserId: string;
+	memberUserIds: string[];
 };
 
 function matchLabel(match: Match) {
@@ -88,15 +119,28 @@ export function AdminTournamentWorkspace() {
 	const [tab, setTab] = useState<Tab>("teams");
 	const [notice, setNotice] = useState("");
 	const [dialog, setDialog] = useState<"team" | { edit: Team } | { team: Team; role: string } | null>(null);
+	const [publishing, setPublishing] = useState(false);
 	const { data: access, error: accessError } = useSWR<{ role: string }>("/api/admin/access", fetcher);
 	const { data: tournamentData, mutate: refreshTournament } = useSWR<{ tournament: Tournament }>(access ? `/api/admin/tournaments/${id}` : null, fetcher);
 	const { data: teamsData, mutate: refreshTeams } = useSWR<{ teams: Team[] }>(access ? `/api/admin/tournaments/${id}/teams` : null, fetcher);
 	const { data: matchesData, mutate: refreshMatches } = useSWR<{ matches: Match[] }>(access ? `/api/admin/tournaments/${id}/matches` : null, fetcher);
-	const { data: applicationData, mutate: refreshApplications } = useSWR<{ applications: Application[] }>(access ? `/api/admin/tournaments/${id}/applications` : null, fetcher);
+	const { data: applicationData, mutate: refreshApplications } = useSWR<{ applications: Application[]; wishGroups: WishGroup[] }>(
+		access ? `/api/admin/tournaments/${id}/applications` : null,
+		fetcher
+	);
 	const tournament = tournamentData?.tournament;
 	const teams = teamsData?.teams || [];
 	const matches = matchesData?.matches || [];
 	const applications = applicationData?.applications || [];
+	const wishGroups = applicationData?.wishGroups || [];
+	const assignedApplicationIds = new Set(teams.flatMap((team) => team.members.map((member) => member.applicationId).filter(Boolean)));
+	const availableApplications = applications.filter((application) => application.status !== "rejected" && !assignedApplicationIds.has(application.id));
+	const groupByUserId = new Map(wishGroups.flatMap((group) => group.memberUserIds.map((userId) => [userId, group] as const)));
+	const teamSize = tournament?.teamSize || 5;
+	const slots =
+		tournament?.collectRoles === false || tournament?.gameMode?.toLowerCase().includes("aram")
+			? Array.from({ length: teamSize }, (_, index) => `Spieler ${index + 1}`)
+			: ["Top", "Jungle", "Mid", "Bot", "Support"].slice(0, teamSize);
 	const names = new Map(teams.map((team) => [team.id, team.name]));
 	const winsNeeded = Math.ceil((tournament?.seriesBestOf || 1) / 2);
 	const firstRoundMatches = matches.filter(
@@ -143,18 +187,52 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
-	async function assignPlayer(event: FormEvent<HTMLFormElement>, team: Team, role: string) {
-		event.preventDefault();
-		const riotId = String(new FormData(event.currentTarget).get("riotId") || "").trim();
-		const members = team.members.filter((member) => member.role?.toLowerCase() !== role.toLowerCase());
-		members.push({ name: riotId, role });
+	async function assignApplication(team: Team, role: string, application: Application) {
 		try {
-			await request(`/api/admin/tournaments/${id}/teams`, "PATCH", { teamId: team.id, members });
-			await refreshTeams();
+			await request(`/api/admin/tournaments/${id}/teams`, "PATCH", {
+				action: "assign-application",
+				teamId: team.id,
+				applicationId: application.id,
+				slot: role,
+			});
+			await Promise.all([refreshTeams(), refreshApplications()]);
 			setDialog(null);
-			setNotice(`${role} bei ${team.name} wurde gespeichert.`);
+			setNotice(`${application.riotId} wurde ${team.name} zugewiesen. Die Änderung erscheint erst nach der Veröffentlichung.`);
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : "Spieler konnte nicht gespeichert werden.");
+		}
+	}
+
+	async function removeApplication(team: Team, member: Member) {
+		if (!member.applicationId) return;
+		try {
+			await request(`/api/admin/tournaments/${id}/teams`, "PATCH", {
+				action: "remove-application",
+				teamId: team.id,
+				applicationId: member.applicationId,
+			});
+			await Promise.all([refreshTeams(), refreshApplications()]);
+			setDialog(null);
+			setNotice(`${member.name} ist wieder im Bewerber-Pool.`);
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : "Die Zuweisung konnte nicht entfernt werden.");
+		}
+	}
+
+	async function publishRoster(action: "publish" | "renotify") {
+		setPublishing(true);
+		try {
+			const result = await request(`/api/admin/tournaments/${id}/roster`, "POST", { action });
+			await Promise.all([refreshTeams(), refreshTournament()]);
+			setNotice(
+				action === "publish"
+					? `Roster veröffentlicht. ${result.playerCount} Spieler sehen jetzt ihre Einteilung; ${result.notificationCount} Benachrichtigungen wurden erstellt.`
+					: `${result.notificationCount} Spieler wurden erneut benachrichtigt.`
+			);
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : "Der Roster konnte nicht veröffentlicht werden.");
+		} finally {
+			setPublishing(false);
 		}
 	}
 
@@ -280,9 +358,19 @@ export function AdminTournamentWorkspace() {
 						</button>
 					</div>
 					{tab === "teams" && (
-						<button className="button button-primary" onClick={() => setDialog("team")}>
-							<Plus size={16} /> Team anlegen
-						</button>
+						<div className="admin-roster-actions">
+							<button className="button button-secondary" onClick={() => setDialog("team")}>
+								<Plus size={16} /> Team anlegen
+							</button>
+							{tournament.rosterPublishedAt && (
+								<button className="button button-secondary" disabled={publishing} onClick={() => publishRoster("renotify")}>
+									<BellRing size={16} /> Erneut informieren
+								</button>
+							)}
+							<button className="button button-primary" disabled={publishing || !teams.length} onClick={() => publishRoster("publish")}>
+								<Send size={16} /> {tournament.rosterPublishedAt ? "Änderungen veröffentlichen" : "Roster veröffentlichen"}
+							</button>
+						</div>
 					)}
 				</div>
 				{notice && (
@@ -292,42 +380,102 @@ export function AdminTournamentWorkspace() {
 				)}
 
 				{tab === "teams" && (
-					<div className="admin-roster-grid">
-						{teams.map((team) => (
-							<article className="admin-team-sheet" key={team.id}>
-								<header>
-									<div>
-										<small>Seed {team.seed}</small>
-										<h2>{team.name}</h2>
-									</div>
-									<button className="icon-action" onClick={() => setDialog({ edit: team })} title="Name und Seed bearbeiten">
-										<Pencil size={16} />
-									</button>
-								</header>
-								<div className="admin-team-slots">
-									{roles.map((role) => {
-										const member = team.members.find((entry) => entry.role?.toLowerCase() === role.toLowerCase());
-										return (
-											<button className={`admin-role-slot ${member ? "filled" : ""}`} key={role} onClick={() => setDialog({ team, role })}>
-												<span>{role}</span>
-												<strong>{member?.name || "Freien Platz besetzen"}</strong>
-												<Plus size={14} />
-											</button>
-										);
-									})}
-								</div>
-								<footer>
-									<span className={`status-pill ${team.discordManaged ? "registration" : ""}`}>{team.discordManaged ? "Discord verwaltet" : "Nur Website"}</span>
-								</footer>
-							</article>
-						))}
-						{teams.length === 0 && (
-							<div className="empty-state">
-								<Users size={36} />
-								<h3>Noch keine Teams</h3>
-								<p>Lege zuerst ein Team an. Danach werden Spieler einzeln über ihre Rolle zugewiesen.</p>
+					<div className="admin-roster-builder">
+						<aside className="admin-applicant-pool">
+							<header>
+								<span>
+									<UsersRound size={17} /> Bewerber-Pool
+								</span>
+								<strong>{availableApplications.length}</strong>
+							</header>
+							<p>Freie Plätze werden aus diesen verifizierten Solo-Anmeldungen besetzt.</p>
+							<div className="admin-applicant-stack">
+								{availableApplications.map((application) => {
+									const group = groupByUserId.get(application.userId);
+									return (
+										<div className="admin-applicant-chip" key={application.id}>
+											<strong>{application.riotId}</strong>
+											<span>{application.role || "Rolle frei"}</span>
+											{group && (
+												<small title={group.inviteCode}>
+													<Flower2 size={12} /> {group.name}
+												</small>
+											)}
+										</div>
+									);
+								})}
+								{!availableApplications.length && <span className="admin-pool-empty">Alle aktiven Bewerber sind zugewiesen.</span>}
 							</div>
-						)}
+							<div className="admin-pool-disclosure">
+								<Flower2 size={15} />
+								<span>Wunschgruppen sind ein Einteilungswunsch. Ausgeglichene Teamstärke hat Vorrang.</span>
+							</div>
+						</aside>
+						<div className="admin-roster-main">
+							<div className="admin-roster-statusline">
+								<span>
+									{teams.length} Teams · {teams.reduce((sum, team) => sum + team.members.length, 0)} zugewiesen
+								</span>
+								<strong>
+									{tournament.rosterPublishedAt
+										? tournament.rosterDirty
+											? "Unveröffentlichte Änderungen"
+											: "Roster veröffentlicht"
+										: "Entwurf, öffentlich noch unsichtbar"}
+								</strong>
+							</div>
+							<div className="admin-roster-grid">
+								{teams.map((team) => (
+									<article className="admin-team-sheet" key={team.id}>
+										<header>
+											<div>
+												<small>
+													Seed {team.seed} · {team.members.length}/{teamSize}
+												</small>
+												<h2>{team.name}</h2>
+											</div>
+											<button className="icon-action" onClick={() => setDialog({ edit: team })} title="Name und Seed bearbeiten">
+												<Pencil size={16} />
+											</button>
+										</header>
+										<div className="admin-team-slots">
+											{slots.map((role) => {
+												const member = team.members.find((entry) => entry.role?.toLowerCase() === role.toLowerCase());
+												const group = member?.userId ? groupByUserId.get(member.userId) : undefined;
+												return (
+													<button className={`admin-role-slot ${member ? "filled" : ""}`} key={role} onClick={() => setDialog({ team, role })}>
+														<span>{role}</span>
+														<strong>{member?.name || "Freien Platz besetzen"}</strong>
+														{group ? (
+															<small>
+																<Flower2 size={11} /> {group.name}
+															</small>
+														) : member ? (
+															<UserMinus size={14} />
+														) : (
+															<UserPlus size={14} />
+														)}
+													</button>
+												);
+											})}
+										</div>
+										<footer>
+											<span className={`status-pill ${team.discordManaged ? "registration" : ""}`}>
+												{team.discordManaged ? "Discord verwaltet" : "Nur Website"}
+											</span>
+											<span>{team.published ? "Öffentlich" : "Entwurf"}</span>
+										</footer>
+									</article>
+								))}
+								{teams.length === 0 && (
+									<div className="empty-state">
+										<Users size={36} />
+										<h3>Noch keine Teams</h3>
+										<p>Lege zuerst ein Team an. Danach werden Spieler einzeln über ihre Rolle zugewiesen.</p>
+									</div>
+								)}
+							</div>
+						</div>
 					</div>
 				)}
 
@@ -337,7 +485,7 @@ export function AdminTournamentWorkspace() {
 							<article className="admin-application-sheet" key={application.id}>
 								<header>
 									<div>
-										<small>{application.participationMode === "team" ? `Festes Team · ${application.teamName || "Ohne Namen"}` : "Einzelanmeldung"}</small>
+										<small>Solo-Anmeldung{groupByUserId.get(application.userId) ? ` · Wunschgruppe ${groupByUserId.get(application.userId)?.name}` : ""}</small>
 										<h2>{application.riotId}</h2>
 									</div>
 									<span
@@ -350,12 +498,9 @@ export function AdminTournamentWorkspace() {
 									<span>Discord: {application.discordId || "fehlt"}</span>
 									<span>Twitch: {application.twitchId || "fehlt"}</span>
 									{application.role && <span>Rolle: {application.role}</span>}
+									<span>Bot-DMs: {application.discordDmOptIn ? "aktiv" : "aus"}</span>
+									{application.teamId && <span>Bereits zugewiesen</span>}
 								</div>
-								{application.teammates && (
-									<p>
-										<strong>Mitspieler:</strong> {application.teammates}
-									</p>
-								)}
 								<p>{application.note}</p>
 								<footer>
 									<button className="button button-secondary button-small" onClick={() => reviewApplication(application.id, "waitlisted")}>
@@ -557,22 +702,65 @@ export function AdminTournamentWorkspace() {
 			)}
 			{dialog && typeof dialog === "object" && "team" in dialog && (
 				<Modal title={`${dialog.role} besetzen`} onClose={() => setDialog(null)}>
-					<form className="roster-form" onSubmit={(event) => assignPlayer(event, dialog.team, dialog.role)}>
-						<label>
-							Riot-ID mit Tag
-							<input
-								name="riotId"
-								placeholder="Name#EUW"
-								defaultValue={dialog.team.members.find((member) => member.role?.toLowerCase() === dialog.role.toLowerCase())?.name || ""}
-								required
-								autoFocus
-							/>
-						</label>
-						<p className="muted-note">Später erscheint hier zusätzlich die gefilterte Liste der Bewerber für diese Rolle.</p>
-						<button className="button button-primary" type="submit">
-							Spieler speichern
-						</button>
-					</form>
+					{(() => {
+						const member = dialog.team.members.find((entry) => entry.role?.toLowerCase() === dialog.role.toLowerCase());
+						const matchingApplications =
+							tournament.collectRoles === false
+								? availableApplications
+								: availableApplications.filter((application) => !application.role || application.role.toLowerCase() === dialog.role.toLowerCase());
+						if (member)
+							return (
+								<div className="roster-current-player">
+									<div>
+										<span className="kicker">Aktuelle Zuweisung</span>
+										<h3>{member.name}</h3>
+										<p>
+											{dialog.team.name} · {dialog.role}
+										</p>
+									</div>
+									<button
+										className="button button-danger-soft"
+										type="button"
+										onClick={() => removeApplication(dialog.team, member)}
+										disabled={!member.applicationId}
+									>
+										<UserMinus size={15} /> Aus Team entfernen
+									</button>
+								</div>
+							);
+						return (
+							<div className="roster-candidate-list">
+								<p>Wähle eine Solo-Anmeldung für diesen freien Platz aus.</p>
+								{matchingApplications.map((application) => {
+									const group = groupByUserId.get(application.userId);
+									return (
+										<button
+											className="roster-candidate"
+											type="button"
+											key={application.id}
+											onClick={() => assignApplication(dialog.team, dialog.role, application)}
+										>
+											<span>
+												<strong>{application.riotId}</strong>
+												<small>
+													{application.role || "Rolle frei"}
+													{group ? ` · ${group.name}` : ""}
+												</small>
+											</span>
+											<UserPlus size={16} />
+										</button>
+									);
+								})}
+								{!matchingApplications.length && (
+									<div className="empty-state compact-empty">
+										<Users size={28} />
+										<h3>Niemand verfügbar</h3>
+										<p>Für diesen Platz gibt es aktuell keine passende, unzugewiesene Anmeldung.</p>
+									</div>
+								)}
+							</div>
+						);
+					})()}
 				</Modal>
 			)}
 		</>
