@@ -1,3 +1,5 @@
+import { registrationWindowState, TournamentRegistrationState } from "@/lib/tournament-registration";
+
 export type TournamentStatus = "announcement" | "registration" | "live" | "completed";
 export type TournamentConnection = "discord" | "riot";
 export type TournamentApplicationMode = "solo" | "team";
@@ -9,10 +11,14 @@ export interface TournamentRecord {
 	format: string;
 	status: TournamentStatus;
 	date: string | null;
+	startsAt?: string | null;
 	maxTeams: number | null;
 	currentTeams: number;
 	rules: string[];
 	registrationOpen?: boolean;
+	registrationOpensAt?: string | null;
+	registrationClosesAt?: string | null;
+	registrationState?: TournamentRegistrationState;
 	description?: string;
 	tagline?: string;
 	registrationNote?: string;
@@ -43,6 +49,8 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		: undefined;
 	const requiredConnections: TournamentConnection[] = ["discord", "riot"];
 
+	const registrationState = registrationWindowState(value);
+
 	return {
 		id: value.id,
 		title: value.title,
@@ -50,9 +58,19 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		format: value.format,
 		status: value.status,
 		date: typeof value.date === "string" ? value.date : null,
+		startsAt: typeof value.startsAt === "string" ? value.startsAt : value.startsAt instanceof Date ? value.startsAt.toISOString() : null,
 		maxTeams: typeof value.maxTeams === "number" ? value.maxTeams : null,
 		currentTeams: typeof value.currentTeams === "number" ? value.currentTeams : 0,
-		registrationOpen: value.registrationOpen === true,
+		registrationOpen: registrationState === "open",
+		registrationOpensAt:
+			typeof value.registrationOpensAt === "string" ? value.registrationOpensAt : value.registrationOpensAt instanceof Date ? value.registrationOpensAt.toISOString() : null,
+		registrationClosesAt:
+			typeof value.registrationClosesAt === "string"
+				? value.registrationClosesAt
+				: value.registrationClosesAt instanceof Date
+					? value.registrationClosesAt.toISOString()
+					: null,
+		registrationState,
 		rules: Array.isArray(value.rules) ? value.rules.filter((rule): rule is string => typeof rule === "string") : [],
 		...(typeof value.description === "string" ? { description: value.description } : {}),
 		...(typeof value.tagline === "string" ? { tagline: value.tagline } : {}),

@@ -9,11 +9,14 @@ import {
 	ArrowDown,
 	ArrowUp,
 	BellRing,
+	CalendarClock,
 	Check,
 	ClipboardList,
 	Clock3,
 	Crown,
 	Flower2,
+	Globe2,
+	LockKeyhole,
 	Pencil,
 	Plus,
 	Save,
@@ -45,13 +48,48 @@ type Tournament = {
 	seriesBestOf?: number | null;
 	status?: string;
 	registrationOpen?: boolean;
+	registrationOpensAt?: string | null;
+	registrationClosesAt?: string | null;
+	registrationState?: "scheduled" | "open" | "closed" | "unavailable";
 	registrationNote?: string;
+	startsAt?: string | null;
+	published?: boolean;
 	bracketType?: "single_elimination" | "double_elimination" | "groups";
 	teamSize?: number;
 	collectRoles?: boolean;
 	gameMode?: string;
+	championRule?: "none" | "light_fearless";
+	wishGroupMode?: "disabled" | "duo" | "team";
 	rosterPublishedAt?: string | null;
 	rosterDirty?: boolean;
+};
+
+function dateTimeLocalValue(value?: string | null) {
+	if (!value) return "";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+	return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
+function localDateTimeToIso(value: FormDataEntryValue | null) {
+	const text = String(value || "").trim();
+	if (!text) return null;
+	const date = new Date(text);
+	return Number.isNaN(date.getTime()) ? text : date.toISOString();
+}
+
+function formatAdminDate(value?: string | null) {
+	if (!value) return "Noch nicht festgelegt";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "Noch nicht festgelegt";
+	return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+const registrationStateCopy = {
+	scheduled: { label: "Startet automatisch", detail: "Die Bewerbungsseite öffnet sich zum eingetragenen Zeitpunkt." },
+	open: { label: "Bewerbung geöffnet", detail: "Neue Bewerbungen und Wunschgruppen sind gerade möglich." },
+	closed: { label: "Bewerbung geschlossen", detail: "Aktuell werden keine neuen Bewerbungen angenommen." },
+	unavailable: { label: "Turnier läuft oder ist beendet", detail: "Für dieses Turnier werden keine Bewerbungen mehr angenommen." },
 };
 type Member = { applicationId?: string; userId?: string; name: string; role?: string; discordId?: string };
 type Team = { id: string; name: string; seed: number | null; members: Member[]; discordManaged?: boolean; published?: boolean };
@@ -333,23 +371,62 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
-	async function saveSettings(event: FormEvent<HTMLFormElement>) {
+	async function saveEventSettings(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = new FormData(event.currentTarget);
+		try {
+			await request(`/api/admin/tournaments/${id}`, "PATCH", {
+				title: form.get("title"),
+				status: form.get("status"),
+				startsAt: localDateTimeToIso(form.get("startsAt")),
+				date: form.get("startsAt") ? undefined : null,
+				published: form.get("published") === "on",
+			});
+			await refreshTournament();
+			setNotice("Turnierfahrplan und Sichtbarkeit wurden gespeichert.");
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : "Der Turnierfahrplan konnte nicht gespeichert werden.");
+		}
+	}
+
+	async function saveRegistrationWindow(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = new FormData(event.currentTarget);
+		try {
+			await request(`/api/admin/tournaments/${id}/registration-window`, "PATCH", {
+				registrationOpensAt: localDateTimeToIso(form.get("registrationOpensAt")),
+				registrationClosesAt: localDateTimeToIso(form.get("registrationClosesAt")),
+				registrationNote: form.get("registrationNote"),
+				manualOpen: form.get("manualOpen") === "on",
+			});
+			await refreshTournament();
+			setNotice("Bewerbungsfenster gespeichert. Öffnung und Schließung laufen automatisch.");
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : "Das Bewerbungsfenster konnte nicht gespeichert werden.");
+		}
+	}
+
+	async function saveFormatSettings(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = new FormData(event.currentTarget);
 		const maxTeams = String(form.get("maxTeams") || "").trim();
 		const seriesBestOf = String(form.get("seriesBestOf") || "").trim();
 		try {
 			await request(`/api/admin/tournaments/${id}`, "PATCH", {
-				status: form.get("status"),
-				registrationOpen: form.get("registrationOpen") === "on",
-				registrationNote: form.get("registrationNote"),
+				format: form.get("format"),
 				maxTeams: maxTeams ? Number(maxTeams) : null,
 				seriesBestOf: seriesBestOf ? Number(seriesBestOf) : null,
+				teamSize: Number(form.get("teamSize") || 5),
+				gameMode: form.get("gameMode"),
+				bracketType: form.get("bracketType"),
+				championRule: form.get("championRule"),
+				wishGroupMode: form.get("wishGroupMode"),
+				collectRoles: form.get("collectRoles") === "on",
 			});
 			await refreshTournament();
-			setNotice("Turnierstatus und Anmeldung wurden gespeichert.");
+			setNotice("Spielformat und Teambildung wurden gespeichert.");
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : "Die Einstellungen konnten nicht gespeichert werden.");
+			setNotice(error instanceof Error ? error.message : "Das Spielformat konnte nicht gespeichert werden.");
 		}
 	}
 
@@ -743,46 +820,167 @@ export function AdminTournamentWorkspace() {
 				)}
 
 				{tab === "settings" && (
-					<form className="admin-tournament-settings" onSubmit={saveSettings}>
-						<div>
-							<span className="kicker">Turnierstatus</span>
-							<h2>Anmeldung und Format freigeben</h2>
-							<p>Teamlimit und Serienformat können offen bleiben, bis die Anmeldezahlen feststehen.</p>
-						</div>
-						<label>
-							Status
-							<select name="status" defaultValue={tournament.status || "announcement"}>
-								<option value="announcement">Ankündigung</option>
-								<option value="registration">Anmeldung</option>
-								<option value="live">Läuft</option>
-								<option value="completed">Abgeschlossen</option>
-							</select>
-						</label>
-						<label>
-							Maximale Teams
-							<input name="maxTeams" type="number" min="2" max="128" defaultValue={tournament.maxTeams || ""} placeholder="Noch offen" />
-						</label>
-						<label>
-							Serienformat
-							<select name="seriesBestOf" defaultValue={tournament.seriesBestOf || ""}>
-								<option value="">Noch offen</option>
-								<option value="1">Best of 1</option>
-								<option value="3">Best of 3</option>
-								<option value="5">Best of 5</option>
-							</select>
-						</label>
-						<label className="settings-note">
-							Hinweis zur Anmeldung
-							<textarea name="registrationNote" defaultValue={tournament.registrationNote || ""} />
-						</label>
-						<label className="form-checkbox settings-open">
-							<input name="registrationOpen" type="checkbox" defaultChecked={tournament.registrationOpen} />
-							<span>Anmeldung öffentlich öffnen</span>
-						</label>
-						<button className="button button-primary" type="submit">
-							<Check size={15} /> Einstellungen speichern
-						</button>
-					</form>
+					<div className="admin-settings-journal">
+						<header className="admin-settings-intro">
+							<span className="kicker">Turnierpflege</span>
+							<h2>Alles Wichtige entlang des Turnierablaufs</h2>
+							<p>Änderungen greifen sofort auf der öffentlichen Turnierseite. Das Bewerbungsfenster benötigt keinen Cronjob.</p>
+						</header>
+
+						<form className="admin-settings-section" onSubmit={saveEventSettings}>
+							<div className="admin-settings-number">01</div>
+							<div className="admin-settings-heading">
+								<CalendarClock size={22} />
+								<div>
+									<span className="kicker">Turnierfahrplan</span>
+									<h3>Name, Start und öffentlicher Status</h3>
+								</div>
+							</div>
+							<div className="admin-settings-fields three-columns">
+								<label>
+									Turniername
+									<input name="title" defaultValue={tournament.title} required />
+								</label>
+								<label>
+									Turnierstart
+									<input name="startsAt" type="datetime-local" defaultValue={dateTimeLocalValue(tournament.startsAt)} />
+								</label>
+								<label>
+									Status
+									<select name="status" defaultValue={tournament.status || "announcement"}>
+										<option value="announcement">In Planung</option>
+										<option value="registration">Bewerbungsphase</option>
+										<option value="live">Läuft gerade</option>
+										<option value="completed">Abgeschlossen</option>
+									</select>
+								</label>
+							</div>
+							<div className="admin-settings-footer">
+								<label className="settings-visibility">
+									<input name="published" type="checkbox" defaultChecked={tournament.published !== false} />
+									<span>{tournament.published !== false ? <Globe2 size={17} /> : <LockKeyhole size={17} />} Auf dem Tournament-Hub sichtbar</span>
+								</label>
+								<button className="button button-primary" type="submit">
+									<Check size={15} /> Fahrplan speichern
+								</button>
+							</div>
+						</form>
+
+						<form className="admin-settings-section registration-window-section" onSubmit={saveRegistrationWindow}>
+							<div className="admin-settings-number">02</div>
+							<div className="admin-settings-heading">
+								<Flower2 size={22} />
+								<div>
+									<span className="kicker">Bewerbungsphase</span>
+									<h3>Automatisch öffnen und schließen</h3>
+								</div>
+								<div className={`registration-window-state ${tournament.registrationState || "closed"}`}>
+									<strong>{registrationStateCopy[tournament.registrationState || "closed"].label}</strong>
+									<span>{registrationStateCopy[tournament.registrationState || "closed"].detail}</span>
+								</div>
+							</div>
+							<div className="registration-timeline" aria-label="Zeitplan der Bewerbungsphase">
+								<label>
+									<span>Öffnet am</span>
+									<input name="registrationOpensAt" type="datetime-local" defaultValue={dateTimeLocalValue(tournament.registrationOpensAt)} />
+									<small>{formatAdminDate(tournament.registrationOpensAt)}</small>
+								</label>
+								<span className="registration-timeline-line" />
+								<label>
+									<span>Schließt am</span>
+									<input name="registrationClosesAt" type="datetime-local" defaultValue={dateTimeLocalValue(tournament.registrationClosesAt)} />
+									<small>{formatAdminDate(tournament.registrationClosesAt)}</small>
+								</label>
+							</div>
+							<label className="settings-note">
+								Hinweis auf der Bewerbungsseite
+								<textarea
+									name="registrationNote"
+									defaultValue={tournament.registrationNote || ""}
+									placeholder="Zum Beispiel: Die Plätze sind begrenzt; eine Bewerbung garantiert noch keine Teilnahme."
+								/>
+							</label>
+							<div className="admin-settings-footer">
+								<label className="settings-visibility manual-registration-toggle">
+									<input name="manualOpen" type="checkbox" defaultChecked={!tournament.registrationOpensAt && tournament.registrationOpen} />
+									<span>Ohne Zeitplan manuell geöffnet halten</span>
+								</label>
+								<button className="button button-primary" type="submit">
+									<Check size={15} /> Bewerbungsfenster speichern
+								</button>
+							</div>
+						</form>
+
+						<form className="admin-settings-section" onSubmit={saveFormatSettings}>
+							<div className="admin-settings-number">03</div>
+							<div className="admin-settings-heading">
+								<Swords size={22} />
+								<div>
+									<span className="kicker">Spielformat</span>
+									<h3>Bracket, Teams und Serien</h3>
+								</div>
+							</div>
+							<div className="admin-settings-fields three-columns">
+								<label>
+									Formatbeschreibung
+									<input name="format" defaultValue={tournament.format} required />
+								</label>
+								<label>
+									Spielmodus
+									<input name="gameMode" defaultValue={tournament.gameMode || "League of Legends"} />
+								</label>
+								<label>
+									Bracket
+									<select name="bracketType" defaultValue={tournament.bracketType || "single_elimination"}>
+										<option value="single_elimination">Single Elimination</option>
+										<option value="double_elimination">Double Elimination</option>
+										<option value="groups">Gruppen + Playoffs</option>
+									</select>
+								</label>
+								<label>
+									Maximale Teams
+									<input name="maxTeams" type="number" min="2" max="128" defaultValue={tournament.maxTeams || ""} placeholder="Noch offen" />
+								</label>
+								<label>
+									Spieler pro Team
+									<input name="teamSize" type="number" min="1" max="10" defaultValue={tournament.teamSize || 5} />
+								</label>
+								<label>
+									Serienformat
+									<select name="seriesBestOf" defaultValue={tournament.seriesBestOf || ""}>
+										<option value="">Noch offen</option>
+										<option value="1">Best of 1</option>
+										<option value="3">Best of 3</option>
+										<option value="5">Best of 5</option>
+									</select>
+								</label>
+								<label>
+									Champion-Regel
+									<select name="championRule" defaultValue={tournament.championRule || "none"}>
+										<option value="none">Keine</option>
+										<option value="light_fearless">Light Fearless</option>
+									</select>
+								</label>
+								<label>
+									Wunschgruppen
+									<select name="wishGroupMode" defaultValue={tournament.wishGroupMode || "disabled"}>
+										<option value="disabled">Deaktiviert</option>
+										<option value="duo">Bis 2 Spieler</option>
+										<option value="team">Bis zur Teamgröße</option>
+									</select>
+								</label>
+							</div>
+							<div className="admin-settings-footer">
+								<label className="settings-visibility">
+									<input name="collectRoles" type="checkbox" defaultChecked={tournament.collectRoles !== false} />
+									<span>Rollenwunsch in der Bewerbung abfragen</span>
+								</label>
+								<button className="button button-primary" type="submit">
+									<Check size={15} /> Spielformat speichern
+								</button>
+							</div>
+						</form>
+					</div>
 				)}
 			</section>
 

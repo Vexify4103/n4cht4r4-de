@@ -6382,3 +6382,432 @@ body.obs-page main {
 		gap: 3px;
 	}
 }
+
+/* Tournament planning journal and complete Twitch clip archive */
+.admin-tournament-chapters {
+	display: grid;
+	gap: 34px;
+	border-top: 0 !important;
+}
+
+.admin-event-chapter {
+	border-top: 1px solid var(--line-strong);
+}
+
+.admin-event-chapter > header {
+	min-height: 76px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+}
+
+.admin-event-chapter > header p {
+	margin: 3px 0 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.admin-event-chapter > header > strong {
+	width: 38px;
+	height: 38px;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--line-strong);
+	border-radius: 50%;
+	color: var(--blossom);
+	font-family: Georgia, "Times New Roman", serif;
+}
+
+.admin-sanctuary .admin-event-chapter .admin-ledger-entry {
+	grid-template-columns: 42px minmax(210px, 1.45fr) minmax(175px, 0.9fr) 105px 105px 24px;
+}
+
+.ledger-timing {
+	display: grid;
+	gap: 4px;
+}
+
+.ledger-timing > span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.ledger-timing small {
+	color: var(--faint);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.ledger-timing small.is-open {
+	color: var(--success);
+}
+
+.admin-settings-journal {
+	max-width: 1060px;
+	margin: 28px auto 0;
+}
+
+.admin-settings-intro {
+	padding: 12px 4px 30px 76px;
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.admin-settings-intro h2 {
+	margin: 5px 0 7px;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 31px;
+}
+
+.admin-settings-intro p {
+	max-width: 720px;
+	margin: 0;
+	color: var(--muted);
+}
+
+.admin-settings-section {
+	position: relative;
+	padding: 34px 4px 38px 76px;
+	display: grid;
+	gap: 24px;
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.admin-settings-section::after {
+	content: "";
+	position: absolute;
+	left: 26px;
+	top: 76px;
+	bottom: -18px;
+	border-left: 1px dotted var(--line-strong);
+}
+
+.admin-settings-section:last-child::after {
+	display: none;
+}
+
+.admin-settings-number {
+	position: absolute;
+	left: 0;
+	top: 33px;
+	width: 52px;
+	height: 52px;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--line-strong);
+	border-radius: 50%;
+	color: var(--blossom);
+	background: color-mix(in srgb, var(--surface) 92%, transparent);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 15px;
+	z-index: 1;
+}
+
+.admin-settings-heading {
+	display: flex;
+	align-items: center;
+	gap: 13px;
+}
+
+.admin-settings-heading > svg {
+	color: var(--blossom);
+}
+
+.admin-settings-heading h3 {
+	margin: 2px 0 0;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 23px;
+}
+
+.admin-settings-fields {
+	display: grid;
+	gap: 14px;
+}
+
+.admin-settings-fields.three-columns {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-settings-fields label,
+.admin-settings-section > .settings-note {
+	display: grid;
+	gap: 7px;
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.admin-settings-fields input,
+.admin-settings-fields select,
+.admin-settings-section textarea,
+.registration-timeline input {
+	width: 100%;
+	min-height: 45px;
+	padding: 10px 12px;
+	border: 1px solid var(--line-strong);
+	border-radius: 4px;
+	color: var(--ink-strong);
+	background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: none;
+}
+
+.admin-settings-section textarea {
+	min-height: 92px;
+	resize: vertical;
+}
+
+.admin-settings-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18px;
+}
+
+.settings-visibility {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.settings-visibility > span {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+}
+
+.settings-visibility input {
+	accent-color: var(--blossom-strong);
+}
+
+.registration-window-section {
+	background: linear-gradient(90deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 76%);
+}
+
+.registration-window-state {
+	margin-left: auto;
+	max-width: 280px;
+	display: grid;
+	gap: 2px;
+	text-align: right;
+}
+
+.registration-window-state strong {
+	color: var(--blossom);
+	font-size: 12px;
+}
+
+.registration-window-state.open strong {
+	color: var(--success);
+}
+
+.registration-window-state span {
+	color: var(--faint);
+	font-size: 10px;
+}
+
+.registration-timeline {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+	align-items: center;
+	gap: 14px;
+}
+
+.registration-timeline label {
+	display: grid;
+	gap: 7px;
+}
+
+.registration-timeline label > span {
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.registration-timeline label small {
+	color: var(--faint);
+	font-size: 10px;
+}
+
+.registration-timeline-line {
+	height: 1px;
+	background: var(--line-strong);
+}
+
+.registration-timeline-line::after {
+	content: "✿";
+	position: relative;
+	top: -10px;
+	left: calc(50% - 8px);
+	padding: 0 5px;
+	color: var(--blossom);
+	background: var(--page);
+}
+
+.clips-archive-toolbar {
+	padding: 5px 0 24px;
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 28px;
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.clips-archive-toolbar h2 {
+	margin: 4px 0 3px;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 30px;
+}
+
+.clips-archive-toolbar p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.clips-archive-toolbar .filter-bar {
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.clips-archive .clips-grid {
+	gap: 18px;
+}
+
+.clips-archive .clip-card {
+	position: relative;
+	border-color: var(--line-strong);
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--surface) 94%, transparent);
+	box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--surface-soft) 28%, transparent);
+}
+
+.clips-archive .clip-card::after {
+	content: "✿";
+	position: absolute;
+	right: 13px;
+	top: calc(56.25% + 12px);
+	color: var(--blossom);
+	font-size: 12px;
+}
+
+.clips-archive .clip-copy {
+	padding: 18px 18px 16px;
+}
+
+.clip-meta-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	color: var(--faint);
+	font-size: 10px;
+}
+
+.clip-meta-line span {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.clips-load-more {
+	margin-top: 26px;
+	padding-top: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	border-top: 1px dotted var(--line-strong);
+}
+
+.clips-load-more > span {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+@media (max-width: 980px) {
+	.admin-sanctuary .admin-event-chapter .admin-ledger-entry {
+		grid-template-columns: 36px minmax(190px, 1fr) minmax(160px, 0.8fr) 90px 24px;
+	}
+
+	.admin-event-chapter .ledger-status {
+		display: none;
+	}
+
+	.admin-settings-fields.three-columns {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 720px) {
+	.admin-sanctuary .admin-event-chapter .admin-ledger-entry {
+		padding: 16px 3px;
+		grid-template-columns: 30px minmax(0, 1fr) 20px;
+		gap: 8px;
+	}
+
+	.admin-event-chapter .ledger-timing,
+	.admin-event-chapter .ledger-teams {
+		grid-column: 2;
+	}
+
+	.admin-event-chapter .ledger-arrow {
+		grid-column: 3;
+		grid-row: 1 / 4;
+	}
+
+	.admin-settings-intro,
+	.admin-settings-section {
+		padding-left: 0;
+	}
+
+	.admin-settings-number,
+	.admin-settings-section::after {
+		display: none;
+	}
+
+	.admin-settings-fields.three-columns,
+	.registration-timeline {
+		grid-template-columns: 1fr;
+	}
+
+	.registration-timeline-line {
+		width: 1px;
+		height: 30px;
+		margin-left: 18px;
+	}
+
+	.registration-timeline-line::after {
+		left: -8px;
+		top: 6px;
+	}
+
+	.admin-settings-heading,
+	.admin-settings-footer,
+	.clips-archive-toolbar,
+	.clips-load-more {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.registration-window-state {
+		margin-left: 35px;
+		text-align: left;
+	}
+
+	.clips-archive-toolbar .filter-bar {
+		width: 100%;
+	}
+}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import useSWR from "swr";
-import { CheckCircle2, ClipboardList, ShieldCheck } from "lucide-react";
+import { CalendarClock, CheckCircle2, ClipboardList, ShieldCheck } from "lucide-react";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { DiscordMark } from "@/components/DiscordMark";
 
@@ -19,6 +19,9 @@ export default function TournamentApplyPage() {
 			title: string;
 			status: string;
 			registrationOpen?: boolean;
+			registrationState?: "scheduled" | "open" | "closed" | "unavailable";
+			registrationOpensAt?: string | null;
+			registrationClosesAt?: string | null;
 			applicationModes?: ("solo" | "team")[];
 			requiredConnections?: ("discord" | "riot")[];
 			collectRoles?: boolean;
@@ -64,6 +67,10 @@ export default function TournamentApplyPage() {
 
 	const title = tournament?.title || "Turnier";
 	const closed = tournamentData && tournament?.registrationOpen !== true;
+	const registrationDate = (value?: string | null) => {
+		if (!value) return null;
+		return new Intl.DateTimeFormat("de-DE", { dateStyle: "long", timeStyle: "short" }).format(new Date(value));
+	};
 
 	return (
 		<>
@@ -108,12 +115,12 @@ export default function TournamentApplyPage() {
 
 				{closed ? (
 					<div className="empty-state">
-						<ClipboardList size={38} />
-						<h3>{tournament?.status === "announcement" ? "Die Anmeldung startet bald" : "Die Anmeldung ist geschlossen"}</h3>
+						{tournament?.registrationState === "scheduled" ? <CalendarClock size={38} /> : <ClipboardList size={38} />}
+						<h3>{tournament?.registrationState === "scheduled" ? "Die Anmeldung startet bald" : "Die Anmeldung ist geschlossen"}</h3>
 						<p>
 							{tournament?.registrationNote ||
-								(tournament?.status === "announcement"
-									? "Start und Teilnehmerlimit werden noch bekannt gegeben."
+								(tournament?.registrationState === "scheduled"
+									? `Ab ${registrationDate(tournament.registrationOpensAt)} kannst du deine Bewerbung hier abschicken.`
 									: "Die Bewerbungsphase für dieses Turnier ist beendet.")}
 						</p>
 						<Link className="text-link" href={`/tournaments/${id}`}>

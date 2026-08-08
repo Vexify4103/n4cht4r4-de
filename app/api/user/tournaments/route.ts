@@ -3,6 +3,7 @@ import client from "@/lib/db";
 import { ACTIVE_APPLICATION_STATUSES, ensureTournamentCommunityIndexes, TournamentNotification, TournamentWishGroup } from "@/lib/tournament-community";
 import { publicTournamentId } from "@/lib/tournament-slugs";
 import { NextResponse } from "next/server";
+import { registrationIsOpen } from "@/lib/tournament-registration";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,7 @@ export async function GET() {
 				...application,
 				title: String(tournament?.title || "Turnier"),
 				tournamentSlug: tournament ? publicTournamentId(tournament) : String(application.tournamentId),
-				registrationOpen: tournament?.registrationOpen === true,
+				registrationOpen: tournament ? registrationIsOpen(tournament) : false,
 				wishGroupMode: tournament?.wishGroupMode || "disabled",
 				wishGroupLimit: tournament ? (tournament.wishGroupMode === "duo" ? 2 : Number(tournament.teamSize || 5)) : 0,
 			};

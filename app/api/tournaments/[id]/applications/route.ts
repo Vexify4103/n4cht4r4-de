@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { resolveTournament } from "@/lib/tournament-slugs";
 import { getRiotRank } from "@/lib/riot";
+import { registrationIsOpen } from "@/lib/tournament-registration";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	const tournament = await resolveTournament(db, id);
 	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
 	id = String(tournament.id);
-	if (!tournament?.registrationOpen) return NextResponse.json({ error: "Die Anmeldung für dieses Turnier ist nicht geöffnet." }, { status: 403 });
+	if (!registrationIsOpen(tournament)) return NextResponse.json({ error: "Die Anmeldung für dieses Turnier ist derzeit nicht geöffnet." }, { status: 403 });
 	const userId = new ObjectId(session.user.id);
 	const user = await db.collection("users").findOne({ _id: userId });
 	const accountUserIds: unknown[] = [userId, session.user.id];

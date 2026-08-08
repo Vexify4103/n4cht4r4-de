@@ -3,6 +3,7 @@ import { recordTournamentAudit } from "@/lib/tournament-audit";
 import { createId } from "@/lib/tournament-engine";
 import client from "@/lib/db";
 import { publicTournamentId, resolveTournament } from "@/lib/tournament-slugs";
+import { registrationWindowState } from "@/lib/tournament-registration";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -16,7 +17,7 @@ export async function GET() {
 	const tournaments = await Promise.all(
 		records.map(async (record) => {
 			const resolved = (await resolveTournament(db, String(record.id))) || record;
-			return { ...resolved, id: publicTournamentId(resolved) };
+			return { ...resolved, id: publicTournamentId(resolved), registrationState: registrationWindowState(resolved) };
 		})
 	);
 	return NextResponse.json({ tournaments, role: staff.role });
@@ -41,12 +42,15 @@ export async function POST(request: Request) {
 		currentTeams: 0,
 		status: "announcement",
 		date: null,
+		startsAt: null,
 		rules: [],
 		bracketType: "single_elimination",
 		seriesBestOf: null,
 		championRule: "none",
 		published: false,
 		registrationOpen: false,
+		registrationOpensAt: null,
+		registrationClosesAt: null,
 		requiredConnections: ["discord", "riot"],
 		createdAt: new Date(),
 		updatedAt: new Date(),

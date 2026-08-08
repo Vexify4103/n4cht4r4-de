@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import client from "@/lib/db";
 import { ACTIVE_APPLICATION_STATUSES, ensureTournamentCommunityIndexes, TournamentWishGroup, wishGroupLimit } from "@/lib/tournament-community";
 import { NextResponse } from "next/server";
+import { registrationIsOpen } from "@/lib/tournament-registration";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 		db.collection<TournamentWishGroup>("tournament_wish_groups").findOne({ tournamentId: group.tournamentId, memberUserIds: session.user.id }),
 	]);
 	if (!tournament || !application) return NextResponse.json({ error: "Bewirb dich zuerst einzeln für dieses Turnier." }, { status: 409 });
-	if (!tournament.registrationOpen) return NextResponse.json({ error: "Wunschgruppen sind nach Anmeldeschluss gesperrt." }, { status: 409 });
+	if (!registrationIsOpen(tournament)) return NextResponse.json({ error: "Wunschgruppen sind nach Anmeldeschluss gesperrt." }, { status: 409 });
 	if (existing)
 		return NextResponse.json(
 			{ error: existing.id === group.id ? "Du bist bereits in dieser Wunschgruppe." : "Du bist bereits in einer anderen Wunschgruppe dieses Turniers." },
