@@ -11,10 +11,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	if (!session?.user?.id || !ObjectId.isValid(session.user.id)) return NextResponse.json({ error: "Bitte melde dich zuerst an." }, { status: 401 });
 	let { id } = await params;
 	const body = await request.json().catch(() => null);
-	const riotId = typeof body?.riotId === "string" ? body.riotId.trim().slice(0, 64) : "";
 	const role = typeof body?.role === "string" ? body.role.trim().slice(0, 24) : "";
 	const note = typeof body?.note === "string" ? body.note.trim().slice(0, 1_500) : "";
-	if (!riotId || !role || note.length < 20 || body?.accepted !== true) return NextResponse.json({ error: "Bitte fülle alle Pflichtfelder aus und akzeptiere die Bedingungen." }, { status: 400 });
+	const participationMode = body?.participationMode === "team" ? "team" : "solo";
+	const teamName = typeof body?.teamName === "string" ? body.teamName.trim().slice(0, 64) : "";
+	const teammates = typeof body?.teammates === "string" ? body.teammates.trim().slice(0, 500) : "";
+	if (note.length < 20 || body?.accepted !== true) return NextResponse.json({ error: "Bitte fülle alle Pflichtfelder aus und akzeptiere die Bedingungen." }, { status: 400 });
 
 	await client.connect();
 	const db = client.db();
@@ -24,12 +26,42 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	if (!tournament?.registrationOpen) return NextResponse.json({ error: "Die Anmeldung für dieses Turnier ist nicht geöffnet." }, { status: 403 });
 	const userId = new ObjectId(session.user.id);
 	const user = await db.collection("users").findOne({ _id: userId });
-	const discord = await db.collection("accounts").findOne({ userId, provider: "discord" });
-	if (!user?.riotVerified || !discord) return NextResponse.json({ error: "Für die Anmeldung brauchst du Discord und eine Riot-Verifizierung." }, { status: 403 });
+	const accountUserIds: unknown[] = [userId, session.user.id];
+	const accounts = await db
+		.collection("accounts")
+		.find({ userId: { $in: accountUserIds } })
+		.toArray();
+	const discord = accounts.find((account) => account.provider === "discord");
+	const twitch = accounts.find((account) => account.provider === "twitch");
+	const requiredConnections = Array.isArray(tournament.requiredConnections) ? tournament.requiredConnections : ["discord", "riot"];
+	if (requiredConnections.includes("discord") && !discord) return NextResponse.json({ error: "Für die Anmeldung musst du Discord verbinden." }, { status: 403 });
+	if (requiredConnections.includes("twitch") && !twitch) return NextResponse.json({ error: "Für die Anmeldung musst du Twitch verbinden." }, { status: 403 });
+	if (requiredConnections.includes("riot") && (!user?.riotVerified || !user.riotSummonerName || !user.riotTagLine))
+		return NextResponse.json({ error: "Für die Anmeldung musst du deine Riot-ID verifizieren." }, { status: 403 });
+	const allowedModes = Array.isArray(tournament.applicationModes) && tournament.applicationModes.length ? tournament.applicationModes : ["solo"];
+	if (!allowedModes.includes(participationMode)) return NextResponse.json({ error: "Diese Anmeldeart ist für das Turnier nicht verfügbar." }, { status: 400 });
+	if (participationMode === "team" && !teamName) return NextResponse.json({ error: "Bitte gib den Namen deines Teams an." }, { status: 400 });
+	if (tournament.collectRoles !== false && !role) return NextResponse.json({ error: "Bitte wähle deine bevorzugte Rolle." }, { status: 400 });
 	const existing = await db.collection("tournament_applications").findOne({ tournamentId: id, userId: session.user.id, status: { $in: ["pending", "accepted", "waitlisted"] } });
 	if (existing) return NextResponse.json({ error: "Du hast bereits eine aktive Bewerbung für dieses Turnier." }, { status: 409 });
 
-	const application = { id: crypto.randomUUID(), tournamentId: id, userId: session.user.id, discordId: discord.providerAccountId, riotId, role, note, status: "pending", consent: { version: "2026-06", acceptedAt: new Date() }, createdAt: new Date() };
+	const riotId = user?.riotSummonerName && user?.riotTagLine ? `${user.riotSummonerName}#${user.riotTagLine}` : "";
+	const application = {
+		id: crypto.randomUUID(),
+		tournamentId: id,
+		userId: session.user.id,
+		discordId: discord?.providerAccountId || null,
+		twitchId: twitch?.providerAccountId || null,
+		riotId,
+		role,
+		participationMode,
+		teamName: participationMode === "team" ? teamName : "",
+		teammates,
+		note,
+		status: "pending",
+		consent: { version: "2026-08", acceptedAt: new Date() },
+		createdAt: new Date(),
+	};
 	await db.collection("tournament_applications").insertOne(application);
 	return NextResponse.json({ application }, { status: 201 });
 }

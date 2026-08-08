@@ -135,9 +135,7 @@ h3 {
 	position: fixed;
 	inset: 0;
 	z-index: -3;
-	background-image:
-		linear-gradient(180deg, rgba(15, 8, 18, 0.3), rgba(16, 10, 20, 0.84)),
-		var(--background-image);
+	background-image: linear-gradient(180deg, rgba(15, 8, 18, 0.3), rgba(16, 10, 20, 0.84)), var(--background-image);
 	background-repeat: no-repeat;
 	background-position: center top;
 	background-size: cover;
@@ -145,9 +143,7 @@ h3 {
 }
 
 :root[data-theme="hanami-light"] .site-backdrop {
-	background-image:
-		linear-gradient(180deg, rgba(255, 248, 252, 0.54), rgba(247, 234, 241, 0.88)),
-		var(--background-image);
+	background-image: linear-gradient(180deg, rgba(255, 248, 252, 0.54), rgba(247, 234, 241, 0.88)), var(--background-image);
 }
 
 .sakura-atmosphere {
@@ -239,7 +235,10 @@ main {
 	color: var(--muted);
 	font-size: 13px;
 	font-weight: 700;
-	transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+	transition:
+		color 160ms ease,
+		border-color 160ms ease,
+		background 160ms ease;
 }
 
 .nav-link:hover,
@@ -499,7 +498,10 @@ main {
 	font-size: 13px;
 	font-weight: 900;
 	cursor: pointer;
-	transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+	transition:
+		transform 150ms ease,
+		background 150ms ease,
+		border-color 150ms ease;
 }
 
 .button:hover {
@@ -733,7 +735,9 @@ main {
 }
 
 @keyframes skeleton-pulse {
-	50% { opacity: 0.55; }
+	50% {
+		opacity: 0.55;
+	}
 }
 
 /* Home */
@@ -808,7 +812,9 @@ main {
 
 .live-panel.is-live {
 	border-color: color-mix(in srgb, #ff7395 55%, var(--line-strong));
-	box-shadow: 0 22px 70px color-mix(in srgb, #ff5f96 18%, transparent), var(--shadow);
+	box-shadow:
+		0 22px 70px color-mix(in srgb, #ff5f96 18%, transparent),
+		var(--shadow);
 }
 
 .live-panel-top,
@@ -855,7 +861,9 @@ main {
 }
 
 @keyframes live-pulse {
-	50% { opacity: 0.45; }
+	50% {
+		opacity: 0.45;
+	}
 }
 
 .live-panel-player {
@@ -1120,9 +1128,7 @@ main {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
-	background:
-		linear-gradient(180deg, transparent 10%, rgba(25, 13, 27, 0.92) 100%),
-		var(--background-image);
+	background: linear-gradient(180deg, transparent 10%, rgba(25, 13, 27, 0.92) 100%), var(--background-image);
 	background-size: cover;
 	background-position: center;
 }
@@ -2909,10 +2915,18 @@ body.obs-page main {
 	border-color: #5865f2;
 	background: #5865f2;
 }
-.social-card.twitch .social-icon { color: #b385ff; }
-.social-card.youtube .social-icon { color: #ff6f7d; }
-.social-card.instagram .social-icon { color: #e674a9; }
-.social-card.kofi .social-icon { color: #e9bd66; }
+.social-card.twitch .social-icon {
+	color: #b385ff;
+}
+.social-card.youtube .social-icon {
+	color: #ff6f7d;
+}
+.social-card.instagram .social-icon {
+	color: #e674a9;
+}
+.social-card.kofi .social-icon {
+	color: #e9bd66;
+}
 
 .project-card {
 	position: relative;
@@ -2945,7 +2959,9 @@ body.obs-page main {
 
 .clip-card {
 	color: var(--ink);
-	transition: transform 180ms ease, border-color 180ms ease;
+	transition:
+		transform 180ms ease,
+		border-color 180ms ease;
 }
 
 .clip-card:hover {
@@ -3095,9 +3111,7 @@ body.obs-page main {
 }
 
 .tournament-card {
-	background:
-		linear-gradient(135deg, transparent 0 76%, color-mix(in srgb, var(--blossom) 8%, transparent) 76%),
-		var(--surface);
+	background: linear-gradient(135deg, transparent 0 76%, color-mix(in srgb, var(--blossom) 8%, transparent) 76%), var(--surface);
 }
 
 .tournament-card:hover {
@@ -3210,6 +3224,35 @@ body.obs-page main {
 .tournament-story p {
 	max-width: 700px;
 	color: var(--muted);
+}
+
+.tournament-story .tournament-tagline {
+	margin-top: 18px;
+	color: var(--blossom);
+	font-family: Georgia, serif;
+	font-size: 18px;
+	font-style: italic;
+}
+
+.tournament-connection-list {
+	margin-top: 20px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.tournament-connection-list span {
+	min-height: 34px;
+	padding: 0 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	border: 1px solid var(--line-strong);
+	border-radius: 999px;
+	color: var(--ink-strong);
+	background: var(--surface-soft);
+	font-size: 11px;
+	font-weight: 800;
 }
 
 .tournament-story .button {
@@ -3391,10 +3434,50 @@ body.obs-page main {
 	gap: 70px;
 	overflow-x: auto;
 	border: 1px solid var(--line);
-	background:
-		linear-gradient(90deg, transparent 49.8%, color-mix(in srgb, var(--line) 60%, transparent) 50%, transparent 50.2%),
-		var(--surface);
-	background-size: 100% 100%, auto;
+	background: linear-gradient(90deg, transparent 49.8%, color-mix(in srgb, var(--line) 60%, transparent) 50%, transparent 50.2%), var(--surface);
+	background-size:
+		100% 100%,
+		auto;
+}
+
+.double-elimination-bracket {
+	display: grid;
+	gap: 34px;
+}
+
+.bracket-lane {
+	padding-top: 20px;
+	border-top: 1px solid var(--line-strong);
+}
+
+.bracket-lane > header {
+	margin-bottom: 13px;
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 20px;
+}
+
+.bracket-lane > header span {
+	color: var(--ink-strong);
+	font-family: Georgia, serif;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.bracket-lane > header p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.bracket-lane-lower .visual-bracket {
+	background-color: color-mix(in srgb, var(--surface) 94%, var(--plum));
+}
+
+.bracket-lane-finals .visual-bracket {
+	min-height: 350px;
+	background-color: color-mix(in srgb, var(--surface) 92%, var(--blossom-soft));
 }
 
 .bracket-column {
@@ -3628,9 +3711,7 @@ body.obs-page main {
 	overflow: hidden;
 	border: 1px solid color-mix(in srgb, var(--blossom) 52%, var(--line));
 	border-radius: 7px;
-	background:
-		linear-gradient(135deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 52%),
-		var(--surface-solid);
+	background: linear-gradient(135deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 52%), var(--surface-solid);
 	box-shadow: var(--shadow);
 }
 
@@ -4049,9 +4130,7 @@ body.obs-page main {
 	margin-top: 24px;
 	padding: 18px;
 	border: 1px solid color-mix(in srgb, var(--blossom) 45%, var(--line));
-	background:
-		linear-gradient(135deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 58%),
-		var(--surface);
+	background: linear-gradient(135deg, color-mix(in srgb, var(--blossom-soft) 38%, transparent), transparent 58%), var(--surface);
 }
 
 .admin-pairing-editor > header {
@@ -4174,6 +4253,124 @@ body.obs-page main {
 	text-align: center;
 }
 
+.admin-application-list {
+	margin-top: 24px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.admin-application-sheet {
+	padding: 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--surface);
+}
+
+.admin-application-sheet > header,
+.admin-application-sheet > footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.admin-application-sheet h2 {
+	margin: 3px 0 0;
+	font-size: 22px;
+}
+
+.admin-application-sheet small {
+	color: var(--blossom);
+	font-size: 10px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.admin-application-sheet p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.admin-application-connections {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.admin-application-connections span {
+	padding: 5px 8px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--faint);
+	background: var(--surface-soft);
+	font-size: 10px;
+}
+
+.admin-application-sheet > footer {
+	margin-top: auto;
+	padding-top: 14px;
+	justify-content: flex-end;
+	border-top: 1px dotted var(--line);
+}
+
+.admin-tournament-settings {
+	max-width: 820px;
+	margin: 24px auto 0;
+	padding: 30px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--surface);
+}
+
+.admin-tournament-settings > div,
+.admin-tournament-settings .settings-note,
+.admin-tournament-settings .settings-open {
+	grid-column: 1 / -1;
+}
+
+.admin-tournament-settings > div p {
+	margin: 4px 0 8px;
+	color: var(--muted);
+}
+
+.admin-tournament-settings > label:not(.form-checkbox) {
+	display: grid;
+	gap: 7px;
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.admin-tournament-settings input,
+.admin-tournament-settings select,
+.admin-tournament-settings textarea {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 12px;
+	border: 1px solid var(--line-strong);
+	border-radius: 5px;
+	color: var(--ink-strong);
+	background: var(--surface-soft);
+	font: inherit;
+}
+
+.admin-tournament-settings textarea {
+	min-height: 100px;
+	resize: vertical;
+}
+
+.admin-tournament-settings > .button {
+	justify-self: start;
+}
+
 .roster-modal {
 	padding: 0;
 }
@@ -4231,6 +4428,7 @@ body.obs-page main {
 	}
 
 	.admin-roster-grid,
+	.admin-application-list,
 	.tournament-team-grid {
 		grid-template-columns: 1fr;
 	}
@@ -4248,6 +4446,16 @@ body.obs-page main {
 	.connection-warning > footer {
 		align-items: stretch;
 		flex-direction: column-reverse;
+	}
+
+	.admin-tournament-settings {
+		padding: 20px;
+		grid-template-columns: 1fr;
+	}
+
+	.admin-tournament-settings > label,
+	.admin-tournament-settings > div {
+		grid-column: 1;
 	}
 
 	.tournament-principles > div,

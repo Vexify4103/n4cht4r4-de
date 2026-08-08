@@ -12,6 +12,8 @@ type Match = {
 	id: string;
 	stage: "group" | "playoff";
 	placement?: "third_place";
+	bracket?: "upper" | "lower" | "finals";
+	matchType?: "standard" | "grand_final" | "bracket_reset";
 	groupId?: string;
 	round: number;
 	position: number;
@@ -28,6 +30,10 @@ type Standing = { groupId?: string; rank: number; teamId: string; teamName: stri
 function matchLabel(match: Match) {
 	if (match.placement === "third_place") return "Spiel um Platz 3";
 	if (match.stage === "group") return `Runde ${match.round}`;
+	if (match.matchType === "grand_final") return "Grand Final";
+	if (match.matchType === "bracket_reset") return "Grand Final Reset";
+	if (match.bracket === "upper") return `Winner Bracket · Runde ${match.round}`;
+	if (match.bracket === "lower") return `Loser Bracket · Runde ${match.round}`;
 	if (match.round === 1) return "Halbfinale";
 	return "Finale";
 }
@@ -41,12 +47,16 @@ const viewMeta = {
 };
 
 function MatchSchedule({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
-	if (!matches.length) return <Empty icon={CalendarDays} title="Noch keine Matches angesetzt" copy="Die Turnierleitung veröffentlicht den Spielplan, sobald alle Paarungen feststehen." />;
+	if (!matches.length)
+		return <Empty icon={CalendarDays} title="Noch keine Matches angesetzt" copy="Die Turnierleitung veröffentlicht den Spielplan, sobald alle Paarungen feststehen." />;
 	return (
 		<div className="match-list">
 			{matches.map((match) => (
 				<article className="match-row" key={match.id}>
-					<div><small>{matchLabel(match)}</small><time>{match.scheduledAt ? new Date(match.scheduledAt).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "Termin folgt"}</time></div>
+					<div>
+						<small>{matchLabel(match)}</small>
+						<time>{match.scheduledAt ? new Date(match.scheduledAt).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "Termin folgt"}</time>
+					</div>
 					<strong>{match.teamAId ? names.get(match.teamAId) || "Team A" : "Noch offen"}</strong>
 					<b>{match.status === "completed" ? `${match.scoreA} : ${match.scoreB}` : "vs."}</b>
 					<strong>{match.teamBId ? names.get(match.teamBId) || "Team B" : "Noch offen"}</strong>
@@ -57,26 +67,42 @@ function MatchSchedule({ matches, names }: { matches: Match[]; names: Map<string
 	);
 }
 
-function Bracket({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
-	if (!matches.length) return <Empty icon={Swords} title="Der Turnierbaum wird vorbereitet" copy="Sobald die Paarungen gesetzt sind, erscheinen Halbfinale und Finale hier automatisch." />;
+function BracketLane({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
 	const rounds = [...new Set(matches.map((match) => match.round))].sort((a, b) => a - b);
 	return (
 		<div className="visual-bracket">
 			{rounds.map((round, roundIndex) => (
 				<section className="bracket-column" key={round}>
-					<header><span>Runde {round}</span><h2>{roundIndex === rounds.length - 1 ? "Finale" : rounds.length === 2 ? "Halbfinale" : `Runde ${round}`}</h2></header>
+					<header>
+						<span>Runde {round}</span>
+						<h2>
+							{matches[0]?.bracket === "finals"
+								? round === 1
+									? "Grand Final"
+									: "Reset"
+								: roundIndex === rounds.length - 1
+									? "Finale"
+									: rounds.length === 2
+										? "Halbfinale"
+										: `Runde ${round}`}
+						</h2>
+					</header>
 					<div className="bracket-column-matches">
-						{matches.filter((match) => match.round === round).map((match) => (
-							<article className={`bracket-match ${match.placement === "third_place" ? "is-placement" : ""}`} key={match.id}>
-								<small className="bracket-match-label">{matchLabel(match)}</small>
-								<div className={match.winnerTeamId && match.winnerTeamId === match.teamAId ? "winner" : ""}>
-									<span>{match.teamAId ? names.get(match.teamAId) || "Team A" : "Noch offen"}</span><b>{match.status === "completed" ? match.scoreA : "–"}</b>
-								</div>
-								<div className={match.winnerTeamId && match.winnerTeamId === match.teamBId ? "winner" : ""}>
-									<span>{match.teamBId ? names.get(match.teamBId) || "Team B" : "Noch offen"}</span><b>{match.status === "completed" ? match.scoreB : "–"}</b>
-								</div>
-							</article>
-						))}
+						{matches
+							.filter((match) => match.round === round)
+							.map((match) => (
+								<article className={`bracket-match ${match.placement === "third_place" ? "is-placement" : ""}`} key={match.id}>
+									<small className="bracket-match-label">{matchLabel(match)}</small>
+									<div className={match.winnerTeamId && match.winnerTeamId === match.teamAId ? "winner" : ""}>
+										<span>{match.teamAId ? names.get(match.teamAId) || "Team A" : "Noch offen"}</span>
+										<b>{match.status === "completed" ? match.scoreA : "–"}</b>
+									</div>
+									<div className={match.winnerTeamId && match.winnerTeamId === match.teamBId ? "winner" : ""}>
+										<span>{match.teamBId ? names.get(match.teamBId) || "Team B" : "Noch offen"}</span>
+										<b>{match.status === "completed" ? match.scoreB : "–"}</b>
+									</div>
+								</article>
+							))}
 					</div>
 				</section>
 			))}
@@ -84,8 +110,42 @@ function Bracket({ matches, names }: { matches: Match[]; names: Map<string, stri
 	);
 }
 
+function Bracket({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
+	if (!matches.length)
+		return <Empty icon={Swords} title="Der Turnierbaum wird vorbereitet" copy="Sobald die Teams feststehen, veröffentlicht die Turnierleitung alle Paarungen." />;
+	const hasDoubleElimination = matches.some((match) => match.bracket === "lower");
+	if (!hasDoubleElimination) return <BracketLane matches={matches} names={names} />;
+	const lanes = [
+		{ key: "upper", title: "Winner Bracket", copy: "Wer gewinnt, bleibt auf dem direkten Weg ins Grand Final." },
+		{ key: "lower", title: "Loser Bracket", copy: "Nach einer Niederlage bleibt hier die zweite Chance auf das Finale." },
+		{ key: "finals", title: "Grand Final", copy: "Der Sieger des Winner Brackets trifft auf den Sieger des Loser Brackets." },
+	] as const;
+	return (
+		<div className="double-elimination-bracket">
+			{lanes.map((lane) => {
+				const laneMatches = matches.filter((match) => match.bracket === lane.key && match.status !== "skipped");
+				return laneMatches.length ? (
+					<section className={`bracket-lane bracket-lane-${lane.key}`} key={lane.key}>
+						<header>
+							<span>{lane.title}</span>
+							<p>{lane.copy}</p>
+						</header>
+						<BracketLane matches={laneMatches} names={names} />
+					</section>
+				) : null;
+			})}
+		</div>
+	);
+}
+
 function Empty({ icon: Icon, title, copy }: { icon: typeof Swords; title: string; copy: string }) {
-	return <div className="empty-state"><Icon size={36} /><h3>{title}</h3><p>{copy}</p></div>;
+	return (
+		<div className="empty-state">
+			<Icon size={36} />
+			<h3>{title}</h3>
+			<p>{copy}</p>
+		</div>
+	);
 }
 
 export function TournamentPublicView({ view }: { view: View }) {
@@ -101,36 +161,63 @@ export function TournamentPublicView({ view }: { view: View }) {
 
 	return (
 		<>
-			<TournamentHeader
-				id={id}
-				active={view}
-				kicker={`${tournamentData?.tournament.title || "Turnier"} · ${meta.kicker}`}
-				title={meta.title}
-				copy={meta.copy}
-			/>
+			<TournamentHeader id={id} active={view} kicker={`${tournamentData?.tournament.title || "Turnier"} · ${meta.kicker}`} title={meta.title} copy={meta.copy} />
 			<section className="content-band tournament-view">
 				{view === "schedule" && <MatchSchedule matches={matches} names={names} />}
 				{view === "playoffs" && <Bracket matches={matches.filter((match) => match.stage === "playoff")} names={names} />}
-				{view === "teams" && (teams.length
-					? <div className="tournament-team-grid">{teams.map((team) => <TournamentTeamCard tournamentId={id} team={team} key={team.id} />)}</div>
-					: <Empty icon={Users} title="Noch keine Teams veröffentlicht" copy="Bestätigte Kader erscheinen nach der Freigabe durch die Turnierleitung." />)}
-				{view === "groups" && ((groupsData?.groups || []).length
-					? <div className="groups-grid">{groupsData?.groups.map((group) => (
-						<article className="group-table" key={group.id}>
-							<h2>{group.name}</h2>
-							{(groupsData.standings || []).filter((standing) => standing.groupId === group.id).map((standing) => (
-								<div className="standings-row" key={standing.teamId}><span>#{standing.rank}</span><strong>{standing.teamName}</strong><span>{standing.wins} S</span><span>{standing.points} P</span></div>
+				{view === "teams" &&
+					(teams.length ? (
+						<div className="tournament-team-grid">
+							{teams.map((team) => (
+								<TournamentTeamCard tournamentId={id} team={team} key={team.id} />
 							))}
-						</article>
-					))}</div>
-					: <Empty icon={Users} title="Dieses Turnier hat keine Gruppen" copy="Bei einem reinen Playoff-Format führt der Weg direkt in den Turnierbaum." />)}
-				{view === "rules" && (
-					<div className="tournament-rules">
-						{(tournamentData?.tournament.rules || []).map((rule, index) => rule.startsWith("## ")
-							? <h2 key={`${rule}-${index}`}>{rule.slice(3)}</h2>
-							: <div className="rule-item" key={`${rule}-${index}`}><span className="rule-number">{String(index + 1).padStart(2, "0")}</span><span className="rule-text">{rule}</span></div>)}
-					</div>
-				)}
+						</div>
+					) : (
+						<Empty icon={Users} title="Noch keine Teams veröffentlicht" copy="Bestätigte Kader erscheinen nach der Freigabe durch die Turnierleitung." />
+					))}
+				{view === "groups" &&
+					((groupsData?.groups || []).length ? (
+						<div className="groups-grid">
+							{groupsData?.groups.map((group) => (
+								<article className="group-table" key={group.id}>
+									<h2>{group.name}</h2>
+									{(groupsData.standings || [])
+										.filter((standing) => standing.groupId === group.id)
+										.map((standing) => (
+											<div className="standings-row" key={standing.teamId}>
+												<span>#{standing.rank}</span>
+												<strong>{standing.teamName}</strong>
+												<span>{standing.wins} S</span>
+												<span>{standing.points} P</span>
+											</div>
+										))}
+								</article>
+							))}
+						</div>
+					) : (
+						<Empty icon={Users} title="Dieses Turnier hat keine Gruppen" copy="Bei einem reinen Playoff-Format führt der Weg direkt in den Turnierbaum." />
+					))}
+				{view === "rules" &&
+					((tournamentData?.tournament.rules || []).length ? (
+						<div className="tournament-rules">
+							{(tournamentData?.tournament.rules || []).map((rule, index) =>
+								rule.startsWith("## ") ? (
+									<h2 key={`${rule}-${index}`}>{rule.slice(3)}</h2>
+								) : (
+									<div className="rule-item" key={`${rule}-${index}`}>
+										<span className="rule-number">{String(index + 1).padStart(2, "0")}</span>
+										<span className="rule-text">{rule}</span>
+									</div>
+								)
+							)}
+						</div>
+					) : (
+						<Empty
+							icon={Swords}
+							title="Das Regelwerk wird vorbereitet"
+							copy="Alle verbindlichen ARAM-MAYHEM-Regeln erscheinen hier, bevor die Anmeldung geöffnet wird."
+						/>
+					))}
 			</section>
 		</>
 	);

@@ -6,6 +6,7 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 const options = {
+	directConnection: process.env.MONGODB_DIRECT_CONNECTION === "true",
 	serverApi: {
 		version: ServerApiVersion.v1,
 		strict: true,

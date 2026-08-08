@@ -21,12 +21,43 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Bearbeiten." }, { status: 403 });
 	let { id } = await params;
 	const body = await request.json().catch(() => null);
-	const allowed = ["title", "format", "status", "date", "rules", "published", "registrationOpen", "maxTeams", "bracketType", "seriesBestOf", "championRule"];
+	const allowed = [
+		"title",
+		"format",
+		"status",
+		"date",
+		"rules",
+		"published",
+		"registrationOpen",
+		"maxTeams",
+		"bracketType",
+		"seriesBestOf",
+		"championRule",
+		"description",
+		"tagline",
+		"registrationNote",
+		"teamSize",
+		"gameMode",
+		"applicationModes",
+		"requiredConnections",
+		"collectRoles",
+	];
 	const update: Record<string, unknown> = {};
 	for (const key of allowed) if (body && key in body) update[key] = body[key];
-	if (Array.isArray(update.rules)) update.rules = update.rules.filter((rule) => typeof rule === "string").map((rule) => rule.trim()).filter(Boolean).slice(0, 50);
-	if (update.seriesBestOf !== undefined && ![1, 3, 5].includes(Number(update.seriesBestOf))) return NextResponse.json({ error: "Fuer eine Serie sind nur Best of 1, 3 oder 5 erlaubt." }, { status: 400 });
-	if (update.championRule !== undefined && !["none", "light_fearless"].includes(String(update.championRule))) return NextResponse.json({ error: "Ungueltige Champion-Regel." }, { status: 400 });
+	if (Array.isArray(update.rules))
+		update.rules = update.rules
+			.filter((rule) => typeof rule === "string")
+			.map((rule) => rule.trim())
+			.filter(Boolean)
+			.slice(0, 50);
+	if (update.seriesBestOf !== undefined && update.seriesBestOf !== null && ![1, 3, 5].includes(Number(update.seriesBestOf)))
+		return NextResponse.json({ error: "Für eine Serie sind nur Best of 1, 3 oder 5 erlaubt." }, { status: 400 });
+	if (update.maxTeams !== undefined && update.maxTeams !== null && (!Number.isInteger(Number(update.maxTeams)) || Number(update.maxTeams) < 2 || Number(update.maxTeams) > 128))
+		return NextResponse.json({ error: "Das Teamlimit muss zwischen 2 und 128 liegen oder offen bleiben." }, { status: 400 });
+	if (update.bracketType !== undefined && !["single_elimination", "double_elimination", "groups"].includes(String(update.bracketType)))
+		return NextResponse.json({ error: "Ungültiges Turnierformat." }, { status: 400 });
+	if (update.championRule !== undefined && !["none", "light_fearless"].includes(String(update.championRule)))
+		return NextResponse.json({ error: "Ungueltige Champion-Regel." }, { status: 400 });
 	if (!Object.keys(update).length) return NextResponse.json({ error: "Keine Änderungen übergeben." }, { status: 400 });
 	update.updatedAt = new Date();
 	await client.connect();

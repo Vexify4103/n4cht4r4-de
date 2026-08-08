@@ -7,8 +7,9 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "eslint .",
-    "format": "prettier --write .",
+		"lint": "eslint .",
+		"seed:tournaments": "node scripts/seed-tournaments.mjs",
+		"format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {

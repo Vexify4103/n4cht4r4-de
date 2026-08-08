@@ -14,7 +14,7 @@ type Tournament = {
 	format: string;
 	status: "announcement" | "registration" | "live" | "completed";
 	date: string | null;
-	maxTeams: number;
+	maxTeams: number | null;
 	currentTeams: number;
 	registrationOpen?: boolean;
 };
@@ -28,7 +28,7 @@ const labels = {
 
 function TournamentCard({ tournament }: { tournament: Tournament }) {
 	const date = tournament.date
-		? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(tournament.date))
+		? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(tournament.date))
 		: "Termin folgt";
 
 	return (
@@ -41,8 +41,10 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
 			<h3>{tournament.title}</h3>
 			<p>{tournament.format}</p>
 			<div className="tournament-card-footer">
-				<span>{tournament.currentTeams} / {tournament.maxTeams} Teams</span>
-				<strong>Turnier öffnen <ArrowRight size={15} /></strong>
+				<span>{tournament.maxTeams ? `${tournament.currentTeams} / ${tournament.maxTeams} Teams` : "Teamlimit folgt"}</span>
+				<strong>
+					Turnier öffnen <ArrowRight size={15} />
+				</strong>
 			</div>
 		</Link>
 	);
@@ -53,12 +55,23 @@ function TournamentCollection({ title, copy, tournaments, icon: Icon }: { title:
 		<section className="content-band">
 			<div className="section-heading with-icon">
 				<Icon size={25} />
-				<div><h2>{title}</h2><p>{copy}</p></div>
+				<div>
+					<h2>{title}</h2>
+					<p>{copy}</p>
+				</div>
 			</div>
 			{tournaments.length ? (
-				<div className="tournament-hub-grid">{tournaments.map((tournament) => <TournamentCard tournament={tournament} key={tournament.id} />)}</div>
+				<div className="tournament-hub-grid">
+					{tournaments.map((tournament) => (
+						<TournamentCard tournament={tournament} key={tournament.id} />
+					))}
+				</div>
 			) : (
-				<div className="empty-state compact-empty"><Icon size={30} /><h3>Gerade ist hier noch Platz</h3><p>Neue Turniere erscheinen automatisch, sobald die Turnierleitung sie veröffentlicht.</p></div>
+				<div className="empty-state compact-empty">
+					<Icon size={30} />
+					<h3>Gerade ist hier noch Platz</h3>
+					<p>Neue Turniere erscheinen automatisch, sobald die Turnierleitung sie veröffentlicht.</p>
+				</div>
 			)}
 		</section>
 	);
@@ -79,20 +92,43 @@ export default function TournamentsPage() {
 				copy="Alle League-Turniere erhalten hier ihren eigenen Platz: mit Teams, Spielplan, Playoff-Baum, Regeln, Ergebnissen und Stream-Overlays."
 				icon={<Trophy size={44} strokeWidth={1.6} />}
 			>
-				<a className="button button-primary" href="#aktuell"><Swords size={17} /> Turniere entdecken</a>
+				<a className="button button-primary" href="#aktuell">
+					<Swords size={17} /> Turniere entdecken
+				</a>
 			</PageHero>
 
 			<section className="content-band tournament-principles">
-				<div><Crown size={20} /><strong>Ein Portal</strong><span>für alle zukünftigen Formate</span></div>
-				<div><ShieldCheck size={20} /><strong>Faire Teilnahme</strong><span>mit Discord und Riot-Verifizierung</span></div>
-				<div><Swords size={20} /><strong>Live gepflegt</strong><span>Ergebnisse und Bracket in Echtzeit</span></div>
+				<div>
+					<Crown size={20} />
+					<strong>Ein Portal</strong>
+					<span>für alle zukünftigen Formate</span>
+				</div>
+				<div>
+					<ShieldCheck size={20} />
+					<strong>Faire Teilnahme</strong>
+					<span>mit Discord, Twitch und Riot-Verifizierung</span>
+				</div>
+				<div>
+					<Swords size={20} />
+					<strong>Live gepflegt</strong>
+					<span>Ergebnisse und Bracket in Echtzeit</span>
+				</div>
 			</section>
 
 			<div id="aktuell">
-				{isLoading ? <section className="content-band"><div className="skeleton portal-skeleton" /></section> : (
+				{isLoading ? (
+					<section className="content-band">
+						<div className="skeleton portal-skeleton" />
+					</section>
+				) : (
 					<>
 						<TournamentCollection title="Aktuell" copy="Offene Anmeldungen und laufende Events." tournaments={current} icon={Trophy} />
-						<TournamentCollection title="Als Nächstes" copy="Angekündigte Turniere, deren Details gerade vorbereitet werden." tournaments={upcoming} icon={CalendarDays} />
+						<TournamentCollection
+							title="Als Nächstes"
+							copy="Angekündigte Turniere, deren Details gerade vorbereitet werden."
+							tournaments={upcoming}
+							icon={CalendarDays}
+						/>
 						<TournamentCollection title="Archiv" copy="Vergangene Turniere mit ihren Teams, Ergebnissen und Siegerwegen." tournaments={archive} icon={Archive} />
 					</>
 				)}
