@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowRight, CalendarDays, Crown, Flower2, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Crown, Flower2, MessageCircleHeart, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -87,6 +87,9 @@ export default function AdminTournamentsPage() {
 						<h2>Veröffentlichte und geplante Turniere</h2>
 					</div>
 					<div className="admin-ledger-tools">
+						<Link className="button button-secondary button-small" href="/admin/community">
+							<MessageCircleHeart size={14} /> Community
+						</Link>
 						<Link className="button button-secondary button-small" href="/admin/challenges">
 							<Sparkles size={14} /> Challenges
 						</Link>

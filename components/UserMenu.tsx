@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, LogIn, LogOut, ShieldCheck, User } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, MessageCircleHeart, ShieldCheck, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 
@@ -104,9 +104,14 @@ export function UserMenu() {
 						<User size={16} /> Mein Garten
 					</Link>
 					{adminRole && (
-						<Link href="/admin/tournaments" className="user-dropdown-item" onClick={() => setOpen(false)}>
-							<ShieldCheck size={16} /> Turnierverwaltung
-						</Link>
+						<>
+							<Link href="/admin/tournaments" className="user-dropdown-item" onClick={() => setOpen(false)}>
+								<ShieldCheck size={16} /> Turnierverwaltung
+							</Link>
+							<Link href="/admin/community" className="user-dropdown-item" onClick={() => setOpen(false)}>
+								<MessageCircleHeart size={16} /> Community moderieren
+							</Link>
+						</>
 					)}
 					<button className="user-dropdown-item logout" type="button" onClick={() => signOut()}>
 						<LogOut size={16} /> Abmelden

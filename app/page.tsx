@@ -1,14 +1,5 @@
 import Link from "next/link";
-import {
-	ArrowRight,
-	BookHeart,
-	Flower2,
-	Gamepad2,
-	HeartHandshake,
-	Sparkles,
-	Target,
-	Trophy,
-} from "lucide-react";
+import { ArrowRight, BookHeart, Flower2, Gamepad2, HeartHandshake, Sparkles, Target, Trophy } from "lucide-react";
 import { HomeLivePanel } from "@/components/HomeLivePanel";
 import { DiscordMark } from "@/components/DiscordMark";
 
@@ -32,10 +23,10 @@ const gardenPaths = [
 	{
 		icon: Gamepad2,
 		eyebrow: "Gemeinsame Welten",
-		title: "Minecraft Projekte",
-		text: "Alle Regeln, Projektinfos und künftigen SMP-Bewerbungen übersichtlich gesammelt.",
-		href: "/minecraft",
-		link: "Minecraft entdecken",
+		title: "Community Projekte",
+		text: "Minecraft, Palworld und kommende Server mit Status, Regeln und Bewerbungen an einem Ort.",
+		href: "/projects",
+		link: "Projekte entdecken",
 	},
 ];
 
@@ -44,7 +35,9 @@ export default function Home() {
 		<>
 			<section className="home-hero">
 				<div className="home-hero-copy">
-					<span className="kicker"><Flower2 size={15} /> Willkommen in Nachtaras Community Garden</span>
+					<span className="kicker">
+						<Flower2 size={15} /> Willkommen in Nachtaras Community Garden
+					</span>
 					<h1>N4cht4r4</h1>
 					<p className="home-tagline">Ein gemütlicher Platz für Streams, League-Abende, Kirschblüten und ein bisschen kontrolliertes Chaos.</p>
 					<div className="hero-actions">
@@ -52,13 +45,22 @@ export default function Home() {
 							<Trophy size={17} /> Zum Turnierhub
 						</Link>
 						<a className="button button-discord-link" href="https://discord.gg/g69uYP97Qh" target="_blank" rel="noopener noreferrer">
-							<span className="discord-button-mark"><DiscordMark size={14} /></span> Community auf Discord
+							<span className="discord-button-mark">
+								<DiscordMark size={14} />
+							</span>{" "}
+							Community auf Discord
 						</a>
 					</div>
 					<div className="home-notes" aria-label="Nachtaras Community">
-						<span><Sparkles size={14} /> deutschsprachig</span>
-						<span><HeartHandshake size={14} /> cozy & competitive</span>
-						<span><Flower2 size={14} /> seit 2026</span>
+						<span>
+							<Sparkles size={14} /> deutschsprachig
+						</span>
+						<span>
+							<HeartHandshake size={14} /> cozy & competitive
+						</span>
+						<span>
+							<Flower2 size={14} /> seit 2026
+						</span>
 					</div>
 				</div>
 				<HomeLivePanel />
@@ -80,7 +82,9 @@ export default function Home() {
 								<small>{item.eyebrow}</small>
 								<h3>{item.title}</h3>
 								<p>{item.text}</p>
-								<Link href={item.href}>{item.link} <ArrowRight size={15} /></Link>
+								<Link href={item.href}>
+									{item.link} <ArrowRight size={15} />
+								</Link>
 							</article>
 						);
 					})}
@@ -94,9 +98,18 @@ export default function Home() {
 					<p>Discord ist dein Hauptkonto. Twitch zeichnet Stream-Challenges auf, Riot bestätigt deinen League-Fortschritt. Du entscheidest selbst, was du verknüpfst.</p>
 				</div>
 				<div className="connection-steps">
-					<span><b>1</b><DiscordMark className="discord-step-logo" size={15} variant="blurple" /> Discord Login</span>
-					<span><b>2</b><BookHeart size={18} /> Konten verbinden</span>
-					<span><b>3</b><Target size={18} /> Fortschritt sammeln</span>
+					<span>
+						<b>1</b>
+						<DiscordMark className="discord-step-logo" size={15} variant="blurple" /> Discord Login
+					</span>
+					<span>
+						<b>2</b>
+						<BookHeart size={18} /> Konten verbinden
+					</span>
+					<span>
+						<b>3</b>
+						<Target size={18} /> Fortschritt sammeln
+					</span>
 				</div>
 			</section>
 		</>

@@ -2,22 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-	BookOpenText,
-	Copyright,
-	Film,
-	Flower2,
-	Gamepad2,
-	Home,
-	Info,
-	Menu,
-	Sparkles,
-	Target,
-	Trophy,
-	Twitch,
-	UsersRound,
-	X,
-} from "lucide-react";
+import { BookOpenText, Copyright, Film, Flower2, Gamepad2, Home, Info, MessageCircleHeart, Menu, Sparkles, Target, Trophy, Twitch, UsersRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SakuraAtmosphere } from "@/components/SakuraAtmosphere";
 import { UserMenu } from "@/components/UserMenu";
@@ -30,7 +15,8 @@ const navItems = [
 	{ href: "/info", label: "Nachtara", icon: Info },
 	{ href: "/tournaments", label: "Turniere", icon: Trophy },
 	{ href: "/challenges", label: "Challenges", icon: Target },
-	{ href: "/minecraft", label: "Minecraft", icon: Gamepad2 },
+	{ href: "/projects", label: "Projekte", icon: Gamepad2 },
+	{ href: "/community", label: "Pinnwand", icon: MessageCircleHeart },
 	{ href: "/clips", label: "Clips", icon: Film },
 	{ href: "/socials", label: "Socials", icon: UsersRound },
 ];
@@ -48,7 +34,9 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 			<header className="site-header">
 				<div className="header-inner">
 					<Link className="brand-mark" href="/" aria-label="N4cht4r4 Startseite">
-						<span className="brand-sigil"><Flower2 size={21} /></span>
+						<span className="brand-sigil">
+							<Flower2 size={21} />
+						</span>
 						<span className="brand-copy">
 							<strong>N4cht4r4</strong>
 							<small>Community Garden</small>
@@ -58,7 +46,9 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 					<nav className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Hauptnavigation">
 						<div className="mobile-nav-head">
 							<span>Wohin möchtest du?</span>
-							<button type="button" onClick={() => setMenuOpen(false)} aria-label="Navigation schließen"><X size={20} /></button>
+							<button type="button" onClick={() => setMenuOpen(false)} aria-label="Navigation schließen">
+								<X size={20} />
+							</button>
 						</div>
 						{navItems.map((item) => {
 							const Icon = item.icon;
@@ -87,7 +77,9 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 			<footer className="site-footer">
 				<div className="footer-main">
 					<div className="footer-brand">
-						<span className="brand-sigil"><Flower2 size={20} /></span>
+						<span className="brand-sigil">
+							<Flower2 size={20} />
+						</span>
 						<div>
 							<strong>N4cht4r4</strong>
 							<p>Streams, Events und ein gemütlicher Platz für die Community.</p>
@@ -95,23 +87,55 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 					</div>
 					<div className="footer-links">
 						<span>Entdecken</span>
-						<Link href="/tournaments"><Trophy size={14} /> Turniere</Link>
-						<Link href="/challenges"><Target size={14} /> Challenges</Link>
-						<Link href="/bewerbungen"><BookOpenText size={14} /> Bewerbungen</Link>
+						<Link href="/tournaments">
+							<Trophy size={14} /> Turniere
+						</Link>
+						<Link href="/challenges">
+							<Target size={14} /> Challenges
+						</Link>
+						<Link href="/bewerbungen">
+							<BookOpenText size={14} /> Bewerbungen
+						</Link>
+						<Link href="/projects">
+							<Gamepad2 size={14} /> Community-Projekte
+						</Link>
 					</div>
 					<div className="footer-links">
 						<span>Community</span>
-						<a href={site.discordUrl} target="_blank" rel="noopener noreferrer"><span className="discord-footer-mark"><DiscordMark size={10} /></span> Discord</a>
-						<a href={site.twitchUrl} target="_blank" rel="noopener noreferrer"><Twitch size={14} /> Twitch</a>
-						<Link href="/socials"><Sparkles size={14} /> Alle Socials</Link>
+						<a href={site.discordUrl} target="_blank" rel="noopener noreferrer">
+							<span className="discord-footer-mark">
+								<DiscordMark size={10} />
+							</span>{" "}
+							Discord
+						</a>
+						<a href={site.twitchUrl} target="_blank" rel="noopener noreferrer">
+							<Twitch size={14} /> Twitch
+						</a>
+						<Link href="/socials">
+							<Sparkles size={14} /> Alle Socials
+						</Link>
+						<Link href="/community">
+							<MessageCircleHeart size={14} /> Pinnwand & Fanart
+						</Link>
 					</div>
 				</div>
 				<div className="footer-bottom">
-					<span><Copyright size={13} /> 2026 N4cht4r4</span>
+					<span>
+						<Copyright size={13} /> 2026 N4cht4r4
+					</span>
 					<span className="footer-credit">
 						Website von {site.creator.name}
-						<a href={site.creator.discordUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Discord`}><span className="discord-footer-mark"><DiscordMark size={9} /></span> Discord</a>
-						{site.creator.twitchUrl && <a href={site.creator.twitchUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Twitch`}><Twitch size={13} /> Twitch</a>}
+						<a href={site.creator.discordUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Discord`}>
+							<span className="discord-footer-mark">
+								<DiscordMark size={9} />
+							</span>{" "}
+							Discord
+						</a>
+						{site.creator.twitchUrl && (
+							<a href={site.creator.twitchUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Twitch`}>
+								<Twitch size={13} /> Twitch
+							</a>
+						)}
 					</span>
 					<div>
 						<Link href="/datenschutz">Datenschutz</Link>
