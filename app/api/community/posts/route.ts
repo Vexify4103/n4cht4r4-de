@@ -10,32 +10,42 @@ const MAX_ARTWORK_SIZE = 8 * 1024 * 1024;
 
 export async function GET(request: NextRequest) {
 	const kind = request.nextUrl.searchParams.get("kind");
+	const mine = request.nextUrl.searchParams.get("mine") === "1";
 	const page = Math.max(0, Number.parseInt(request.nextUrl.searchParams.get("page") || "0", 10) || 0);
 	const limit = Math.min(150, Math.max(1, Number.parseInt(request.nextUrl.searchParams.get("limit") || "18", 10) || 18));
+	const session = mine ? await auth() : null;
+	if (mine && (!session?.user?.id || !ObjectId.isValid(session.user.id))) {
+		return NextResponse.json({ error: "Bitte melde dich zuerst an." }, { status: 401 });
+	}
 	try {
 		await client.connect();
 		const db = client.db();
 		await ensureCommunityIndexes(db);
-		const query: Record<string, unknown> = { status: "published" };
+		const query: Record<string, unknown> = mine ? { userId: session!.user!.id } : { status: "published" };
 		if (kind === "message" || kind === "fanart") query.kind = kind;
 		const [posts, total] = await Promise.all([
 			db
 				.collection("community_posts")
 				.find(query)
-				.project({ _id: 0, userId: 0, moderationNote: 0 })
-				.sort({ publishedAt: -1, createdAt: -1 })
+				.project({ _id: 0, userId: 0, discordId: 0, moderationNote: 0, moderatedBy: 0 })
+				.sort(mine ? { createdAt: -1 } : { publishedAt: -1, createdAt: -1 })
 				.skip(page * limit)
 				.limit(limit)
 				.toArray(),
 			db.collection("community_posts").countDocuments(query),
 		]);
-		return NextResponse.json({
-			posts: posts.map((post) => ({ ...post, mediaUrl: post.mediaId ? `/api/community/media/${post.mediaId}` : null })),
-			total,
-			hasMore: (page + 1) * limit < total,
-		});
+		return NextResponse.json(
+			{
+				posts: posts.map((post) => ({ ...post, mediaUrl: post.mediaId ? `/api/community/media/${post.mediaId}` : null })),
+				total,
+				hasMore: (page + 1) * limit < total,
+			},
+			{ headers: mine ? { "Cache-Control": "private, no-store" } : undefined }
+		);
 	} catch {
-		return NextResponse.json({ posts: [], total: 0, hasMore: false });
+		return mine
+			? NextResponse.json({ error: "Deine Einreichungen konnten gerade nicht geladen werden." }, { status: 503 })
+			: NextResponse.json({ posts: [], total: 0, hasMore: false });
 	}
 }
 
@@ -117,5 +127,5 @@ export async function POST(request: NextRequest) {
 		if (mediaId) await new GridFSBucket(db, { bucketName: "community_media" }).delete(mediaId).catch(() => undefined);
 		throw error;
 	}
-	return NextResponse.json({ post: { ...post, mediaId: mediaId?.toString() } }, { status: 201 });
+	return NextResponse.json({ post: { ...post, mediaId: mediaId?.toString(), mediaUrl: mediaId ? `/api/community/media/${mediaId}` : null } }, { status: 201 });
 }

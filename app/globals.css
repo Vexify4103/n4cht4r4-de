@@ -6576,6 +6576,109 @@ body.obs-page main {
 	gap: 34px;
 }
 
+.community-own-submissions {
+	grid-column: 1 / -1;
+	padding: 22px 0 28px;
+	border-top: 1px solid var(--line-strong);
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.community-own-submissions > header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+	align-items: end;
+	gap: 30px;
+}
+
+.community-own-submissions h2 {
+	margin: 5px 0 0;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: clamp(22px, 3vw, 31px);
+}
+
+.community-own-submissions > header p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.6;
+}
+
+.community-own-grid {
+	margin-top: 18px;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+}
+
+.community-own-entry {
+	min-width: 0;
+	min-height: 112px;
+	display: grid;
+	grid-template-columns: 116px minmax(0, 1fr);
+	align-items: stretch;
+	border: 1px solid var(--line-strong);
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--surface) 92%, transparent);
+	overflow: hidden;
+}
+
+.community-own-art,
+.community-own-message {
+	position: relative;
+	min-height: 112px;
+	border-right: 1px solid var(--line-strong);
+	background: color-mix(in srgb, var(--blossom-soft) 45%, var(--surface-soft));
+}
+
+.community-own-art img {
+	object-fit: cover;
+}
+
+.community-own-message {
+	display: grid;
+	place-items: center;
+	color: var(--blossom);
+}
+
+.community-own-entry > div:last-child {
+	min-width: 0;
+	padding: 13px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 5px;
+}
+
+.community-own-entry strong {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 14px;
+}
+
+.community-own-entry small {
+	color: var(--faint);
+	font-size: 9px;
+}
+
+.community-own-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--gold);
+	font-size: 8px;
+	font-weight: 900;
+	line-height: 1.35;
+	text-transform: uppercase;
+}
+
+.community-own-entry.rejected .community-own-status {
+	color: var(--danger);
+}
+
 .community-compose {
 	position: sticky;
 	top: 104px;
@@ -7209,6 +7312,10 @@ body.obs-page main {
 		grid-template-columns: 1fr;
 	}
 
+	.community-own-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
 	.community-compose {
 		position: static;
 	}
@@ -7230,6 +7337,16 @@ body.obs-page main {
 
 	.community-project-art {
 		min-height: 260px;
+	}
+
+	.community-own-submissions > header,
+	.community-own-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.community-own-submissions > header {
+		align-items: start;
+		gap: 8px;
 	}
 
 	.project-rule-notes,

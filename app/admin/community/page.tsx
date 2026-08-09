@@ -264,7 +264,7 @@ export default function AdminCommunityPage() {
 								<article className="community-moderation-entry" key={post.id}>
 									{post.mediaUrl && (
 										<div className="moderation-art">
-											<Image src={post.mediaUrl} alt={post.title || "Fanart zur Moderation"} fill sizes="280px" />
+											<Image src={post.mediaUrl} alt={post.title || "Fanart zur Moderation"} fill sizes="280px" unoptimized />
 										</div>
 									)}
 									<div className="moderation-copy">

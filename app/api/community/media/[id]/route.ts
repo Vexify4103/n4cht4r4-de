@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import client from "@/lib/db";
 import { GridFSBucket, ObjectId } from "mongodb";
@@ -13,7 +14,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 	const mediaId = new ObjectId(id);
 	const post = await db.collection("community_posts").findOne({ mediaId });
 	if (!post) return NextResponse.json({ error: "Bild nicht gefunden." }, { status: 404 });
-	if (post.status !== "published" && !(await hasTournamentPermission("viewer"))) return NextResponse.json({ error: "Bild nicht gefunden." }, { status: 404 });
+	if (post.status !== "published") {
+		const session = await auth();
+		const isAuthor = session?.user?.id && session.user.id === String(post.userId);
+		if (!isAuthor && !(await hasTournamentPermission("viewer"))) return NextResponse.json({ error: "Bild nicht gefunden." }, { status: 404 });
+	}
 
 	const bucket = new GridFSBucket(db, { bucketName: "community_media" });
 	const file = await db.collection("community_media.files").findOne({ _id: mediaId });

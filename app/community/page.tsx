@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import useSWR from "swr";
-import { Brush, CheckCircle2, Flower2, Heart, ImagePlus, Loader2, MessageCircleHeart, Send, ShieldCheck, Sparkles } from "lucide-react";
+import { Brush, CheckCircle2, Clock3, EyeOff, Flower2, Heart, ImagePlus, Loader2, MessageCircleHeart, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { DiscordMark } from "@/components/DiscordMark";
 
@@ -19,7 +19,9 @@ type CommunityPost = {
 	authorName: string;
 	authorImage?: string | null;
 	mediaUrl?: string | null;
-	publishedAt: string;
+	status: "pending" | "published" | "rejected";
+	createdAt: string;
+	publishedAt: string | null;
 };
 
 const filters = [
@@ -42,7 +44,12 @@ export default function CommunityPage() {
 		refreshInterval: 120_000,
 		keepPreviousData: true,
 	});
+	const { data: ownData, mutate: mutateOwn } = useSWR<{ posts: CommunityPost[] }>(session ? "/api/community/posts?mine=1&limit=12" : null, fetcher, {
+		refreshInterval: 60_000,
+		revalidateOnFocus: true,
+	});
 	const hasDiscord = profile?.providers.includes("discord");
+	const unpublishedPosts = ownData?.posts.filter((post) => post.status !== "published") || [];
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -55,8 +62,14 @@ export default function CommunityPage() {
 			const result = await response.json();
 			if (!response.ok) throw new Error(result.error || "Dein Beitrag konnte nicht gesendet werden.");
 			formRef.current?.reset();
-			setNotice({ tone: "success", text: "Dein Beitrag liegt jetzt bei der Moderation und erscheint nach der Freigabe." });
-			await mutate();
+			setNotice({
+				tone: "success",
+				text:
+					composeKind === "fanart"
+						? "Bild hochgeladen, aber noch nicht veröffentlicht. Du kannst es oben unter deinen Einreichungen sehen."
+						: "Beitrag gespeichert, aber noch nicht veröffentlicht. Du kannst ihn oben unter deinen Einreichungen sehen.",
+			});
+			await Promise.all([mutate(), mutateOwn()]);
 		} catch (error) {
 			setNotice({ tone: "error", text: error instanceof Error ? error.message : "Dein Beitrag konnte nicht gesendet werden." });
 		} finally {
@@ -75,6 +88,40 @@ export default function CommunityPage() {
 			/>
 
 			<section className="content-band community-wall-layout">
+				{unpublishedPosts.length > 0 && (
+					<section className="community-own-submissions" aria-labelledby="own-community-submissions">
+						<header>
+							<div>
+								<span className="kicker">Nur für dich sichtbar</span>
+								<h2 id="own-community-submissions">Deine noch nicht veröffentlichten Einreichungen</h2>
+							</div>
+							<p>Der Upload ist angekommen. Nachtara oder ihr Team schaut kurz darüber, bevor er an der öffentlichen Pinnwand erscheint.</p>
+						</header>
+						<div className="community-own-grid">
+							{unpublishedPosts.map((post) => (
+								<article className={`community-own-entry ${post.status}`} key={post.id}>
+									{post.mediaUrl ? (
+										<div className="community-own-art">
+											<Image src={post.mediaUrl} alt={post.title || "Dein hochgeladenes Fanart"} fill sizes="160px" unoptimized />
+										</div>
+									) : (
+										<span className="community-own-message">
+											<MessageCircleHeart size={24} />
+										</span>
+									)}
+									<div>
+										<span className="community-own-status">
+											{post.status === "pending" ? <Clock3 size={13} /> : <EyeOff size={13} />}
+											{post.status === "pending" ? "Hochgeladen, noch nicht veröffentlicht" : "Nicht veröffentlicht"}
+										</span>
+										<strong>{post.title || "Lieber Gruß"}</strong>
+										<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(post.createdAt))}</small>
+									</div>
+								</article>
+							))}
+						</div>
+					</section>
+				)}
 				<aside className="community-compose">
 					<header>
 						<span className="kicker">Dein Platz an der Wand</span>
@@ -202,7 +249,7 @@ export default function CommunityPage() {
 											)}
 											<div>
 												<strong>{post.authorName}</strong>
-												<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(post.publishedAt))}</small>
+												<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(post.publishedAt || post.createdAt))}</small>
 											</div>
 										</header>
 										{post.title && <h3>{post.title}</h3>}
