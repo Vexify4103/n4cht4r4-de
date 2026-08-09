@@ -7158,6 +7158,92 @@ body.obs-page main {
 	justify-content: flex-end;
 }
 
+.moderation-copy > footer:has(.moderation-delete-button) {
+	justify-content: space-between;
+}
+
+.moderation-decision-buttons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.moderation-delete-button {
+	min-height: 34px;
+	padding: 0 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 0;
+	color: var(--danger);
+	background: transparent;
+	font-size: 10px;
+	font-weight: 900;
+	cursor: pointer;
+}
+
+.moderation-delete-button:hover {
+	text-decoration: underline;
+}
+
+.community-delete-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 300;
+	padding: 20px;
+	display: grid;
+	place-items: center;
+	background: color-mix(in srgb, #120916 76%, transparent);
+	backdrop-filter: blur(8px);
+}
+
+.community-delete-dialog {
+	width: min(100%, 520px);
+	padding: 28px;
+	display: grid;
+	grid-template-columns: 45px minmax(0, 1fr);
+	gap: 17px;
+	border: 1px solid color-mix(in srgb, var(--danger) 60%, var(--line));
+	border-radius: 4px;
+	color: var(--ink-strong);
+	background: var(--surface);
+	box-shadow:
+		0 24px 80px color-mix(in srgb, #000 48%, transparent),
+		inset 0 0 0 5px color-mix(in srgb, var(--danger) 6%, transparent);
+}
+
+.community-delete-icon {
+	width: 45px;
+	height: 45px;
+	display: grid;
+	place-items: center;
+	border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+	border-radius: 50%;
+	color: var(--danger);
+	background: color-mix(in srgb, var(--danger) 10%, var(--surface-soft));
+}
+
+.community-delete-dialog h2 {
+	margin: 5px 0 8px;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 22px;
+}
+
+.community-delete-dialog p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.community-delete-dialog footer {
+	grid-column: 1 / -1;
+	margin-top: 6px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
 .project-default-note {
 	margin: 16px 0 0;
 	padding: 11px 13px;
@@ -7347,6 +7433,27 @@ body.obs-page main {
 	.community-own-submissions > header {
 		align-items: start;
 		gap: 8px;
+	}
+
+	.moderation-copy > footer,
+	.moderation-decision-buttons {
+		width: 100%;
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.moderation-delete-button {
+		justify-content: center;
+	}
+
+	.community-delete-dialog {
+		padding: 22px 18px;
+		grid-template-columns: 1fr;
+	}
+
+	.community-delete-dialog footer {
+		grid-column: 1;
+		flex-direction: column-reverse;
 	}
 
 	.project-rule-notes,

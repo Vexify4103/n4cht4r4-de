@@ -1,10 +1,26 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowLeft, Brush, Check, ClipboardCheck, Flower2, Gamepad2, ImageIcon, MessageCircleHeart, Plus, Save, ShieldAlert, Sparkles, X } from "lucide-react";
+import {
+	AlertTriangle,
+	ArrowLeft,
+	Brush,
+	Check,
+	ClipboardCheck,
+	Flower2,
+	Gamepad2,
+	ImageIcon,
+	MessageCircleHeart,
+	Plus,
+	Save,
+	ShieldAlert,
+	Sparkles,
+	Trash2,
+	X,
+} from "lucide-react";
 import type { CommunityPostKind, CommunityPostStatus, CommunityProject } from "@/lib/community";
 
 const fetcher = (url: string) =>
@@ -143,6 +159,8 @@ export default function AdminCommunityPage() {
 	const [notes, setNotes] = useState<Record<string, string>>({});
 	const [notice, setNotice] = useState("");
 	const [newProjectOpen, setNewProjectOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<ModerationPost | null>(null);
+	const [deleting, setDeleting] = useState(false);
 	const { data: access, error: accessError } = useSWR<{ role: string }>("/api/admin/access", fetcher);
 	const { data: moderation, mutate: refreshPosts } = useSWR<{ posts: ModerationPost[]; counts: Record<string, number> }>(
 		access ? `/api/admin/community/posts?status=${filter}` : null,
@@ -152,6 +170,15 @@ export default function AdminCommunityPage() {
 		access ? "/api/admin/community/projects" : null,
 		fetcher
 	);
+
+	useEffect(() => {
+		if (!deleteTarget) return;
+		function closeOnEscape(event: KeyboardEvent) {
+			if (event.key === "Escape" && !deleting) setDeleteTarget(null);
+		}
+		window.addEventListener("keydown", closeOnEscape);
+		return () => window.removeEventListener("keydown", closeOnEscape);
+	}, [deleteTarget, deleting]);
 
 	async function moderate(id: string, status: CommunityPostStatus) {
 		setNotice("");
@@ -163,6 +190,23 @@ export default function AdminCommunityPage() {
 		const result = await response.json();
 		if (!response.ok) return setNotice(result.error || "Moderation konnte nicht gespeichert werden.");
 		setNotice(status === "published" ? "Beitrag hängt jetzt öffentlich an der Pinnwand." : "Beitrag wurde aus der öffentlichen Pinnwand genommen.");
+		await refreshPosts();
+	}
+
+	async function deletePost() {
+		if (!deleteTarget || deleting) return;
+		setDeleting(true);
+		setNotice("");
+		const response = await fetch("/api/admin/community/posts", {
+			method: "DELETE",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ id: deleteTarget.id }),
+		});
+		const result = await response.json();
+		setDeleting(false);
+		if (!response.ok) return setNotice(result.error || "Beitrag konnte nicht gelöscht werden.");
+		setDeleteTarget(null);
+		setNotice("Beitrag und zugehörige Bilddatei wurden endgültig gelöscht.");
 		await refreshPosts();
 	}
 
@@ -212,6 +256,34 @@ export default function AdminCommunityPage() {
 
 	return (
 		<main className="admin-community-sanctuary">
+			{deleteTarget && (
+				<div className="community-delete-backdrop" onMouseDown={() => !deleting && setDeleteTarget(null)}>
+					<section
+						className="community-delete-dialog"
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="community-delete-title"
+						onMouseDown={(event) => event.stopPropagation()}
+					>
+						<span className="community-delete-icon">
+							<AlertTriangle size={25} />
+						</span>
+						<div>
+							<span className="kicker">Endgültig löschen</span>
+							<h2 id="community-delete-title">„{deleteTarget.title || deleteTarget.authorName}“ entfernen?</h2>
+							<p>Der Beitrag wird aus der Moderation entfernt. Ein hochgeladenes Bild wird ebenfalls vollständig gelöscht. Das lässt sich nicht rückgängig machen.</p>
+						</div>
+						<footer>
+							<button className="button button-secondary" type="button" disabled={deleting} onClick={() => setDeleteTarget(null)}>
+								Abbrechen
+							</button>
+							<button className="button button-danger-soft" type="button" disabled={deleting} onClick={deletePost}>
+								<Trash2 size={15} /> {deleting ? "Wird gelöscht ..." : "Endgültig löschen"}
+							</button>
+						</footer>
+					</section>
+				</div>
+			)}
 			<header className="admin-community-hero">
 				<Link href="/admin/tournaments">
 					<ArrowLeft size={15} /> Zur Turnierverwaltung
@@ -286,12 +358,17 @@ export default function AdminCommunityPage() {
 											/>
 										</label>
 										<footer>
-											<button className="button button-secondary button-small" onClick={() => moderate(post.id, "rejected")}>
-												<X size={14} /> Ablehnen
+											<button className="moderation-delete-button" type="button" onClick={() => setDeleteTarget(post)}>
+												<Trash2 size={14} /> Löschen
 											</button>
-											<button className="button button-primary button-small" onClick={() => moderate(post.id, "published")}>
-												<Check size={14} /> Freigeben
-											</button>
+											<div className="moderation-decision-buttons">
+												<button className="button button-secondary button-small" onClick={() => moderate(post.id, "rejected")}>
+													<X size={14} /> Ablehnen
+												</button>
+												<button className="button button-primary button-small" onClick={() => moderate(post.id, "published")}>
+													<Check size={14} /> Freigeben
+												</button>
+											</div>
 										</footer>
 									</div>
 								</article>
