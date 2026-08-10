@@ -8217,6 +8217,174 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	font-size: 11px;
 }
 
+.not-found-page {
+	width: min(100% - 40px, 1180px);
+	min-height: calc(100vh - 76px);
+	margin-inline: auto;
+	padding: 80px 0 96px;
+	display: grid;
+	grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
+	align-items: center;
+	gap: clamp(44px, 8vw, 112px);
+}
+
+.not-found-illustration {
+	position: relative;
+	min-height: 390px;
+	display: grid;
+	place-items: center;
+	isolation: isolate;
+}
+
+.not-found-illustration::before {
+	content: "";
+	position: absolute;
+	inset: 30px 5% 16px;
+	z-index: -2;
+	border: 1px solid var(--line-strong);
+	border-radius: 48% 52% 45% 55% / 55% 42% 58% 45%;
+	background: linear-gradient(145deg, color-mix(in srgb, var(--blossom-soft) 68%, transparent), transparent 58%), color-mix(in srgb, var(--surface) 78%, transparent);
+	box-shadow:
+		inset 0 0 0 8px color-mix(in srgb, var(--surface-soft) 42%, transparent),
+		var(--shadow);
+	transform: rotate(-2deg);
+}
+
+.not-found-illustration::after {
+	content: "";
+	position: absolute;
+	left: 12%;
+	right: 5%;
+	top: 52%;
+	height: 8px;
+	z-index: -1;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--plum) 72%, var(--ink-strong));
+	transform: rotate(-14deg);
+	box-shadow: 0 2px 0 color-mix(in srgb, var(--blossom) 24%, transparent);
+}
+
+.not-found-code {
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: clamp(118px, 14vw, 188px);
+	font-weight: 700;
+	line-height: 1;
+	color: color-mix(in srgb, var(--ink-strong) 88%, var(--blossom));
+	text-shadow: 3px 4px 0 color-mix(in srgb, var(--blossom) 34%, transparent);
+}
+
+.not-found-branch {
+	position: absolute;
+	left: 21%;
+	right: 4%;
+	top: 31%;
+	display: flex;
+	justify-content: space-around;
+	align-items: flex-start;
+	transform: rotate(-12deg);
+}
+
+.not-found-branch span {
+	display: block;
+	font-size: 35px;
+	filter: drop-shadow(0 4px 8px color-mix(in srgb, var(--blossom) 28%, transparent));
+}
+
+.not-found-branch span:nth-child(2) {
+	margin-top: -36px;
+	font-size: 45px;
+}
+
+.not-found-branch span:nth-child(3) {
+	margin-top: 18px;
+	font-size: 28px;
+}
+
+.not-found-petal {
+	position: absolute;
+	color: var(--blossom);
+	opacity: 0.7;
+}
+
+.not-found-petal.petal-one {
+	left: 9%;
+	top: 19%;
+	font-size: 19px;
+	transform: rotate(-16deg);
+}
+
+.not-found-petal.petal-two {
+	right: 3%;
+	bottom: 20%;
+	font-size: 25px;
+	transform: rotate(21deg);
+}
+
+.not-found-petal.petal-three {
+	left: 28%;
+	bottom: 6%;
+	font-size: 15px;
+	transform: rotate(38deg);
+}
+
+.not-found-copy {
+	max-width: 610px;
+}
+
+.not-found-copy h1 {
+	margin: 10px 0 18px;
+	font-size: clamp(40px, 5.1vw, 66px);
+}
+
+.not-found-copy > p {
+	max-width: 570px;
+	margin-bottom: 30px;
+	color: var(--muted);
+	font-size: 17px;
+}
+
+.not-found-actions {
+	display: flex;
+	align-items: center;
+	gap: 22px;
+	flex-wrap: wrap;
+}
+
+.not-found-community-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--ink-strong);
+	font-size: 13px;
+	font-weight: 800;
+	border-bottom: 1px solid var(--line-strong);
+	transition:
+		color 150ms ease,
+		border-color 150ms ease;
+}
+
+.not-found-community-link:hover {
+	color: var(--blossom);
+	border-color: var(--blossom);
+}
+
+.not-found-note {
+	margin-top: 36px;
+	padding-top: 18px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border-top: 1px dotted var(--line-strong);
+	color: var(--faint);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 12px;
+	font-style: italic;
+}
+
+:root[data-theme="hanami-light"] .not-found-illustration::before {
+	background: linear-gradient(145deg, rgba(255, 225, 238, 0.78), rgba(255, 250, 252, 0.42) 62%), var(--surface);
+}
+
 @media (max-width: 980px) {
 	.admin-sanctuary .admin-event-chapter .admin-ledger-entry {
 		grid-template-columns: 36px minmax(190px, 1fr) minmax(160px, 0.8fr) 90px 24px;
@@ -8228,6 +8396,15 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 	.admin-settings-fields.three-columns {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.not-found-page {
+		grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+		gap: 40px;
+	}
+
+	.not-found-illustration {
+		min-height: 330px;
 	}
 }
 
@@ -8289,5 +8466,39 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 	.clips-archive-toolbar .filter-bar {
 		width: 100%;
+	}
+
+	.not-found-page {
+		min-height: auto;
+		padding: 44px 0 72px;
+		grid-template-columns: 1fr;
+		gap: 28px;
+		text-align: center;
+	}
+
+	.not-found-illustration {
+		min-height: 270px;
+		order: 1;
+	}
+
+	.not-found-copy {
+		order: 2;
+	}
+
+	.not-found-copy h1 {
+		font-size: 39px;
+	}
+
+	.not-found-copy > p {
+		margin-inline: auto;
+		font-size: 15px;
+	}
+
+	.not-found-actions {
+		justify-content: center;
+	}
+
+	.not-found-note {
+		justify-content: center;
 	}
 }
