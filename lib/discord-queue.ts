@@ -321,12 +321,42 @@ async function processNotificationJob(db: Db, job: DiscordQueueJob, config: Disc
 async function processRewardRoleJob(db: Db, job: DiscordQueueJob, config: DiscordGuildConfig) {
 	const grantId = typeof job.payload.grantId === "string" ? job.payload.grantId : "";
 	const discordId = typeof job.payload.discordId === "string" ? job.payload.discordId : "";
-	const roleId = typeof job.payload.roleId === "string" ? job.payload.roleId : "";
+	let roleId = typeof job.payload.roleId === "string" ? job.payload.roleId : "";
 	const grant = grantId ? await db.collection<ChallengeRewardGrant>("challenge_reward_grants").findOne({ id: grantId }) : null;
 	if (!grant || !discordId || !roleId) return "skipped" as const;
 	if (grant.status === "granted") return "skipped" as const;
+	if (roleId.startsWith("managed:")) {
+		const registryKey = roleId.slice("managed:".length);
+		const roleName = registryKey === "turnierkrone" ? "Turnierkrone" : grant.label;
+		const registered = await db.collection("discord_role_registry").findOne({ key: registryKey });
+		roleId = typeof registered?.roleId === "string" ? registered.roleId : "";
+		if (!roleId) {
+			const roles = await discordRequest<{ id: string; name: string }[]>(config, `/guilds/${config.guildId}/roles`, "GET");
+			let role: { id: string; name: string } | null | undefined = roles?.find((entry) => entry.name === roleName);
+			if (!role) {
+				role = await discordRequest<{ id: string; name: string }>(config, `/guilds/${config.guildId}/roles`, "POST", {
+					name: roleName,
+					permissions: "0",
+					color: 15418846,
+					hoist: false,
+					mentionable: false,
+				});
+			}
+			if (!role?.id) throw new DiscordRequestError("Discord hat keine Gewinnerrolle zurückgegeben.");
+			roleId = role.id;
+			await db
+				.collection("discord_role_registry")
+				.updateOne(
+					{ key: registryKey },
+					{ $set: { key: registryKey, roleId, roleName, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
+					{ upsert: true }
+				);
+		}
+	}
 	await discordRequest(config, `/guilds/${config.guildId}/members/${discordId}/roles/${roleId}`, "PUT");
-	await db.collection<ChallengeRewardGrant>("challenge_reward_grants").updateOne({ id: grant.id }, { $set: { status: "granted", grantedAt: new Date(), updatedAt: new Date() } });
+	await db
+		.collection<ChallengeRewardGrant>("challenge_reward_grants")
+		.updateOne({ id: grant.id }, { $set: { status: "granted", discordRoleId: roleId, grantedAt: new Date(), updatedAt: new Date() } });
 	return "completed" as const;
 }
 

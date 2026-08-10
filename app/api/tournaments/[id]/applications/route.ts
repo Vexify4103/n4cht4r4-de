@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { resolveTournament } from "@/lib/tournament-slugs";
 import { getRiotRank } from "@/lib/riot";
 import { registrationIsOpen } from "@/lib/tournament-registration";
+import { grantTournamentApplicationReward } from "@/lib/tournament-rewards";
 
 export const runtime = "nodejs";
 
@@ -61,5 +62,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		createdAt: new Date(),
 	};
 	await db.collection("tournament_applications").insertOne(application);
+	await grantTournamentApplicationReward(db, session.user.id).catch((error) => {
+		console.error("Tournament application badge could not be granted:", error);
+	});
 	return NextResponse.json({ application }, { status: 201 });
 }

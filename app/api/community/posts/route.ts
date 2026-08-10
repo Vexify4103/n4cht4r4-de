@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { detectCommunityImageMime, ensureCommunityIndexes } from "@/lib/community";
 import client from "@/lib/db";
+import { getPublicBadgeShowcases } from "@/lib/public-badges";
 import { GridFSBucket, ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,16 +28,32 @@ export async function GET(request: NextRequest) {
 			db
 				.collection("community_posts")
 				.find(query)
-				.project({ _id: 0, userId: 0, discordId: 0, moderationNote: 0, moderatedBy: 0 })
+				.project({ _id: 0, discordId: 0, moderationNote: 0, moderatedBy: 0 })
 				.sort(mine ? { createdAt: -1 } : { publishedAt: -1, createdAt: -1 })
 				.skip(page * limit)
 				.limit(limit)
 				.toArray(),
 			db.collection("community_posts").countDocuments(query),
 		]);
+		const badgeShowcases = await getPublicBadgeShowcases(
+			db,
+			posts.map((post) => (typeof post.userId === "string" ? post.userId : ""))
+		);
 		return NextResponse.json(
 			{
-				posts: posts.map((post) => ({ ...post, mediaUrl: post.mediaId ? `/api/community/media/${post.mediaId}` : null })),
+				posts: posts.map((post) => {
+					const userId = typeof post.userId === "string" ? post.userId : "";
+					const { userId: _userId, mediaId, mediaMime: _mediaMime, ...safePost } = post;
+					void _userId;
+					void _mediaMime;
+					return {
+						...safePost,
+						authorId: userId,
+						profileHref: userId ? `/community/members/${userId}` : null,
+						badges: badgeShowcases.get(userId) || [],
+						mediaUrl: mediaId ? `/api/community/media/${mediaId}` : null,
+					};
+				}),
 				total,
 				hasMore: (page + 1) * limit < total,
 			},
@@ -127,5 +144,8 @@ export async function POST(request: NextRequest) {
 		if (mediaId) await new GridFSBucket(db, { bucketName: "community_media" }).delete(mediaId).catch(() => undefined);
 		throw error;
 	}
-	return NextResponse.json({ post: { ...post, mediaId: mediaId?.toString(), mediaUrl: mediaId ? `/api/community/media/${mediaId}` : null } }, { status: 201 });
+	return NextResponse.json(
+		{ post: { ...post, mediaId: mediaId?.toString(), profileHref: `/community/members/${userId}`, mediaUrl: mediaId ? `/api/community/media/${mediaId}` : null } },
+		{ status: 201 }
+	);
 }

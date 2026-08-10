@@ -10,9 +10,15 @@ export type PublicBadge = {
 
 type BadgeGrant = {
 	userId: string;
+	challengeId: string;
 	rewardKey: string;
 	badge?: PublicBadge;
 };
+
+const IDENTITY_BADGE_ORDER = new Map([
+	["identity-site-owner", 0],
+	["identity-site-admin", 1],
+]);
 
 type ShowcaseUser = {
 	_id: ObjectId | string;
@@ -39,15 +45,18 @@ export async function getPublicBadgeShowcases(db: Db, userIds: string[]) {
 	const grants = await db
 		.collection<BadgeGrant>("challenge_reward_grants")
 		.find({ userId: { $in: uniqueUserIds }, type: "badge", status: "granted" })
-		.project({ _id: 0, userId: 1, rewardKey: 1, badge: 1 })
+		.project({ _id: 0, userId: 1, challengeId: 1, rewardKey: 1, badge: 1 })
 		.toArray();
 
 	for (const userId of uniqueUserIds) {
-		const grantsByKey = new Map(grants.filter((grant) => grant.userId === userId && grant.badge).map((grant) => [grant.rewardKey, grant.badge as PublicBadge]));
-		result.set(
-			userId,
-			(showcaseByUser.get(userId) || []).map((badgeId) => grantsByKey.get(badgeId)).filter((badge): badge is PublicBadge => Boolean(badge))
-		);
+		const userGrants = grants.filter((grant) => grant.userId === userId && grant.badge);
+		const grantsByKey = new Map(userGrants.map((grant) => [grant.rewardKey, grant.badge as PublicBadge]));
+		const identityBadges = userGrants
+			.filter((grant) => IDENTITY_BADGE_ORDER.has(grant.challengeId))
+			.sort((left, right) => (IDENTITY_BADGE_ORDER.get(left.challengeId) || 0) - (IDENTITY_BADGE_ORDER.get(right.challengeId) || 0))
+			.map((grant) => grant.badge as PublicBadge);
+		const selectedBadges = (showcaseByUser.get(userId) || []).map((badgeId) => grantsByKey.get(badgeId)).filter((badge): badge is PublicBadge => Boolean(badge));
+		result.set(userId, [...new Map([...identityBadges, ...selectedBadges].map((badge) => [badge.id, badge])).values()]);
 	}
 
 	return result;

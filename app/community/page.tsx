@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { Brush, CheckCircle2, Clock3, EyeOff, Flower2, Heart, ImagePlus, Loader2, MessageCircleHeart, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { DiscordMark } from "@/components/DiscordMark";
+import type { PublicBadge } from "@/lib/public-badges";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
@@ -18,6 +19,9 @@ type CommunityPost = {
 	body: string;
 	authorName: string;
 	authorImage?: string | null;
+	authorId?: string;
+	profileHref?: string | null;
+	badges?: PublicBadge[];
 	mediaUrl?: string | null;
 	status: "pending" | "published" | "rejected";
 	createdAt: string;
@@ -240,17 +244,28 @@ export default function CommunityPage() {
 									)}
 									<div className="community-post-paper">
 										<header>
-											{post.authorImage ? (
-												<Image src={post.authorImage} alt="" width={34} height={34} />
-											) : (
-												<span>
-													<Flower2 size={16} />
+											<Link className="community-post-identity" href={post.profileHref || "/community"}>
+												{post.authorImage ? (
+													<Image src={post.authorImage} alt="" width={34} height={34} />
+												) : (
+													<span>
+														<Flower2 size={16} />
+													</span>
+												)}
+												<div>
+													<strong>{post.authorName}</strong>
+													<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(post.publishedAt || post.createdAt))}</small>
+												</div>
+											</Link>
+											{Boolean(post.badges?.length) && (
+												<span className="community-post-badges" aria-label="Präsentierte Community-Badges">
+													{post.badges?.map((badge) => (
+														<span className={`public-badge ${badge.rarity}`} title={`${badge.name}: ${badge.description}`} key={badge.id}>
+															{badge.icon}
+														</span>
+													))}
 												</span>
 											)}
-											<div>
-												<strong>{post.authorName}</strong>
-												<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(post.publishedAt || post.createdAt))}</small>
-											</div>
 										</header>
 										{post.title && <h3>{post.title}</h3>}
 										<p>{post.body}</p>

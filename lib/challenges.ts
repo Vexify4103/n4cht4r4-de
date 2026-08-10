@@ -38,6 +38,8 @@ export interface ChallengeDef {
 const LAUNCH_START = new Date("2026-08-08T00:00:00.000Z");
 const LAUNCH_END = new Date("2026-12-31T22:59:59.999Z");
 const SEASON_ID = "sakura-launch-2026";
+const PERMANENT_START = new Date("2026-01-01T00:00:00.000Z");
+const PERMANENT_END = new Date("2099-12-31T23:59:59.999Z");
 
 function launchChallenge(challenge: Omit<ChallengeDef, "seasonId" | "startsAt" | "endsAt" | "enabled" | "systemVersion">): ChallengeDef {
 	return {
@@ -52,6 +54,54 @@ function launchChallenge(challenge: Omit<ChallengeDef, "seasonId" | "startsAt" |
 
 // IDs remain stable across balance passes so existing seasonal progress stays attached.
 export const DEFAULT_CHALLENGES: ChallengeDef[] = [
+	{
+		id: "permanent-tournament-application",
+		seasonId: "community-permanent",
+		title: "Erster Schritt ins Turnier",
+		description: "Bewirb dich für ein beliebiges Turnier in Nachtaras Community Garden.",
+		type: "meta",
+		target: 1,
+		icon: "🎟️",
+		requirement: "discord",
+		sortOrder: 1,
+		badge: {
+			id: "turnierbluete",
+			name: "Turnierblüte",
+			description: "Hat sich für mindestens ein Community-Turnier beworben.",
+			icon: "🎟️",
+			rarity: "common",
+		},
+		reward: "Permanentes Profil-Badge „Turnierblüte“",
+		startsAt: PERMANENT_START,
+		endsAt: PERMANENT_END,
+		enabled: true,
+		systemVersion: 4,
+	},
+	{
+		id: "permanent-tournament-winner",
+		seasonId: "community-permanent",
+		title: "Die Krone gehört euch",
+		description: "Gewinne mit deinem Team ein beliebiges Turnier in Nachtaras Community Garden.",
+		type: "meta",
+		target: 1,
+		icon: "👑",
+		requirement: "discord",
+		discordRoleId: process.env.DISCORD_TOURNAMENT_WINNER_ROLE_ID?.trim() || "managed:turnierkrone",
+		discordRoleName: "Turnierkrone",
+		sortOrder: 2,
+		badge: {
+			id: "siegesbluete",
+			name: "Siegesblüte",
+			description: "Hat ein Community-Turnier als Teil des Siegerteams gewonnen.",
+			icon: "👑",
+			rarity: "epic",
+		},
+		reward: "Episches Profil-Badge „Siegesblüte“ und Discord-Rolle „Turnierkrone“",
+		startsAt: PERMANENT_START,
+		endsAt: PERMANENT_END,
+		enabled: true,
+		systemVersion: 4,
+	},
 	launchChallenge({
 		id: "launch-2026-aram-matches-3",
 		title: "ARAM-Blütenregen",

@@ -6920,8 +6920,21 @@ body.obs-page main {
 	gap: 9px;
 }
 
-.community-post-paper > header > img,
-.community-post-paper > header > span {
+.community-post-identity {
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.community-post-identity:hover strong {
+	color: var(--blossom);
+}
+
+.community-post-identity > img,
+.community-post-identity > span {
 	width: 34px;
 	height: 34px;
 	display: grid;
@@ -6931,6 +6944,20 @@ body.obs-page main {
 	object-fit: cover;
 	color: var(--blossom);
 	background: var(--surface-soft);
+}
+
+.community-post-badges {
+	margin-left: auto;
+	padding-right: 18px;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.community-post-badges .public-badge {
+	width: 23px;
+	height: 23px;
+	font-size: 11px;
 }
 
 .community-post-paper header div {
@@ -6970,6 +6997,284 @@ body.obs-page main {
 	right: 14px;
 	top: 18px;
 	color: var(--blossom);
+}
+
+.team-player-profile-link {
+	max-width: 100%;
+	overflow: hidden;
+	color: var(--ink-strong);
+	font-weight: 900;
+	text-overflow: ellipsis;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.team-player-profile-link:hover {
+	color: var(--blossom);
+	text-decoration: underline;
+}
+
+/* Public community pass */
+.member-profile-page {
+	width: min(100% - 40px, var(--content-width));
+	margin: 0 auto;
+	padding: 42px 0 90px;
+}
+
+.member-profile-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 900;
+	text-decoration: none;
+}
+
+.member-profile-back:hover {
+	color: var(--blossom);
+}
+
+.member-profile-hero {
+	position: relative;
+	min-height: 245px;
+	margin-top: 20px;
+	padding: 42px 110px 42px 44px;
+	display: flex;
+	align-items: center;
+	gap: 28px;
+	overflow: hidden;
+	border-top: 1px solid var(--line-strong);
+	border-bottom: 1px solid var(--line-strong);
+	background:
+		linear-gradient(90deg, color-mix(in srgb, var(--surface) 97%, transparent), color-mix(in srgb, var(--blossom-soft) 35%, transparent)),
+		url("/images/hanami-light-v1.png") right 30% / 52% auto no-repeat;
+}
+
+html[data-theme="sakura-night"] .member-profile-hero {
+	background:
+		linear-gradient(90deg, color-mix(in srgb, var(--page) 96%, transparent), color-mix(in srgb, var(--page) 68%, transparent)),
+		url("/images/sakura-night-v2.png") right 32% / 56% auto no-repeat;
+}
+
+.member-profile-avatar {
+	position: relative;
+	width: 118px;
+	height: 118px;
+	flex: 0 0 118px;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--line-strong);
+	border-radius: 50%;
+	color: var(--blossom);
+	background: var(--surface);
+	box-shadow:
+		0 12px 34px color-mix(in srgb, var(--plum) 16%, transparent),
+		0 0 0 6px color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
+.member-profile-avatar > img {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	object-fit: cover;
+}
+
+.member-profile-avatar .user-menu-badge {
+	right: -3px;
+	bottom: 5px;
+	width: 34px;
+	height: 34px;
+	font-size: 17px;
+}
+
+.member-profile-hero h1 {
+	margin: 7px 0 5px;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: clamp(36px, 6vw, 64px);
+	letter-spacing: 0;
+}
+
+.member-profile-hero p {
+	margin: 0;
+	color: var(--muted);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 14px;
+}
+
+.member-profile-hero-flower {
+	position: absolute;
+	right: 34px;
+	bottom: 24px;
+	color: var(--blossom);
+	opacity: 0.7;
+}
+
+.member-profile-badges {
+	padding: 30px 0;
+	display: grid;
+	grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
+	align-items: center;
+	gap: 30px;
+	border-bottom: 1px dotted var(--line-strong);
+}
+
+.member-profile-badges h2,
+.member-profile-section-head h2 {
+	margin: 5px 0 0;
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 27px;
+}
+
+.member-badge-ribbon {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.member-profile-empty-line {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--faint);
+	font-size: 11px;
+}
+
+.member-profile-columns {
+	padding-top: 38px;
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+	gap: 44px;
+}
+
+.member-profile-section-head {
+	padding-bottom: 14px;
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.member-contribution-list,
+.member-tournament-list {
+	margin-top: 16px;
+	display: grid;
+	gap: 12px;
+}
+
+.member-contribution {
+	display: grid;
+	grid-template-columns: minmax(140px, 0.42fr) minmax(0, 1fr);
+	border-bottom: 1px dotted var(--line-strong);
+	background: color-mix(in srgb, var(--surface) 62%, transparent);
+}
+
+.member-contribution:not(:has(.member-contribution-art)) {
+	grid-template-columns: 1fr;
+}
+
+.member-contribution-art {
+	position: relative;
+	min-height: 190px;
+	overflow: hidden;
+}
+
+.member-contribution-art img {
+	object-fit: cover;
+}
+
+.member-contribution > div:last-child {
+	padding: 22px;
+}
+
+.member-contribution > div:last-child > span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--blossom);
+	font-size: 9px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.member-contribution h3 {
+	margin: 10px 0 0;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 20px;
+}
+
+.member-contribution p {
+	margin: 10px 0 0;
+	color: var(--muted);
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 13px;
+	line-height: 1.65;
+	white-space: pre-wrap;
+}
+
+.member-tournament-list > a {
+	position: relative;
+	min-height: 92px;
+	padding: 15px;
+	display: grid;
+	grid-template-columns: 40px minmax(0, 1fr);
+	align-items: center;
+	gap: 11px;
+	border-left: 2px solid var(--line-strong);
+	color: inherit;
+	background: color-mix(in srgb, var(--surface) 64%, transparent);
+	text-decoration: none;
+}
+
+.member-tournament-list > a:hover,
+.member-tournament-list > a.winner {
+	border-left-color: var(--blossom);
+	background: color-mix(in srgb, var(--blossom-soft) 22%, var(--surface));
+}
+
+.member-tournament-icon {
+	width: 38px;
+	height: 38px;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	color: var(--blossom);
+}
+
+.member-tournament-list a > div {
+	display: grid;
+	gap: 2px;
+}
+
+.member-tournament-list small {
+	color: var(--blossom);
+	font-size: 8px;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.member-tournament-list strong {
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 15px;
+}
+
+.member-tournament-list a > div > span,
+.member-tournament-list time {
+	color: var(--faint);
+	font-size: 9px;
+}
+
+.member-tournament-list time {
+	position: absolute;
+	right: 12px;
+	top: 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.member-profile-skeleton {
+	min-height: 540px;
 }
 
 .community-wall-more {
@@ -7409,6 +7714,10 @@ body.obs-page main {
 	.community-project-editor-fields {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
+
+	.member-profile-columns {
+		grid-template-columns: 1fr;
+	}
 }
 
 @media (max-width: 720px) {
@@ -7470,6 +7779,45 @@ body.obs-page main {
 
 	.community-wall-filters {
 		width: 100%;
+	}
+
+	.member-profile-page {
+		width: min(100% - 28px, var(--content-width));
+		padding-top: 24px;
+	}
+
+	.member-profile-hero {
+		padding: 34px 20px;
+		align-items: flex-start;
+		flex-direction: column;
+		background-size: auto 100%;
+	}
+
+	.member-profile-avatar {
+		width: 88px;
+		height: 88px;
+		flex-basis: 88px;
+	}
+
+	.member-profile-hero h1 {
+		font-size: 38px;
+	}
+
+	.member-profile-hero-flower {
+		display: none;
+	}
+
+	.member-profile-badges,
+	.member-contribution {
+		grid-template-columns: 1fr;
+	}
+
+	.member-badge-ribbon {
+		justify-content: flex-start;
+	}
+
+	.member-contribution-art {
+		min-height: 220px;
 	}
 
 	.admin-community-sanctuary {

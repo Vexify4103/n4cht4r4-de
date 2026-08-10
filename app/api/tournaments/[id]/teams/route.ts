@@ -36,6 +36,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 				seed: typeof team.publicSeed === "number" ? team.publicSeed : typeof team.seed === "number" ? team.seed : null,
 				members: members.map((member) => ({
 					name: String(member.name || "Spieler"),
+					profileHref: typeof member.userId === "string" ? `/community/members/${member.userId}` : undefined,
 					role: typeof member.role === "string" ? member.role : undefined,
 					opgg: typeof member.opgg === "string" ? member.opgg : undefined,
 					champs: Array.isArray(member.champs) ? member.champs.filter((champ: unknown): champ is string => typeof champ === "string").slice(0, 3) : [],

@@ -3,7 +3,8 @@ import { recordTournamentAudit } from "@/lib/tournament-audit";
 import client from "@/lib/db";
 import { rebuildGroupStandings, TournamentMatch } from "@/lib/tournament-engine";
 import { resolveTournament } from "@/lib/tournament-slugs";
-import { Db } from "mongodb";
+import { grantTournamentWinnerRewards, resolveTournamentChampionTeamId } from "@/lib/tournament-rewards";
+import type { Db } from "mongodb";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -205,6 +206,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 			.countDocuments({ tournamentId: id, stage: "playoff", status: { $nin: ["completed", "skipped", "conditional"] } });
 		if (openPlayoffMatches === 0) {
 			await db.collection("tournaments").updateOne({ id }, { $set: { status: "completed", registrationOpen: false, updatedAt: new Date() } });
+			const championTeamId = await resolveTournamentChampionTeamId(db, id);
+			if (championTeamId) await grantTournamentWinnerRewards(db, id, championTeamId);
 		}
 	}
 	await recordTournamentAudit(db, staff, id, "match.completed", { matchId: match.id, scoreA: body.scoreA, scoreB: body.scoreB, winnerTeamId });

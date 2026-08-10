@@ -9,6 +9,7 @@
 		"start": "cross-env NODE_ENV=production node dist/bootstrap.mjs",
 		"lint": "eslint .",
 		"seed:tournaments": "node scripts/seed-tournaments.mjs",
+		"sync:staff-badges": "tsx scripts/sync-staff-badges.ts",
 		"format": "prettier --write .",
 		"format:check": "prettier --check ."
 	},

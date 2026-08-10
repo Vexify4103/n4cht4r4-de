@@ -9,6 +9,7 @@ import useSWR from "swr";
 
 type BadgeProfile = {
 	badges: { rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } }[];
+	identityBadges: { rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } }[];
 	showcasedBadgeIds: string[];
 };
 
@@ -23,9 +24,12 @@ export function UserMenu() {
 		revalidateOnFocus: false,
 		dedupingInterval: 60_000,
 	});
-	const showcasedBadges = (badgeProfile?.showcasedBadgeIds || [])
+	const selectedBadges = (badgeProfile?.showcasedBadgeIds || [])
 		.map((badgeId) => badgeProfile?.badges.find((grant) => grant.rewardKey === badgeId)?.badge)
 		.filter((badge): badge is NonNullable<typeof badge> => Boolean(badge));
+	const showcasedBadges = [...(badgeProfile?.identityBadges || []).map((grant) => grant.badge), ...selectedBadges].filter(
+		(badge, index, badges) => badges.findIndex((candidate) => candidate.id === badge.id) === index
+	);
 
 	useEffect(() => {
 		function handleClick(event: MouseEvent) {

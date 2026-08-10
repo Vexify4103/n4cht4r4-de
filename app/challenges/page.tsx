@@ -12,6 +12,7 @@ const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
 type Challenge = {
 	id: string;
+	seasonId: string;
 	title: string;
 	description: string;
 	type: "wins" | "kills" | "matches" | "watchtime" | "community" | "meta";
@@ -199,8 +200,11 @@ export default function ChallengesPage() {
 								<h3>{challenge.title}</h3>
 								<p>{challenge.description}</p>
 								<div className="challenge-season-line">
-									<span>Launch-Saison{challenge.badge ? ` · ${rarityLabel(challenge.badge.rarity)}` : ""}</span>
-									<time>bis {new Date(challenge.endsAt).toLocaleDateString("de-DE")}</time>
+									<span>
+										{challenge.seasonId === "community-permanent" ? "Permanenter Meilenstein" : "Launch-Saison"}
+										{challenge.badge ? ` · ${rarityLabel(challenge.badge.rarity)}` : ""}
+									</span>
+									{challenge.seasonId !== "community-permanent" && <time>bis {new Date(challenge.endsAt).toLocaleDateString("de-DE")}</time>}
 								</div>
 								{challenge.reward && (
 									<small className="challenge-reward">

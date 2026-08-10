@@ -68,7 +68,7 @@ type WishGroup = {
 type TournamentNotification = { id: string; title: string; body: string; href: string; readAt: string | null; createdAt: string; discordStatus: string };
 type TournamentProfileData = { applications: TournamentApplication[]; groups: WishGroup[]; notifications: TournamentNotification[] };
 type BadgeGrant = { id: string; rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } };
-type BadgeProfileData = { badges: BadgeGrant[]; showcasedBadgeIds: string[] };
+type BadgeProfileData = { badges: BadgeGrant[]; identityBadges: BadgeGrant[]; showcasedBadgeIds: string[] };
 
 const connectionWarnings = {
 	discord: {
@@ -280,9 +280,12 @@ export default function MePage() {
 	const hasDiscord = profile?.providers.includes("discord");
 	const hasTwitch = profile?.providers.includes("twitch");
 	const challenge = profile?.riotVerificationChallenge;
-	const showcasedBadges = (badgeProfile?.showcasedBadgeIds || [])
+	const selectedBadges = (badgeProfile?.showcasedBadgeIds || [])
 		.map((badgeId) => badgeProfile?.badges.find((grant) => grant.rewardKey === badgeId)?.badge)
 		.filter((badge): badge is BadgeGrant["badge"] => Boolean(badge));
+	const showcasedBadges = [...(badgeProfile?.identityBadges || []).map((grant) => grant.badge), ...selectedBadges].filter(
+		(badge, index, badges) => badges.findIndex((candidate) => candidate.id === badge.id) === index
+	);
 
 	return (
 		<main className="me-page">
@@ -443,7 +446,7 @@ export default function MePage() {
 				<div className="section-heading">
 					<span>Meine Blütenzeichen</span>
 					<h2>Badges aus deinen Challenges</h2>
-					<p>Wähle bis zu drei Badges für deinen Community-Pass. Der erste ausgewählte Badge ist dein Zeichen am Accountbild.</p>
+					<p>Wähle bis zu drei Badges für deinen Community-Pass. Team- und Owner-Badges erscheinen automatisch davor.</p>
 				</div>
 				<div className="badge-showcase-preview">
 					<div className="badge-preview-avatar">
@@ -453,7 +456,7 @@ export default function MePage() {
 					<div>
 						<small>So sieht dich die Community</small>
 						<strong>{session.user?.name || "Community-Mitglied"}</strong>
-						<span>Account-Menü und veröffentlichte Turnierkader</span>
+						<span>Account-Menü, Forum, öffentliches Profil und Turnierkader</span>
 					</div>
 					<div className="badge-preview-list">
 						{showcasedBadges.map((badge) => (

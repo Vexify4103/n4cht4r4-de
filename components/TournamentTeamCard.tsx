@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Check, Copy, ExternalLink, Radio, Users } from "lucide-react";
 import type { PublicBadge } from "@/lib/public-badges";
 
@@ -8,7 +9,7 @@ export type PublicTeam = {
 	id: string;
 	name: string;
 	seed?: number | null;
-	members?: { name: string; role?: string; opgg?: string; champs?: string[]; badges?: PublicBadge[] }[];
+	members?: { name: string; profileHref?: string; role?: string; opgg?: string; champs?: string[]; badges?: PublicBadge[] }[];
 };
 
 function playerOpgg(riotId: string) {
@@ -50,7 +51,13 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 						<div className="team-player" key={`${team.id}-${member.name}`}>
 							<span>{member.role || "Spieler"}</span>
 							<div className="team-player-identity">
-								<strong>{member.name}</strong>
+								{member.profileHref ? (
+									<Link className="team-player-profile-link" href={member.profileHref}>
+										{member.name}
+									</Link>
+								) : (
+									<strong>{member.name}</strong>
+								)}
 								{Boolean(member.badges?.length) && (
 									<span className="player-badge-showcase" aria-label="Präsentierte Community-Badges">
 										{member.badges?.map((badge) => (
