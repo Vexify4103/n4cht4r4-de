@@ -2,7 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenText, Copyright, Film, Flower2, Gamepad2, Home, Info, MessageCircleHeart, Menu, Sparkles, Target, Trophy, Twitch, UsersRound, X } from "lucide-react";
+import {
+	BookOpenText,
+	Copyright,
+	Film,
+	Flower2,
+	Gamepad2,
+	HeartHandshake,
+	Home,
+	Info,
+	MessageCircleHeart,
+	Menu,
+	Sparkles,
+	Target,
+	Trophy,
+	Twitch,
+	UsersRound,
+	X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { SakuraAtmosphere } from "@/components/SakuraAtmosphere";
 import { UserMenu } from "@/components/UserMenu";
@@ -116,6 +133,9 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 						</Link>
 						<Link href="/community">
 							<MessageCircleHeart size={14} /> Pinnwand & Fanart
+						</Link>
+						<Link href="/engagement">
+							<HeartHandshake size={14} /> Engagement & Charity
 						</Link>
 					</div>
 				</div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BookHeart, Flower2, Gamepad2, HeartHandshake, Sparkles, Target, Trophy } from "lucide-react";
 import { HomeLivePanel } from "@/components/HomeLivePanel";
 import { DiscordMark } from "@/components/DiscordMark";
+import { currentEngagement } from "@/lib/engagement";
 
 const gardenPaths = [
 	{
@@ -111,6 +112,21 @@ export default function Home() {
 						<Target size={18} /> Fortschritt sammeln
 					</span>
 				</div>
+			</section>
+
+			<section className="section-shell home-engagement-note">
+				<div className="home-engagement-flower" aria-hidden="true">
+					<HeartHandshake size={30} />
+					<span>🌸</span>
+				</div>
+				<div>
+					<span className="kicker">Was uns am Herzen liegt</span>
+					<h2>{currentEngagement.title} · 2026 zum vierten Mal</h2>
+					<p>Charity-Aktionen und Projekte, die Nachtara langfristig oder gemeinsam mit ihrer Community unterstützt.</p>
+				</div>
+				<Link href="/engagement">
+					Engagement entdecken <ArrowRight size={15} />
+				</Link>
 			</section>
 		</>
 	);

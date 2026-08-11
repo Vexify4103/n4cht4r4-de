@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import useSWR from "swr";
-import { CalendarHeart, Clock3, Coffee, ExternalLink, Gift, Radio, Star } from "lucide-react";
+import { ArrowRight, CalendarHeart, Clock3, Coffee, ExternalLink, Gift, HeartHandshake, Radio, Star } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/site";
 
@@ -56,13 +57,17 @@ export default function InfoPage() {
 					<p>Der Kalender wird automatisch aus Nachtaras Twitch-Zeitplan gelesen.</p>
 				</div>
 				<div className="schedule-grid">
-					{streams.length > 0 ? streams.map((stream) => (
-						<div className="schedule-item" key={stream.id}>
-							<strong className="schedule-day">{dateLabel(stream.start_time)}</strong>
-							<span className="schedule-time"><Clock3 size={15} /> {timeLabel(stream.start_time)} Uhr</span>
-							<span className="schedule-game">{stream.category?.name || stream.title || "Stream"}</span>
-						</div>
-					)) : (
+					{streams.length > 0 ? (
+						streams.map((stream) => (
+							<div className="schedule-item" key={stream.id}>
+								<strong className="schedule-day">{dateLabel(stream.start_time)}</strong>
+								<span className="schedule-time">
+									<Clock3 size={15} /> {timeLabel(stream.start_time)} Uhr
+								</span>
+								<span className="schedule-game">{stream.category?.name || stream.title || "Stream"}</span>
+							</div>
+						))
+					) : (
 						<div className="empty-state compact-empty">
 							<CalendarHeart size={29} />
 							<h3>Noch nichts eingetragen</h3>
@@ -78,30 +83,54 @@ export default function InfoPage() {
 						<Coffee size={27} />
 						<h2>Ko-Fi</h2>
 						<p>Ein direkter Weg, Nachtara und kommende Community-Projekte zu unterstützen.</p>
-						<a className="text-link" href={site.koFiUrl} target="_blank" rel="noreferrer">Ko-Fi öffnen <ExternalLink size={15} /></a>
+						<a className="text-link" href={site.koFiUrl} target="_blank" rel="noreferrer">
+							Ko-Fi öffnen <ExternalLink size={15} />
+						</a>
 					</article>
 					<article className="feature-card">
 						<Gift size={27} />
 						<h2>Wunschliste</h2>
 						<p>Kleine und große Wünsche für Stream, Setup und gemütliche Community-Abende.</p>
 						{site.amazonWishlistUrl ? (
-							<a className="text-link" href={site.amazonWishlistUrl} target="_blank" rel="noreferrer">Wunschliste öffnen <ExternalLink size={15} /></a>
-						) : <span className="muted-note">Wird bald ergänzt.</span>}
+							<a className="text-link" href={site.amazonWishlistUrl} target="_blank" rel="noreferrer">
+								Wunschliste öffnen <ExternalLink size={15} />
+							</a>
+						) : (
+							<span className="muted-note">Wird bald ergänzt.</span>
+						)}
 					</article>
 					<article className="feature-card">
 						<Star size={27} />
 						<h2>Top Supporter</h2>
 						<p>Die fünf größten öffentlich erfassten Unterstützungen.</p>
 						<div className="donation-list">
-							{donations.length > 0 ? donations.map((donation, index) => (
-								<div className="donation-entry" key={`${donation.name}-${index}`}>
-									<strong>{index + 1}. {donation.name}</strong>
-									<span>{donationLabel(donation)}</span>
-								</div>
-							)) : <span className="donation-empty">Noch keine öffentlichen Einträge.</span>}
+							{donations.length > 0 ? (
+								donations.map((donation, index) => (
+									<div className="donation-entry" key={`${donation.name}-${index}`}>
+										<strong>
+											{index + 1}. {donation.name}
+										</strong>
+										<span>{donationLabel(donation)}</span>
+									</div>
+								))
+							) : (
+								<span className="donation-empty">Noch keine öffentlichen Einträge.</span>
+							)}
 						</div>
 					</article>
 				</div>
+			</section>
+
+			<section className="content-band info-engagement-note">
+				<HeartHandshake size={34} strokeWidth={1.5} />
+				<div>
+					<span className="kicker">Mehr als Stream & Spiel</span>
+					<h2>Projekte, die Nachtara am Herzen liegen.</h2>
+					<p>Von wiederkehrenden Charity-Streams bis zu langfristiger persönlicher Unterstützung.</p>
+				</div>
+				<Link href="/engagement">
+					Zum Engagement <ArrowRight size={15} />
+				</Link>
 			</section>
 		</>
 	);
