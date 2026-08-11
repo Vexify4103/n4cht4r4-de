@@ -15,9 +15,11 @@ export const engagementEntries: EngagementEntry[] = [
 		category: "ongoing",
 		period: "Monatlich seit 2023",
 		title: "Zugang zu sauberem Trinkwasser",
-		organisation: "Langfristige persönliche Unterstützung",
+		organisation: "Save the Children",
 		description:
-			"Seit drei Jahren unterstützt Nachtara monatlich eine Organisation, die Trinkwasserprojekte in afrikanischen Regionen ermöglicht. Der Organisationsname und ein direkter Link werden ergänzt, sobald beides noch einmal geprüft ist.",
+			"Seit drei Jahren unterstützt Nachtara Save the Children monatlich. Die WASH-Programme der Organisation verbessern gemeinsam mit lokalen Partnern die Wasserqualität, sanitäre Versorgung und Hygienepraxis für Kinder und Familien.",
+		href: "https://resourcecentre.savethechildren.net/topics/water-sanitation-and-hygiene-wash",
+		linkLabel: "Mehr über die WASH-Arbeit erfahren",
 	},
 	{
 		id: "raid4aid",
