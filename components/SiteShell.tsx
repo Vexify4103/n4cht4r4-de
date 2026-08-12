@@ -24,22 +24,25 @@ import { useEffect, useState } from "react";
 import { SakuraAtmosphere } from "@/components/SakuraAtmosphere";
 import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useLocale } from "@/components/LocaleProvider";
 import { DiscordMark } from "@/components/DiscordMark";
 import { site } from "@/lib/site";
 
 const navItems = [
-	{ href: "/", label: "Start", icon: Home },
-	{ href: "/info", label: "Nachtara", icon: Info },
-	{ href: "/tournaments", label: "Turniere", icon: Trophy },
-	{ href: "/challenges", label: "Challenges", icon: Target },
-	{ href: "/projects", label: "Projekte", icon: Gamepad2 },
-	{ href: "/community", label: "Pinnwand", icon: MessageCircleHeart },
-	{ href: "/clips", label: "Clips", icon: Film },
-	{ href: "/socials", label: "Socials", icon: UsersRound },
+	{ href: "/", en: "Home", de: "Start", icon: Home },
+	{ href: "/info", en: "Nachtara", de: "Nachtara", icon: Info },
+	{ href: "/tournaments", en: "Tournaments", de: "Turniere", icon: Trophy },
+	{ href: "/challenges", en: "Challenges", de: "Challenges", icon: Target },
+	{ href: "/projects", en: "Projects", de: "Projekte", icon: Gamepad2 },
+	{ href: "/community", en: "Community", de: "Pinnwand", icon: MessageCircleHeart },
+	{ href: "/clips", en: "Clips", de: "Clips", icon: Film },
+	{ href: "/socials", en: "Socials", de: "Socials", icon: UsersRound },
 ];
 
 export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>) {
 	const pathname = usePathname();
+	const { text } = useLocale();
 	const [menuOpen, setMenuOpen] = useState(false);
 
 	useEffect(() => setMenuOpen(false), [pathname]);
@@ -50,7 +53,7 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 			<SakuraAtmosphere />
 			<header className="site-header">
 				<div className="header-inner">
-					<Link className="brand-mark" href="/" aria-label="N4cht4r4 Startseite">
+					<Link className="brand-mark" href="/" aria-label={text("N4cht4r4 home page", "N4cht4r4 Startseite")}>
 						<span className="brand-sigil">
 							<Flower2 size={21} />
 						</span>
@@ -60,10 +63,10 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 						</span>
 					</Link>
 
-					<nav className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Hauptnavigation">
+					<nav className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label={text("Main navigation", "Hauptnavigation")}>
 						<div className="mobile-nav-head">
-							<span>Wohin möchtest du?</span>
-							<button type="button" onClick={() => setMenuOpen(false)} aria-label="Navigation schließen">
+							<span>{text("Where would you like to go?", "Wohin möchtest du?")}</span>
+							<button type="button" onClick={() => setMenuOpen(false)} aria-label={text("Close navigation", "Navigation schließen")}>
 								<X size={20} />
 							</button>
 						</div>
@@ -73,16 +76,17 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 							return (
 								<Link href={item.href} key={item.href} className={`nav-link ${active ? "is-active" : ""}`}>
 									<Icon size={16} />
-									<span>{item.label}</span>
+									<span>{text(item.en, item.de)}</span>
 								</Link>
 							);
 						})}
 					</nav>
 
 					<div className="header-actions">
+						<LanguageToggle />
 						<ThemeToggle />
 						<UserMenu />
-						<button className="mobile-menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-label="Navigation öffnen">
+						<button className="mobile-menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-label={text("Open navigation", "Navigation öffnen")}>
 							<Menu size={21} />
 						</button>
 					</div>
@@ -99,22 +103,22 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 						</span>
 						<div>
 							<strong>N4cht4r4</strong>
-							<p>Streams, Events und ein gemütlicher Platz für die Community.</p>
+							<p>{text("Streams, events, and a cozy place for the community.", "Streams, Events und ein gemütlicher Platz für die Community.")}</p>
 						</div>
 					</div>
 					<div className="footer-links">
-						<span>Entdecken</span>
+						<span>{text("Explore", "Entdecken")}</span>
 						<Link href="/tournaments">
-							<Trophy size={14} /> Turniere
+							<Trophy size={14} /> {text("Tournaments", "Turniere")}
 						</Link>
 						<Link href="/challenges">
 							<Target size={14} /> Challenges
 						</Link>
 						<Link href="/bewerbungen">
-							<BookOpenText size={14} /> Bewerbungen
+							<BookOpenText size={14} /> {text("Applications", "Bewerbungen")}
 						</Link>
 						<Link href="/projects">
-							<Gamepad2 size={14} /> Community-Projekte
+							<Gamepad2 size={14} /> {text("Community projects", "Community-Projekte")}
 						</Link>
 					</div>
 					<div className="footer-links">
@@ -129,13 +133,13 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 							<Twitch size={14} /> Twitch
 						</a>
 						<Link href="/socials">
-							<Sparkles size={14} /> Alle Socials
+							<Sparkles size={14} /> {text("All socials", "Alle Socials")}
 						</Link>
 						<Link href="/community">
-							<MessageCircleHeart size={14} /> Pinnwand & Fanart
+							<MessageCircleHeart size={14} /> {text("Community wall & fan art", "Pinnwand & Fanart")}
 						</Link>
 						<Link href="/engagement">
-							<HeartHandshake size={14} /> Engagement & Charity
+							<HeartHandshake size={14} /> {text("Causes & charity", "Engagement & Charity")}
 						</Link>
 					</div>
 				</div>
@@ -144,22 +148,32 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 						<Copyright size={13} /> 2026 N4cht4r4
 					</span>
 					<span className="footer-credit">
-						Website von {site.creator.name}
-						<a href={site.creator.discordUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Discord`}>
+						{text("Website by", "Website von")} {site.creator.name}
+						<a
+							href={site.creator.discordUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={text(`${site.creator.name} on Discord`, `${site.creator.name} auf Discord`)}
+						>
 							<span className="discord-footer-mark">
 								<DiscordMark size={9} />
 							</span>{" "}
 							Discord
 						</a>
 						{site.creator.twitchUrl && (
-							<a href={site.creator.twitchUrl} target="_blank" rel="noopener noreferrer" aria-label={`${site.creator.name} auf Twitch`}>
+							<a
+								href={site.creator.twitchUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label={text(`${site.creator.name} on Twitch`, `${site.creator.name} auf Twitch`)}
+							>
 								<Twitch size={13} /> Twitch
 							</a>
 						)}
 					</span>
 					<div>
-						<Link href="/datenschutz">Datenschutz</Link>
-						<Link href="/agb">Nutzungsbedingungen</Link>
+						<Link href="/datenschutz">{text("Privacy", "Datenschutz")}</Link>
+						<Link href="/agb">{text("Terms of use", "Nutzungsbedingungen")}</Link>
 					</div>
 				</div>
 			</footer>

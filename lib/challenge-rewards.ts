@@ -48,6 +48,11 @@ async function createRewards(db: Db, userId: string, challenge: ChallengeDef) {
 		await grants.updateOne(
 			{ userId, challengeId: challenge.id, type: "badge", rewardKey: challenge.badge.id },
 			{
+				$set: {
+					label: challenge.badge.name,
+					badge: challenge.badge,
+					updatedAt: now,
+				},
 				$setOnInsert: {
 					id: `reward_${crypto.randomUUID()}`,
 					userId,
@@ -55,11 +60,8 @@ async function createRewards(db: Db, userId: string, challenge: ChallengeDef) {
 					seasonId: challenge.seasonId,
 					type: "badge",
 					rewardKey: challenge.badge.id,
-					label: challenge.badge.name,
-					badge: challenge.badge,
 					status: "granted",
 					createdAt: now,
-					updatedAt: now,
 				},
 			},
 			{ upsert: true }

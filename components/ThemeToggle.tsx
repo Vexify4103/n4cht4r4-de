@@ -2,10 +2,12 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Theme = "sakura-night" | "hanami-light";
 
 export function ThemeToggle() {
+	const { text } = useLocale();
 	const [theme, setTheme] = useState<Theme>("sakura-night");
 
 	useEffect(() => {
@@ -24,7 +26,13 @@ export function ThemeToggle() {
 
 	const light = theme === "hanami-light";
 	return (
-		<button className="icon-button theme-toggle" type="button" onClick={toggleTheme} aria-label={light ? "Sakura Night aktivieren" : "Hanami Light aktivieren"} title={light ? "Sakura Night" : "Hanami Light"}>
+		<button
+			className="icon-button theme-toggle"
+			type="button"
+			onClick={toggleTheme}
+			aria-label={light ? text("Activate Sakura Night", "Sakura Night aktivieren") : text("Activate Hanami Light", "Hanami Light aktivieren")}
+			title={light ? "Sakura Night" : "Hanami Light"}
+		>
 			{light ? <Moon size={18} /> : <Sun size={18} />}
 		</button>
 	);

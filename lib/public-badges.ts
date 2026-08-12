@@ -3,7 +3,9 @@ import { ObjectId, type Db } from "mongodb";
 export type PublicBadge = {
 	id: string;
 	name: string;
+	nameEn?: string;
 	description: string;
+	descriptionEn?: string;
 	icon: string;
 	rarity: "common" | "rare" | "epic";
 };

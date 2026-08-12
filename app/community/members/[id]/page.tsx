@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { ArrowLeft, Brush, CalendarDays, Crown, Flower2, MessageCircleHeart, Sparkles, Trophy, UserRound } from "lucide-react";
 import type { PublicBadge } from "@/lib/public-badges";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -21,6 +22,8 @@ type MemberProfile = {
 };
 
 export default function CommunityMemberPage() {
+	const { locale, text } = useLocale();
+	const intlLocale = locale === "en" ? "en-GB" : "de-DE";
 	const params = useParams<{ id: string }>();
 	const { data, error, isLoading } = useSWR<MemberProfile>(params.id ? `/api/community/members/${params.id}` : null, fetcher);
 
@@ -35,10 +38,10 @@ export default function CommunityMemberPage() {
 			<main className="member-profile-page">
 				<div className="empty-state">
 					<UserRound size={38} />
-					<h1>Dieses Community-Profil blüht hier nicht.</h1>
-					<p>Der Link ist ungültig oder das Profil existiert nicht mehr.</p>
+					<h1>{text("This community profile is not blooming here.", "Dieses Community-Profil blüht hier nicht.")}</h1>
+					<p>{text("The link is invalid or the profile no longer exists.", "Der Link ist ungültig oder das Profil existiert nicht mehr.")}</p>
 					<Link className="button button-secondary" href="/community">
-						Zur Pinnwand
+						{text("Community wall", "Zur Pinnwand")}
 					</Link>
 				</div>
 			</main>
@@ -48,7 +51,7 @@ export default function CommunityMemberPage() {
 	return (
 		<main className="member-profile-page">
 			<Link className="member-profile-back" href="/community">
-				<ArrowLeft size={15} /> Zur Kirschblüten-Pinnwand
+				<ArrowLeft size={15} /> {text("Cherry blossom wall", "Zur Kirschblüten-Pinnwand")}
 			</Link>
 			<header className="member-profile-hero">
 				<div className="member-profile-avatar">
@@ -56,12 +59,12 @@ export default function CommunityMemberPage() {
 					{member.badges[0] && <span className={`user-menu-badge ${member.badges[0].rarity}`}>{member.badges[0].icon}</span>}
 				</div>
 				<div>
-					<span className="kicker">Community-Pass</span>
+					<span className="kicker">{text("Community pass", "Community-Pass")}</span>
 					<h1>{member.name}</h1>
 					<p>
 						{member.memberSince
-							? `Im Garten seit ${new Intl.DateTimeFormat("de-DE", { year: "numeric", month: "long" }).format(new Date(member.memberSince))}`
-							: "Teil von Nachtaras Community Garden"}
+							? `${text("In the garden since", "Im Garten seit")} ${new Intl.DateTimeFormat(intlLocale, { year: "numeric", month: "long" }).format(new Date(member.memberSince))}`
+							: text("Part of Nachtara's Community Garden", "Teil von Nachtaras Community Garden")}
 					</p>
 				</div>
 				<Flower2 className="member-profile-hero-flower" size={72} strokeWidth={0.8} />
@@ -69,18 +72,22 @@ export default function CommunityMemberPage() {
 
 			<section className="member-profile-badges">
 				<header>
-					<span className="kicker">Präsentierte Blütenzeichen</span>
-					<h2>Was hier schon erblüht ist</h2>
+					<span className="kicker">{text("Showcased blossom marks", "Präsentierte Blütenzeichen")}</span>
+					<h2>{text("What has already bloomed here", "Was hier schon erblüht ist")}</h2>
 				</header>
 				<div className="member-badge-ribbon">
 					{member.badges.map((badge) => (
-						<span className={`public-badge labeled ${badge.rarity}`} title={badge.description} key={badge.id}>
-							<b>{badge.icon}</b> {badge.name}
+						<span
+							className={`public-badge labeled ${badge.rarity}`}
+							title={locale === "en" ? badge.descriptionEn || badge.description : badge.description}
+							key={badge.id}
+						>
+							<b>{badge.icon}</b> {locale === "en" ? badge.nameEn || badge.name : badge.name}
 						</span>
 					))}
 					{!member.badges.length && (
 						<span className="member-profile-empty-line">
-							<Sparkles size={15} /> Noch keine Badges präsentiert
+							<Sparkles size={15} /> {text("No badges showcased yet", "Noch keine Badges präsentiert")}
 						</span>
 					)}
 				</div>
@@ -89,21 +96,21 @@ export default function CommunityMemberPage() {
 			<section className="member-profile-columns">
 				<div>
 					<header className="member-profile-section-head">
-						<span className="kicker">Pinnwand</span>
-						<h2>Beiträge & Fanart</h2>
+						<span className="kicker">{text("Community wall", "Pinnwand")}</span>
+						<h2>{text("Posts & fan art", "Beiträge & Fanart")}</h2>
 					</header>
 					<div className="member-contribution-list">
 						{posts.map((post) => (
 							<article className="member-contribution" key={post.id}>
 								{post.mediaUrl && (
 									<div className="member-contribution-art">
-										<Image src={post.mediaUrl} alt={post.title || "Community-Fanart"} fill sizes="(max-width: 720px) 100vw, 320px" />
+										<Image src={post.mediaUrl} alt={post.title || text("Community fan art", "Community-Fanart")} fill sizes="(max-width: 720px) 100vw, 320px" />
 									</div>
 								)}
 								<div>
 									<span>
 										{post.kind === "fanart" ? <Brush size={13} /> : <MessageCircleHeart size={13} />}
-										{post.kind === "fanart" ? "Fanart" : "Lieber Gruß"}
+										{post.kind === "fanart" ? text("Fan art", "Fanart") : text("Kind message", "Lieber Gruß")}
 									</span>
 									{post.title && <h3>{post.title}</h3>}
 									<p>{post.body}</p>
@@ -113,29 +120,35 @@ export default function CommunityMemberPage() {
 						{!posts.length && (
 							<div className="empty-state compact-empty">
 								<MessageCircleHeart size={30} />
-								<h3>Noch still an der Pinnwand</h3>
-								<p>Freigegebene Beiträge erscheinen später hier.</p>
+								<h3>{text("Still quiet on the wall", "Noch still an der Pinnwand")}</h3>
+								<p>{text("Approved posts will appear here later.", "Freigegebene Beiträge erscheinen später hier.")}</p>
 							</div>
 						)}
 					</div>
 				</div>
 				<div>
 					<header className="member-profile-section-head">
-						<span className="kicker">Turniergarten</span>
-						<h2>Teams & Turniere</h2>
+						<span className="kicker">{text("Tournament garden", "Turniergarten")}</span>
+						<h2>{text("Teams & tournaments", "Teams & Turniere")}</h2>
 					</header>
 					<div className="member-tournament-list">
 						{tournaments.map((tournament) => (
 							<Link href={tournament.href} className={tournament.won ? "winner" : ""} key={`${tournament.id}-${tournament.teamName}`}>
 								<span className="member-tournament-icon">{tournament.won ? <Crown size={19} /> : <Trophy size={19} />}</span>
 								<div>
-									<small>{tournament.won ? "Turniersieg" : tournament.status === "completed" ? "Teilgenommen" : "Im Team"}</small>
+									<small>
+										{tournament.won
+											? text("Tournament winner", "Turniersieg")
+											: tournament.status === "completed"
+												? text("Participated", "Teilgenommen")
+												: text("On the team", "Im Team")}
+									</small>
 									<strong>{tournament.title}</strong>
 									<span>{tournament.teamName}</span>
 								</div>
 								{tournament.date && (
 									<time>
-										<CalendarDays size={12} /> {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(tournament.date))}
+										<CalendarDays size={12} /> {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(tournament.date))}
 									</time>
 								)}
 							</Link>
@@ -143,8 +156,8 @@ export default function CommunityMemberPage() {
 						{!tournaments.length && (
 							<div className="empty-state compact-empty">
 								<Trophy size={30} />
-								<h3>Noch keine Teamseite</h3>
-								<p>Veröffentlichte Turnierkader erscheinen hier.</p>
+								<h3>{text("No team page yet", "Noch keine Teamseite")}</h3>
+								<p>{text("Published tournament rosters appear here.", "Veröffentlichte Turnierkader erscheinen hier.")}</p>
 							</div>
 						)}
 					</div>

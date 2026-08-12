@@ -22,6 +22,7 @@ import {
 	X,
 } from "lucide-react";
 import type { CommunityPostKind, CommunityPostStatus, CommunityProject } from "@/lib/community";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -42,9 +43,8 @@ type ModerationPost = {
 	createdAt: string;
 };
 
-const statusCopy = { pending: "Wartet", published: "Freigegeben", rejected: "Abgelehnt" };
-
 function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSaved: () => Promise<unknown> }) {
+	const { text } = useLocale();
 	const [notice, setNotice] = useState("");
 	const [saving, setSaving] = useState(false);
 	async function save(event: FormEvent<HTMLFormElement>) {
@@ -72,8 +72,8 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 		});
 		const result = await response.json();
 		setSaving(false);
-		if (!response.ok) return setNotice(result.error || "Projekt konnte nicht gespeichert werden.");
-		setNotice("Projekt gespeichert.");
+		if (!response.ok) return setNotice(result.error || text("The project could not be saved.", "Projekt konnte nicht gespeichert werden."));
+		setNotice(text("Project saved.", "Projekt gespeichert."));
 		await onSaved();
 	}
 
@@ -93,60 +93,64 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 				</div>
 				<label className="project-publish-toggle">
 					<input name="published" type="checkbox" defaultChecked={project.published} />
-					<span>Öffentlich</span>
+					<span>{text("Public", "Öffentlich")}</span>
 				</label>
 			</header>
 			<div className="community-project-editor-fields">
 				<label>
-					Titel
+					{text("Title", "Titel")}
 					<input name="title" defaultValue={project.title} required />
 				</label>
 				<label>
-					Spiel
+					{text("Game", "Spiel")}
 					<input name="game" defaultValue={project.game} required />
 				</label>
 				<label>
 					Status
 					<select name="status" defaultValue={project.status}>
 						<option value="online">Online</option>
-						<option value="planning">In Planung</option>
-						<option value="paused">Pause</option>
-						<option value="ended">Archiv</option>
+						<option value="planning">{text("Planning", "In Planung")}</option>
+						<option value="paused">{text("Paused", "Pause")}</option>
+						<option value="ended">{text("Archive", "Archiv")}</option>
 					</select>
 				</label>
 				<label>
-					Status-Text
+					{text("Status text", "Status-Text")}
 					<input name="statusLabel" defaultValue={project.statusLabel} required />
 				</label>
 				<label>
-					Sortierung
+					{text("Sort order", "Sortierung")}
 					<input name="order" type="number" min="0" max="10000" defaultValue={project.order} />
 				</label>
 				<label>
-					Bildpfad oder URL
+					{text("Image path or URL", "Bildpfad oder URL")}
 					<input name="imageUrl" defaultValue={project.imageUrl} />
 				</label>
 				<label className="wide">
-					Kurzbeschreibung
+					{text("Short description", "Kurzbeschreibung")}
 					<textarea name="summary" defaultValue={project.summary} required />
 				</label>
 				<label className="wide">
-					Ausführliche Infos
+					{text("Detailed information", "Ausführliche Infos")}
 					<textarea name="details" defaultValue={project.details} />
 				</label>
 				<label className="wide">
-					Regeln · eine pro Zeile
+					{text("Rules · one per line", "Regeln · eine pro Zeile")}
 					<textarea name="rules" defaultValue={project.rules.join("\n")} />
 				</label>
 				<label className="wide">
-					Bewerbungslink
-					<input name="applicationHref" defaultValue={project.applicationHref || ""} placeholder="Leer lassen, wenn es noch keine Bewerbung gibt" />
+					{text("Application link", "Bewerbungslink")}
+					<input
+						name="applicationHref"
+						defaultValue={project.applicationHref || ""}
+						placeholder={text("Leave empty if applications are not available yet", "Leer lassen, wenn es noch keine Bewerbung gibt")}
+					/>
 				</label>
 			</div>
 			<footer>
 				<span>{notice}</span>
 				<button className="button button-primary button-small" disabled={saving} type="submit">
-					<Save size={14} /> {saving ? "Speichert ..." : "Projekt speichern"}
+					<Save size={14} /> {saving ? text("Saving...", "Speichert ...") : text("Save project", "Projekt speichern")}
 				</button>
 			</footer>
 		</form>
@@ -154,6 +158,7 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 }
 
 export default function AdminCommunityPage() {
+	const { locale, text } = useLocale();
 	const [tab, setTab] = useState<"moderation" | "projects">("moderation");
 	const [filter, setFilter] = useState<CommunityPostStatus>("pending");
 	const [notes, setNotes] = useState<Record<string, string>>({});
@@ -188,8 +193,12 @@ export default function AdminCommunityPage() {
 			body: JSON.stringify({ id, status, moderationNote: notes[id] || "" }),
 		});
 		const result = await response.json();
-		if (!response.ok) return setNotice(result.error || "Moderation konnte nicht gespeichert werden.");
-		setNotice(status === "published" ? "Beitrag hängt jetzt öffentlich an der Pinnwand." : "Beitrag wurde aus der öffentlichen Pinnwand genommen.");
+		if (!response.ok) return setNotice(result.error || text("The moderation decision could not be saved.", "Moderation konnte nicht gespeichert werden."));
+		setNotice(
+			status === "published"
+				? text("The post is now public on the community wall.", "Beitrag hängt jetzt öffentlich an der Pinnwand.")
+				: text("The post was removed from the public community wall.", "Beitrag wurde aus der öffentlichen Pinnwand genommen.")
+		);
 		await refreshPosts();
 	}
 
@@ -204,9 +213,9 @@ export default function AdminCommunityPage() {
 		});
 		const result = await response.json();
 		setDeleting(false);
-		if (!response.ok) return setNotice(result.error || "Beitrag konnte nicht gelöscht werden.");
+		if (!response.ok) return setNotice(result.error || text("The post could not be deleted.", "Beitrag konnte nicht gelöscht werden."));
 		setDeleteTarget(null);
-		setNotice("Beitrag und zugehörige Bilddatei wurden endgültig gelöscht.");
+		setNotice(text("The post and its image file were permanently deleted.", "Beitrag und zugehörige Bilddatei wurden endgültig gelöscht."));
 		await refreshPosts();
 	}
 
@@ -231,9 +240,9 @@ export default function AdminCommunityPage() {
 			}),
 		});
 		const result = await response.json();
-		if (!response.ok) return setNotice(result.error || "Projekt konnte nicht erstellt werden.");
+		if (!response.ok) return setNotice(result.error || text("The project could not be created.", "Projekt konnte nicht erstellt werden."));
 		setNewProjectOpen(false);
-		setNotice("Projekt als nicht öffentlicher Entwurf angelegt.");
+		setNotice(text("Project created as a private draft.", "Projekt als nicht öffentlicher Entwurf angelegt."));
 		await refreshProjects();
 	}
 
@@ -242,8 +251,8 @@ export default function AdminCommunityPage() {
 			<section className="content-band">
 				<div className="empty-state">
 					<ShieldAlert size={40} />
-					<h3>Kein Moderationszugriff</h3>
-					<p>Dein Discord-Konto ist nicht für die Community-Verwaltung hinterlegt.</p>
+					<h3>{text("No moderation access", "Kein Moderationszugriff")}</h3>
+					<p>{text("Your Discord account is not registered for community management.", "Dein Discord-Konto ist nicht für die Community-Verwaltung hinterlegt.")}</p>
 				</div>
 			</section>
 		);
@@ -269,16 +278,23 @@ export default function AdminCommunityPage() {
 							<AlertTriangle size={25} />
 						</span>
 						<div>
-							<span className="kicker">Endgültig löschen</span>
-							<h2 id="community-delete-title">„{deleteTarget.title || deleteTarget.authorName}“ entfernen?</h2>
-							<p>Der Beitrag wird aus der Moderation entfernt. Ein hochgeladenes Bild wird ebenfalls vollständig gelöscht. Das lässt sich nicht rückgängig machen.</p>
+							<span className="kicker">{text("Delete permanently", "Endgültig löschen")}</span>
+							<h2 id="community-delete-title">
+								{text(`Remove “${deleteTarget.title || deleteTarget.authorName}”?`, `„${deleteTarget.title || deleteTarget.authorName}“ entfernen?`)}
+							</h2>
+							<p>
+								{text(
+									"The post is removed from moderation and any uploaded image is deleted as well. This cannot be undone.",
+									"Der Beitrag wird aus der Moderation entfernt. Ein hochgeladenes Bild wird ebenfalls vollständig gelöscht. Das lässt sich nicht rückgängig machen."
+								)}
+							</p>
 						</div>
 						<footer>
 							<button className="button button-secondary" type="button" disabled={deleting} onClick={() => setDeleteTarget(null)}>
-								Abbrechen
+								{text("Cancel", "Abbrechen")}
 							</button>
 							<button className="button button-danger-soft" type="button" disabled={deleting} onClick={deletePost}>
-								<Trash2 size={15} /> {deleting ? "Wird gelöscht ..." : "Endgültig löschen"}
+								<Trash2 size={15} /> {deleting ? text("Deleting...", "Wird gelöscht ...") : text("Delete permanently", "Endgültig löschen")}
 							</button>
 						</footer>
 					</section>
@@ -286,25 +302,27 @@ export default function AdminCommunityPage() {
 			)}
 			<header className="admin-community-hero">
 				<Link href="/admin/tournaments">
-					<ArrowLeft size={15} /> Zur Turnierverwaltung
+					<ArrowLeft size={15} /> {text("Tournament management", "Zur Turnierverwaltung")}
 				</Link>
 				<span className="admin-seal">
 					<MessageCircleHeart size={28} />
 				</span>
 				<div>
-					<span className="kicker">Community-Verwaltung · {access.role}</span>
-					<h1>Blütenpost & Spielwelten</h1>
-					<p>Beiträge behutsam freigeben und gemeinsame Server aktuell halten.</p>
+					<span className="kicker">
+						{text("Community management", "Community-Verwaltung")} · {access.role}
+					</span>
+					<h1>{text("Blossom mail & game worlds", "Blütenpost & Spielwelten")}</h1>
+					<p>{text("Review submissions carefully and keep shared servers up to date.", "Beiträge behutsam freigeben und gemeinsame Server aktuell halten.")}</p>
 				</div>
 			</header>
 
 			<section className="admin-community-workspace">
 				<div className="admin-community-tabs">
 					<button className={tab === "moderation" ? "active" : ""} onClick={() => setTab("moderation")}>
-						<ClipboardCheck size={16} /> Moderation <span>{moderation?.counts.pending || 0}</span>
+						<ClipboardCheck size={16} /> {text("Moderation", "Moderation")} <span>{moderation?.counts.pending || 0}</span>
 					</button>
 					<button className={tab === "projects" ? "active" : ""} onClick={() => setTab("projects")}>
-						<Gamepad2 size={16} /> Community-Projekte
+						<Gamepad2 size={16} /> {text("Community projects", "Community-Projekte")}
 					</button>
 					<Link href="/admin/challenges">
 						<Sparkles size={15} /> Challenges
@@ -320,13 +338,17 @@ export default function AdminCommunityPage() {
 					<div className="community-moderation-area">
 						<header>
 							<div>
-								<span className="kicker">Moderationskorb</span>
-								<h2>Was darf an die Pinnwand?</h2>
+								<span className="kicker">{text("Moderation queue", "Moderationskorb")}</span>
+								<h2>{text("What may appear on the community wall?", "Was darf an die Pinnwand?")}</h2>
 							</div>
 							<div className="moderation-filters">
 								{(["pending", "published", "rejected"] as CommunityPostStatus[]).map((status) => (
 									<button className={filter === status ? "active" : ""} key={status} onClick={() => setFilter(status)}>
-										{statusCopy[status]} <span>{moderation?.counts[status] || 0}</span>
+										{text(
+											status === "pending" ? "Pending" : status === "published" ? "Published" : "Rejected",
+											status === "pending" ? "Wartet" : status === "published" ? "Freigegeben" : "Abgelehnt"
+										)}{" "}
+										<span>{moderation?.counts[status] || 0}</span>
 									</button>
 								))}
 							</div>
@@ -336,37 +358,52 @@ export default function AdminCommunityPage() {
 								<article className="community-moderation-entry" key={post.id}>
 									{post.mediaUrl && (
 										<div className="moderation-art">
-											<Image src={post.mediaUrl} alt={post.title || "Fanart zur Moderation"} fill sizes="280px" unoptimized />
+											<Image
+												src={post.mediaUrl}
+												alt={post.title || text("Fan art awaiting moderation", "Fanart zur Moderation")}
+												fill
+												sizes="280px"
+												unoptimized
+											/>
 										</div>
 									)}
 									<div className="moderation-copy">
 										<header>
 											<span>
-												{post.kind === "fanart" ? <Brush size={14} /> : <MessageCircleHeart size={14} />} {post.kind === "fanart" ? "Fanart" : "Gruß"}
+												{post.kind === "fanart" ? <Brush size={14} /> : <MessageCircleHeart size={14} />}{" "}
+												{post.kind === "fanart" ? text("Fan art", "Fanart") : text("Message", "Gruß")}
 											</span>
-											<small>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(post.createdAt))}</small>
+											<small>
+												{new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", { dateStyle: "medium", timeStyle: "short" }).format(
+													new Date(post.createdAt)
+												)}
+											</small>
 										</header>
 										<strong>{post.title || post.authorName}</strong>
-										{post.title && <small>von {post.authorName}</small>}
+										{post.title && (
+											<small>
+												{text("by", "von")} {post.authorName}
+											</small>
+										)}
 										<p>{post.body}</p>
 										<label>
-											Interne Notiz
+											{text("Internal note", "Interne Notiz")}
 											<textarea
 												value={notes[post.id] ?? post.moderationNote ?? ""}
 												onChange={(event) => setNotes((current) => ({ ...current, [post.id]: event.target.value }))}
-												placeholder="Optionaler Grund oder Hinweis für das Mod-Team"
+												placeholder={text("Optional reason or note for the moderation team", "Optionaler Grund oder Hinweis für das Mod-Team")}
 											/>
 										</label>
 										<footer>
 											<button className="moderation-delete-button" type="button" onClick={() => setDeleteTarget(post)}>
-												<Trash2 size={14} /> Löschen
+												<Trash2 size={14} /> {text("Delete", "Löschen")}
 											</button>
 											<div className="moderation-decision-buttons">
 												<button className="button button-secondary button-small" onClick={() => moderate(post.id, "rejected")}>
-													<X size={14} /> Ablehnen
+													<X size={14} /> {text("Reject", "Ablehnen")}
 												</button>
 												<button className="button button-primary button-small" onClick={() => moderate(post.id, "published")}>
-													<Check size={14} /> Freigeben
+													<Check size={14} /> {text("Publish", "Freigeben")}
 												</button>
 											</div>
 										</footer>
@@ -376,8 +413,8 @@ export default function AdminCommunityPage() {
 							{moderation && moderation.posts.length === 0 && (
 								<div className="empty-state">
 									<ClipboardCheck size={36} />
-									<h3>Dieser Korb ist leer</h3>
-									<p>Hier wartet gerade nichts auf das Mod-Team.</p>
+									<h3>{text("This queue is empty", "Dieser Korb ist leer")}</h3>
+									<p>{text("Nothing is currently waiting for the moderation team.", "Hier wartet gerade nichts auf das Mod-Team.")}</p>
 								</div>
 							)}
 						</div>
@@ -388,35 +425,44 @@ export default function AdminCommunityPage() {
 					<div className="community-project-admin-area">
 						<header>
 							<div>
-								<span className="kicker">Weltenbuch</span>
-								<h2>Server und Projekte pflegen</h2>
-								<p>Status, Regeln und Bewerbungslinks erscheinen direkt im öffentlichen Projekt-Hub.</p>
+								<span className="kicker">{text("World book", "Weltenbuch")}</span>
+								<h2>{text("Manage servers and projects", "Server und Projekte pflegen")}</h2>
+								<p>
+									{text(
+										"Status, rules, and application links appear directly in the public project hub.",
+										"Status, Regeln und Bewerbungslinks erscheinen direkt im öffentlichen Projekt-Hub."
+									)}
+								</p>
 							</div>
 							<button className="button button-primary" onClick={() => setNewProjectOpen((open) => !open)}>
-								{newProjectOpen ? <X size={15} /> : <Plus size={15} />} {newProjectOpen ? "Abbrechen" : "Projekt anlegen"}
+								{newProjectOpen ? <X size={15} /> : <Plus size={15} />} {newProjectOpen ? text("Cancel", "Abbrechen") : text("Create project", "Projekt anlegen")}
 							</button>
 						</header>
 						{projectData?.usingDefaults && (
 							<p className="project-default-note">
-								<Flower2 size={14} /> Die beiden Startprojekte sind Vorlagen. Beim ersten Speichern werden sie in MongoDB übernommen.
+								<Flower2 size={14} />{" "}
+								{text(
+									"The two starter projects are templates. They are copied to MongoDB when first saved.",
+									"Die beiden Startprojekte sind Vorlagen. Beim ersten Speichern werden sie in MongoDB übernommen."
+								)}
 							</p>
 						)}
 						{newProjectOpen && (
 							<form className="new-community-project" onSubmit={createProject}>
 								<label>
-									Projektname
+									{text("Project name", "Projektname")}
 									<input name="title" required />
 								</label>
 								<label>
-									Spiel
+									{text("Game", "Spiel")}
 									<input name="game" required />
 								</label>
 								<label>
-									Kurzbeschreibung
+									{text("Short description", "Kurzbeschreibung")}
 									<textarea name="summary" required />
 								</label>
 								<button className="button button-primary" type="submit">
-									Entwurf anlegen
+									{text("Create draft", "Entwurf anlegen")}
 								</button>
 							</form>
 						)}

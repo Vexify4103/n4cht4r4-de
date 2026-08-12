@@ -6,7 +6,9 @@ export type BadgeRarity = "common" | "rare" | "epic";
 export type ChallengeBadge = {
 	id: string;
 	name: string;
+	nameEn?: string;
 	description: string;
+	descriptionEn?: string;
 	icon: string;
 	rarity: BadgeRarity;
 };
@@ -15,7 +17,9 @@ export interface ChallengeDef {
 	id: string;
 	seasonId: string;
 	title: string;
+	titleEn?: string;
 	description: string;
+	descriptionEn?: string;
 	type: ChallengeType;
 	gameMode?: string;
 	queueId?: number;
@@ -23,6 +27,7 @@ export interface ChallengeDef {
 	icon: string;
 	winMultiplier?: number;
 	reward?: string;
+	rewardEn?: string;
 	badge?: ChallengeBadge;
 	discordRoleId?: string;
 	discordRoleName?: string;
@@ -217,6 +222,82 @@ export const DEFAULT_CHALLENGES: ChallengeDef[] = [
 	}),
 ];
 
+const DEFAULT_CHALLENGE_ENGLISH: Record<string, Pick<ChallengeDef, "titleEn" | "descriptionEn" | "rewardEn">> = {
+	"permanent-tournament-application": {
+		titleEn: "First step into a tournament",
+		descriptionEn: "Apply to any tournament in Nachtara's Community Garden.",
+		rewardEn: 'Permanent "Tournament Blossom" profile badge',
+	},
+	"permanent-tournament-winner": {
+		titleEn: "The crown is yours",
+		descriptionEn: "Win any tournament in Nachtara's Community Garden with your team.",
+		rewardEn: 'Epic "Victory Blossom" profile badge and "Tournament Crown" Discord role',
+	},
+	"launch-2026-aram-matches-3": {
+		titleEn: "ARAM Blossom Rain",
+		descriptionEn: "Finish ten ARAM matches during the launch season.",
+		rewardEn: '"ARAM Blossom Rain" profile badge',
+	},
+	"launch-2026-aram-wins-3": {
+		titleEn: "Snowball with a Crown",
+		descriptionEn: "Win 15 ARAM matches during the launch season.",
+		rewardEn: 'Rare "Snowball with a Crown" profile badge',
+	},
+	"launch-2026-soloq-wins-2": {
+		titleEn: "Ranked Roses",
+		descriptionEn: "Win 25 Solo Queue games during the launch season.",
+		rewardEn: 'Epic "Ranked Roses" profile badge',
+	},
+	"launch-2026-kills-100": {
+		titleEn: "Blossom Blade",
+		descriptionEn: "Collect a total of 1,000 kills in League matches during the season.",
+		rewardEn: 'Epic "Blossom Blade" profile badge',
+	},
+	"launch-2026-watchtime-30": {
+		titleEn: "First Tea Break",
+		descriptionEn: "Spend one full live hour with Nachtara's stream.",
+		rewardEn: '"First Tea Break" profile badge',
+	},
+	"launch-2026-watchtime-300": {
+		titleEn: "Regular Spot in Chat",
+		descriptionEn: "Collect 25 hours of live watch time during the season.",
+		rewardEn: 'Rare "Regular Spot in Chat" profile badge',
+	},
+	"launch-2026-watchtime-1200": {
+		titleEn: "Sakura Regular",
+		descriptionEn: "Collect 100 hours of live watch time during the launch season.",
+		rewardEn: 'Epic "Sakura Regular" profile badge',
+	},
+	"launch-2026-riot-meta-3": {
+		titleEn: "Season Blossom",
+		descriptionEn: "Complete all four League challenges this season.",
+		rewardEn: "Epic profile badge and optional Discord role",
+	},
+	"launch-2026-community-watchtime-100": {
+		titleEn: "Five Thousand Hours of Hanami",
+		descriptionEn: "All connected community members collect 5,000 hours of live watch time together.",
+		rewardEn: "A large community event and a shared vote on Nachtara's next stream challenge",
+	},
+};
+
+const DEFAULT_BADGE_ENGLISH: Record<string, { nameEn: string; descriptionEn: string }> = {
+	"permanent-tournament-application": { nameEn: "Tournament Blossom", descriptionEn: "Applied to at least one community tournament." },
+	"permanent-tournament-winner": { nameEn: "Victory Blossom", descriptionEn: "Won a community tournament as part of the winning team." },
+	"launch-2026-aram-matches-3": { nameEn: "ARAM Blossom Rain", descriptionEn: "Completed ten ARAM matches in the Sakura Garden." },
+	"launch-2026-aram-wins-3": { nameEn: "Snowball with a Crown", descriptionEn: "Collected 15 wins in ARAM mayhem." },
+	"launch-2026-soloq-wins-2": { nameEn: "Ranked Roses", descriptionEn: "Won 25 Solo Queue games for the Community Garden." },
+	"launch-2026-kills-100": { nameEn: "Blossom Blade", descriptionEn: "Collected 1,000 kills during a challenge season." },
+	"launch-2026-watchtime-30": { nameEn: "First Tea Break", descriptionEn: "Spent the first full live hour together." },
+	"launch-2026-watchtime-300": { nameEn: "Regular Spot in Chat", descriptionEn: "Joined the Sakura Garden live for 25 hours." },
+	"launch-2026-watchtime-1200": { nameEn: "Sakura Regular", descriptionEn: "Collected 100 hours of genuine live watch time." },
+	"launch-2026-riot-meta-3": { nameEn: "Season Blossom 2026", descriptionEn: "Completed every League goal in the launch season." },
+};
+
+for (const challenge of DEFAULT_CHALLENGES) {
+	Object.assign(challenge, DEFAULT_CHALLENGE_ENGLISH[challenge.id], { systemVersion: 6 });
+	if (challenge.badge) Object.assign(challenge.badge, DEFAULT_BADGE_ENGLISH[challenge.id]);
+}
+
 const LEGACY_IDS = ["aram-matches-10", "aram-wins-5", "soloq-wins-5", "flexq-wins-5", "kills-300", "watchtime-30", "watchtime-300", "community-watchtime-1000"];
 let migrationPromise: Promise<void> | null = null;
 
@@ -231,7 +312,7 @@ export async function ensureChallengeDefinitions(db: Db) {
 			await collection.createIndex({ id: 1 }, { unique: true });
 			for (const challenge of DEFAULT_CHALLENGES) {
 				await collection.updateOne({ id: challenge.id }, { $setOnInsert: challenge }, { upsert: true });
-				await collection.updateOne({ id: challenge.id, systemVersion: { $ne: 4 } }, { $set: challenge });
+				await collection.updateOne({ id: challenge.id, systemVersion: { $ne: 6 } }, { $set: challenge });
 				if (challenge.discordRoleId) {
 					await collection.updateOne(
 						{ id: challenge.id, $or: [{ discordRoleId: { $exists: false } }, { discordRoleId: null as unknown as string }, { discordRoleId: "" }] },

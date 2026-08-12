@@ -13,7 +13,9 @@ export const N4CHT4R4_DISCORD_ID = "248841932913115136";
 export const SITE_ADMIN_BADGE: PublicBadge = {
 	id: SITE_ADMIN_BADGE_ID,
 	name: "Gartenwache",
+	nameEn: "Garden Guard",
 	description: "Gehört zum Team, das Nachtaras Community Garden behütet.",
+	descriptionEn: "Part of the team that looks after Nachtara's Community Garden.",
 	icon: "🛡️",
 	rarity: "rare",
 };
@@ -21,7 +23,9 @@ export const SITE_ADMIN_BADGE: PublicBadge = {
 export const SITE_OWNER_BADGE: PublicBadge = {
 	id: SITE_OWNER_BADGE_ID,
 	name: "Gartenherrin",
+	nameEn: "Garden Host",
 	description: "N4cht4r4, Gastgeberin und Besitzerin dieses Community Gardens.",
+	descriptionEn: "N4cht4r4, host and owner of this Community Garden.",
 	icon: "🌸",
 	rarity: "epic",
 };

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import { SiteShell } from "@/components/SiteShell";
+import { LocaleProvider } from "@/components/LocaleProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,9 +25,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang="de" suppressHydrationWarning>
+		<html lang="de" suppressHydrationWarning data-scroll-behavior="smooth">
 			<SessionProvider refetchInterval={0} refetchOnWindowFocus={false} refetchWhenOffline={false}>
-				<SiteShell>{children}</SiteShell>
+				<LocaleProvider>
+					<SiteShell>{children}</SiteShell>
+				</LocaleProvider>
 			</SessionProvider>
 		</html>
 	);

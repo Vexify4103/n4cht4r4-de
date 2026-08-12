@@ -6,10 +6,17 @@ import Image from "next/image";
 import { ChevronDown, LogIn, LogOut, MessageCircleHeart, ShieldCheck, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
+import { useLocale } from "@/components/LocaleProvider";
 
 type BadgeProfile = {
-	badges: { rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } }[];
-	identityBadges: { rewardKey: string; badge: { id: string; name: string; description: string; icon: string; rarity: "common" | "rare" | "epic" } }[];
+	badges: {
+		rewardKey: string;
+		badge: { id: string; name: string; nameEn?: string; description: string; descriptionEn?: string; icon: string; rarity: "common" | "rare" | "epic" };
+	}[];
+	identityBadges: {
+		rewardKey: string;
+		badge: { id: string; name: string; nameEn?: string; description: string; descriptionEn?: string; icon: string; rarity: "common" | "rare" | "epic" };
+	}[];
 	showcasedBadgeIds: string[];
 };
 
@@ -17,6 +24,7 @@ const fetcher = (url: string) => fetch(url).then((response) => (response.ok ? re
 
 export function UserMenu() {
 	const { data: session, status } = useSession();
+	const { locale, text } = useLocale();
 	const [open, setOpen] = useState(false);
 	const [adminRole, setAdminRole] = useState<string | null>(null);
 	const ref = useRef<HTMLDivElement>(null);
@@ -64,7 +72,7 @@ export function UserMenu() {
 		return (
 			<Link href="/login" className="account-login">
 				<LogIn size={16} />
-				<span>Anmelden</span>
+				<span>{text("Sign in", "Anmelden")}</span>
 			</Link>
 		);
 	}
@@ -81,7 +89,10 @@ export function UserMenu() {
 						</span>
 					)}
 					{showcasedBadges[0] && (
-						<span className={`user-menu-badge ${showcasedBadges[0].rarity}`} title={showcasedBadges[0].name}>
+						<span
+							className={`user-menu-badge ${showcasedBadges[0].rarity}`}
+							title={locale === "en" ? showcasedBadges[0].nameEn || showcasedBadges[0].name : showcasedBadges[0].name}
+						>
 							{showcasedBadges[0].icon}
 						</span>
 					)}
@@ -92,12 +103,16 @@ export function UserMenu() {
 			{open && (
 				<div className="user-dropdown">
 					<div className="user-dropdown-header">
-						<small>Angemeldet als</small>
+						<small>{text("Signed in as", "Angemeldet als")}</small>
 						<strong>{session.user?.name}</strong>
 						{showcasedBadges.length > 0 && (
 							<span className="user-dropdown-badges">
 								{showcasedBadges.map((badge) => (
-									<span className={`public-badge ${badge.rarity}`} title={`${badge.name}: ${badge.description}`} key={badge.id}>
+									<span
+										className={`public-badge ${badge.rarity}`}
+										title={`${locale === "en" ? badge.nameEn || badge.name : badge.name}: ${locale === "en" ? badge.descriptionEn || badge.description : badge.description}`}
+										key={badge.id}
+									>
 										{badge.icon}
 									</span>
 								))}
@@ -105,20 +120,20 @@ export function UserMenu() {
 						)}
 					</div>
 					<Link href="/me" className="user-dropdown-item" onClick={() => setOpen(false)}>
-						<User size={16} /> Mein Garten
+						<User size={16} /> {text("My garden", "Mein Garten")}
 					</Link>
 					{adminRole && (
 						<>
 							<Link href="/admin/tournaments" className="user-dropdown-item" onClick={() => setOpen(false)}>
-								<ShieldCheck size={16} /> Turnierverwaltung
+								<ShieldCheck size={16} /> {text("Tournament admin", "Turnierverwaltung")}
 							</Link>
 							<Link href="/admin/community" className="user-dropdown-item" onClick={() => setOpen(false)}>
-								<MessageCircleHeart size={16} /> Community moderieren
+								<MessageCircleHeart size={16} /> {text("Moderate community", "Community moderieren")}
 							</Link>
 						</>
 					)}
 					<button className="user-dropdown-item logout" type="button" onClick={() => signOut()}>
-						<LogOut size={16} /> Abmelden
+						<LogOut size={16} /> {text("Sign out", "Abmelden")}
 					</button>
 				</div>
 			)}

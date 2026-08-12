@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Copy, ExternalLink, Radio, Users } from "lucide-react";
 import type { PublicBadge } from "@/lib/public-badges";
+import { useLocale } from "@/components/LocaleProvider";
 
 export type PublicTeam = {
 	id: string;
@@ -22,6 +23,7 @@ function multiOpgg(members: PublicTeam["members"]) {
 
 export function TournamentTeamCard({ tournamentId, team }: { tournamentId: string; team: PublicTeam }) {
 	const [copied, setCopied] = useState(false);
+	const { locale, text } = useLocale();
 
 	async function copyObsLink() {
 		const url = `${window.location.origin}/tournaments/${tournamentId}/obs?bg=transparent&team=${team.id}`;
@@ -37,10 +39,10 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 					<Users size={20} />
 				</span>
 				<div>
-					<small>{team.seed ? `Seed ${team.seed}` : "Bestätigtes Team"}</small>
+					<small>{team.seed ? `Seed ${team.seed}` : text("Confirmed team", "Bestätigtes Team")}</small>
 					<h3>{team.name}</h3>
 				</div>
-				<a className="icon-action" href={multiOpgg(team.members)} target="_blank" rel="noreferrer" title="Team auf op.gg öffnen">
+				<a className="icon-action" href={multiOpgg(team.members)} target="_blank" rel="noreferrer" title={text("Open team on op.gg", "Team auf op.gg öffnen")}>
 					<ExternalLink size={16} />
 				</a>
 			</header>
@@ -49,7 +51,7 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 				{team.members?.length ? (
 					team.members.map((member) => (
 						<div className="team-player" key={`${team.id}-${member.name}`}>
-							<span>{member.role || "Spieler"}</span>
+							<span>{member.role || text("Player", "Spieler")}</span>
 							<div className="team-player-identity">
 								{member.profileHref ? (
 									<Link className="team-player-profile-link" href={member.profileHref}>
@@ -59,22 +61,26 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 									<strong>{member.name}</strong>
 								)}
 								{Boolean(member.badges?.length) && (
-									<span className="player-badge-showcase" aria-label="Präsentierte Community-Badges">
+									<span className="player-badge-showcase" aria-label={text("Showcased community badges", "Präsentierte Community-Badges")}>
 										{member.badges?.map((badge) => (
-											<span className={`public-badge ${badge.rarity}`} title={`${badge.name}: ${badge.description}`} key={badge.id}>
+											<span
+												className={`public-badge ${badge.rarity}`}
+												title={`${locale === "en" ? badge.nameEn || badge.name : badge.name}: ${locale === "en" ? badge.descriptionEn || badge.description : badge.description}`}
+												key={badge.id}
+											>
 												{badge.icon}
 											</span>
 										))}
 									</span>
 								)}
 							</div>
-							<a href={member.opgg || playerOpgg(member.name)} target="_blank" rel="noreferrer" title={`${member.name} auf op.gg öffnen`}>
+							<a href={member.opgg || playerOpgg(member.name)} target="_blank" rel="noreferrer" title={`${member.name} ${text("on op.gg", "auf op.gg öffnen")}`}>
 								<ExternalLink size={14} />
 							</a>
 						</div>
 					))
 				) : (
-					<p className="muted-note">Der Kader wird noch veröffentlicht.</p>
+					<p className="muted-note">{text("The roster has not been published yet.", "Der Kader wird noch veröffentlicht.")}</p>
 				)}
 			</div>
 
@@ -84,7 +90,7 @@ export function TournamentTeamCard({ tournamentId, team }: { tournamentId: strin
 				</a>
 				<button className="obs-copy-button" type="button" onClick={copyObsLink}>
 					{copied ? <Check size={14} /> : <Copy size={14} />}
-					{copied ? "OBS-Link kopiert" : "OBS-Karte kopieren"}
+					{copied ? text("OBS link copied", "OBS-Link kopiert") : text("Copy OBS card", "OBS-Karte kopieren")}
 					<Radio size={13} />
 				</button>
 			</footer>

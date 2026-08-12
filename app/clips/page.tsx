@@ -5,6 +5,7 @@ import Image from "next/image";
 import useSWR from "swr";
 import { CalendarDays, Eye, Film, Flower2, Play, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
@@ -21,16 +22,18 @@ type Clip = {
 };
 
 const sorts = [
-	{ value: "views", label: "Beliebt" },
-	{ value: "date", label: "Neu" },
+	{ value: "views", en: "Popular", de: "Beliebt" },
+	{ value: "date", en: "New", de: "Neu" },
 ];
 const periods = [
-	{ value: "7d", label: "7 Tage" },
-	{ value: "30d", label: "30 Tage" },
-	{ value: "all", label: "Alle" },
+	{ value: "7d", en: "7 days", de: "7 Tage" },
+	{ value: "30d", en: "30 days", de: "30 Tage" },
+	{ value: "all", en: "All", de: "Alle" },
 ];
 
 export default function ClipsPage() {
+	const { locale, text } = useLocale();
+	const intlLocale = locale === "en" ? "en-GB" : "de-DE";
 	const [sort, setSort] = useState("views");
 	const [period, setPeriod] = useState("all");
 	const [limit, setLimit] = useState(18);
@@ -47,9 +50,12 @@ export default function ClipsPage() {
 	return (
 		<>
 			<PageHero
-				kicker="Aus dem Stream"
-				title="Momente, die bleiben durften."
-				copy="Chaos, Clutches und kleine Lieblingsmomente aus Nachtaras Streams, direkt aus Twitch gesammelt."
+				kicker={text("From the stream", "Aus dem Stream")}
+				title={text("Moments worth keeping.", "Momente, die bleiben durften.")}
+				copy={text(
+					"Chaos, clutch plays, and little favourite moments from Nachtara's streams, collected directly from Twitch.",
+					"Chaos, Clutches und kleine Lieblingsmomente aus Nachtaras Streams, direkt aus Twitch gesammelt."
+				)}
 				icon={<Film size={44} strokeWidth={1.6} />}
 				compact
 			/>
@@ -57,11 +63,16 @@ export default function ClipsPage() {
 			<section className="content-band clips-archive">
 				<div className="clips-archive-toolbar">
 					<div>
-						<span className="kicker">Clip-Archiv</span>
-						<h2>{data ? `${data.total} Twitch-Momente` : "Twitch-Momente werden gesammelt"}</h2>
-						<p>Direkt vom Kanal geladen und alle fünf Minuten behutsam aktualisiert.</p>
+						<span className="kicker">{text("Clip archive", "Clip-Archiv")}</span>
+						<h2>{data ? `${data.total} ${text("Twitch moments", "Twitch-Momente")}` : text("Collecting Twitch moments", "Twitch-Momente werden gesammelt")}</h2>
+						<p>
+							{text(
+								"Loaded directly from the channel and gently refreshed every five minutes.",
+								"Direkt vom Kanal geladen und alle fünf Minuten behutsam aktualisiert."
+							)}
+						</p>
 					</div>
-					<div className="filter-bar" aria-label="Clips filtern">
+					<div className="filter-bar" aria-label={text("Filter clips", "Clips filtern")}>
 						<div className="filter-group">
 							{sorts.map((option) => (
 								<button
@@ -72,7 +83,7 @@ export default function ClipsPage() {
 										setLimit(18);
 									}}
 								>
-									{option.label}
+									{option[locale]}
 								</button>
 							))}
 						</div>
@@ -86,7 +97,7 @@ export default function ClipsPage() {
 										setLimit(18);
 									}}
 								>
-									{option.label}
+									{option[locale]}
 								</button>
 							))}
 						</div>
@@ -99,8 +110,13 @@ export default function ClipsPage() {
 				) : clips.length === 0 ? (
 					<div className="empty-state">
 						<Sparkles size={38} />
-						<h3>Gerade ist es hier ganz still</h3>
-						<p>Sobald neue Twitch-Clips verfügbar sind, landen sie automatisch in dieser Sammlung.</p>
+						<h3>{text("It is quiet here right now", "Gerade ist es hier ganz still")}</h3>
+						<p>
+							{text(
+								"New Twitch clips will automatically appear in this collection as soon as they are available.",
+								"Sobald neue Twitch-Clips verfügbar sind, landen sie automatisch in dieser Sammlung."
+							)}
+						</p>
 					</div>
 				) : (
 					<div className="clips-grid">
@@ -120,10 +136,10 @@ export default function ClipsPage() {
 									<h2>{clip.title}</h2>
 									<div className="clip-meta-line">
 										<span>
-											<Eye size={14} /> {clip.view_count.toLocaleString("de-DE")}
+											<Eye size={14} /> {clip.view_count.toLocaleString(intlLocale)}
 										</span>
 										<span>
-											<CalendarDays size={14} /> {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(clip.created_at))}
+											<CalendarDays size={14} /> {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(clip.created_at))}
 										</span>
 									</div>
 								</div>
@@ -134,10 +150,10 @@ export default function ClipsPage() {
 				{data?.hasMore && (
 					<div className="clips-load-more">
 						<span>
-							{clips.length} von {data.total} sichtbar
+							{clips.length} {text("of", "von")} {data.total} {text("visible", "sichtbar")}
 						</span>
 						<button className="button button-secondary" type="button" onClick={() => setLimit((current) => current + 18)}>
-							<Flower2 size={15} /> Mehr Clips zeigen
+							<Flower2 size={15} /> {text("Show more clips", "Mehr Clips zeigen")}
 						</button>
 					</div>
 				)}

@@ -1123,6 +1123,27 @@ main {
 	background: color-mix(in srgb, var(--danger) 86%, #000);
 }
 
+.language-toggle {
+	min-width: 58px;
+	height: 38px;
+	padding: 0 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border: 1px solid var(--line-strong);
+	border-radius: 999px;
+	color: var(--ink);
+	background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+	font-size: 11px;
+	font-weight: 900;
+}
+
+.language-toggle:hover {
+	border-color: var(--blossom);
+	color: var(--blossom);
+}
+
 .section-shell,
 .content-band,
 .split-band,

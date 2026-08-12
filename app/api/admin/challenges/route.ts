@@ -17,6 +17,14 @@ function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
 	const description = String(body.description || current?.description || "")
 		.trim()
 		.slice(0, 500);
+	const titleEn =
+		String(body.titleEn ?? current?.titleEn ?? "")
+			.trim()
+			.slice(0, 100) || undefined;
+	const descriptionEn =
+		String(body.descriptionEn ?? current?.descriptionEn ?? "")
+			.trim()
+			.slice(0, 500) || undefined;
 	const target = Number(body.target ?? current?.target);
 	const queueId = body.queueId === undefined ? current?.queueId : body.queueId === "" || body.queueId === null ? undefined : Number(body.queueId);
 	const sortOrder = Number(body.sortOrder ?? current?.sortOrder ?? 999);
@@ -52,7 +60,9 @@ function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
 			: current?.prerequisiteIds;
 	return {
 		title,
+		titleEn,
 		description,
+		descriptionEn,
 		type,
 		target,
 		seasonId: String(body.seasonId || current?.seasonId || "custom")
@@ -75,6 +85,10 @@ function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
 			String(body.reward ?? current?.reward ?? "")
 				.trim()
 				.slice(0, 240) || undefined,
+		rewardEn:
+			String(body.rewardEn ?? current?.rewardEn ?? "")
+				.trim()
+				.slice(0, 240) || undefined,
 		discordRoleId:
 			String(body.discordRoleId ?? current?.discordRoleId ?? "")
 				.trim()
@@ -89,9 +103,17 @@ function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
 				? {
 						id: badgeId,
 						name: badgeName,
+						nameEn:
+							String(body.badgeNameEn ?? current?.badge?.nameEn ?? "")
+								.trim()
+								.slice(0, 80) || undefined,
 						description: String(body.badgeDescription ?? current?.badge?.description ?? description)
 							.trim()
 							.slice(0, 240),
+						descriptionEn:
+							String(body.badgeDescriptionEn ?? current?.badge?.descriptionEn ?? "")
+								.trim()
+								.slice(0, 240) || undefined,
 						icon: String(body.badgeIcon ?? current?.badge?.icon ?? body.icon ?? current?.icon ?? "🌸")
 							.trim()
 							.slice(0, 8),
