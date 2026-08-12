@@ -2,10 +2,27 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowRight, CalendarHeart, Clock3, Coffee, ExternalLink, Gift, HeartHandshake, Radio, Star } from "lucide-react";
+import {
+	ArrowRight,
+	CalendarHeart,
+	Clock3,
+	Coffee,
+	Cpu,
+	ExternalLink,
+	Flower2,
+	Gift,
+	HeartHandshake,
+	MonitorPlay,
+	Palette,
+	Radio,
+	ShoppingBag,
+	Snowflake,
+	Star,
+} from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { useLocale } from "@/components/LocaleProvider";
 import { site } from "@/lib/site";
+import { streamSetupGroups } from "@/lib/stream-setup";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 type Donation = { name: string; amountCents: number; currency: string };
@@ -22,6 +39,7 @@ export default function InfoPage() {
 	const dateLabel = (value: string) => new Intl.DateTimeFormat(intlLocale, { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date(value));
 	const timeLabel = (value: string) => new Intl.DateTimeFormat(intlLocale, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 	const donationLabel = (donation: Donation) => new Intl.NumberFormat(intlLocale, { style: "currency", currency: donation.currency || "EUR" }).format(donation.amountCents / 100);
+	const setupIcons = { hardware: Cpu, widgets: MonitorPlay, design: Palette, seasonal: Snowflake } as const;
 
 	return (
 		<>
@@ -116,6 +134,85 @@ export default function InfoPage() {
 						</div>
 					</article>
 				</div>
+			</section>
+			<section className="content-band stream-setup-section" aria-labelledby="stream-setup-title">
+				<header className="stream-setup-intro">
+					<span className="stream-setup-seal">
+						<Flower2 size={27} />
+					</span>
+					<div>
+						<span className="kicker">{text("Behind the stream", "Hinter dem Stream")}</span>
+						<h2 id="stream-setup-title">{text("Nachtara's stream setup & credits", "Nachtaras Stream-Setup & Credits")}</h2>
+						<p>
+							{text(
+								"Widgets, overlays, and little details that give the stream its familiar sakura look.",
+								"Widgets, Overlays und kleine Details, die dem Stream seinen vertrauten Sakura-Look geben."
+							)}
+						</p>
+					</div>
+					<span className="stream-setup-count">
+						<strong>{streamSetupGroups.reduce((total, group) => total + group.items.length, 0)}</strong>
+						{text("stream details", "Stream-Details")}
+					</span>
+				</header>
+
+				<div className="stream-setup-groups">
+					{streamSetupGroups.map((group) => {
+						const GroupIcon = setupIcons[group.id];
+						return (
+							<section className={`stream-setup-group ${group.id}`} key={group.id}>
+								<header>
+									<span>
+										<GroupIcon size={19} />
+									</span>
+									<div>
+										<h3>{group.title[locale]}</h3>
+										<p>{group.description[locale]}</p>
+									</div>
+								</header>
+								<div className="stream-setup-list">
+									{group.items.map((item) => {
+										const entryContent = (
+											<>
+												<span className="stream-setup-entry-mark">
+													{!item.href ? <Cpu size={16} /> : item.shopOnly ? <ShoppingBag size={16} /> : <Flower2 size={16} />}
+												</span>
+												<span>
+													<small>
+														{!item.href
+															? text("Nachtara's hardware", "Nachtaras Hardware")
+															: item.shopOnly
+																? text("Etsy shop · original no longer listed", "Etsy-Shop · Original nicht mehr gelistet")
+																: text("Etsy asset", "Etsy-Asset")}
+													</small>
+													<strong>{item.title[locale]}</strong>
+													<p>{item.description[locale]}</p>
+												</span>
+												{item.href && <ExternalLink size={15} />}
+											</>
+										);
+										return item.href ? (
+											<a className="stream-setup-entry" href={item.href} target="_blank" rel="noreferrer" key={item.id}>
+												{entryContent}
+											</a>
+										) : (
+											<div className="stream-setup-entry static" key={item.id}>
+												{entryContent}
+											</div>
+										);
+									})}
+								</div>
+							</section>
+						);
+					})}
+				</div>
+				<p className="stream-setup-disclosure">
+					<ShoppingBag size={14} />
+					{text(
+						"The linked sources lead directly to Etsy. They are provided as creator credits and are not affiliate links; availability may change.",
+						"Die verlinkten Quellen führen direkt zu Etsy. Sie dienen als Creator-Credits, sind keine Affiliate-Links und können sich in ihrer Verfügbarkeit ändern."
+					)}
+				</p>
 			</section>
 			<section className="content-band info-engagement-note">
 				<HeartHandshake size={34} strokeWidth={1.5} />
