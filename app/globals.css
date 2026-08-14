@@ -3978,6 +3978,9 @@ body.obs-page main {
 .social-card.instagram .social-icon {
 	color: #e674a9;
 }
+.social-card.threads .social-icon {
+	color: var(--ink-strong);
+}
 .social-card.kofi .social-icon {
 	color: #e9bd66;
 }

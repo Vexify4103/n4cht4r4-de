@@ -1,6 +1,6 @@
 "use client";
 
-import { Coffee, ExternalLink, Instagram, MessageCircleHeart, Music2, Twitch, Twitter, Youtube } from "lucide-react";
+import { AtSign, Coffee, ExternalLink, Instagram, MessageCircleHeart, Music2, Twitch, Twitter, Youtube } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { DiscordMark } from "@/components/DiscordMark";
 import { useLocale } from "@/components/LocaleProvider";
@@ -11,6 +11,7 @@ const socials = [
 	{ name: "Twitch", detail: { en: "Streams, chaos, and cozy evenings", de: "Streams, Chaos und Cozy-Abende" }, href: site.twitchUrl, icon: Twitch, tone: "twitch" },
 	{ name: "TikTok", detail: { en: "Clips for in between", de: "Clips für zwischendurch" }, href: site.tiktokUrl, icon: Music2, tone: "tiktok" },
 	{ name: "Instagram", detail: { en: "Photos and small updates", de: "Fotos und kleine Updates" }, href: site.instagramUrl, icon: Instagram, tone: "instagram" },
+	{ name: "Threads", detail: { en: "Thoughts, updates, and conversations", de: "Gedanken, Updates und Gespräche" }, href: site.threadsUrl, icon: AtSign, tone: "threads" },
 	{ name: "X / Twitter", detail: { en: "News and thoughts", de: "Neuigkeiten und Gedanken" }, href: site.xUrl, icon: Twitter, tone: "x" },
 	{ name: "YouTube", detail: { en: "Videos and stream moments", de: "Videos und Stream-Momente" }, href: site.youtubeUrl, icon: Youtube, tone: "youtube" },
 	{ name: "Ko-Fi", detail: { en: "Support Nachtara directly", de: "Nachtara direkt unterstützen" }, href: site.koFiUrl, icon: Coffee, tone: "kofi" },

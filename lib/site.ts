@@ -5,6 +5,7 @@ export const site = {
 	koFiUrl: "https://ko-fi.com/n4cht4r4",
 	tiktokUrl: "https://www.tiktok.com/@twitchn4cht4r4",
 	instagramUrl: "https://www.instagram.com/n4cht4r4",
+	threadsUrl: "https://www.threads.com/@n4cht4r4",
 	youtubeUrl: "https://www.youtube.com/@n4cht4r4",
 	xUrl: "https://x.com/n4cht4r4",
 	amazonWishlistUrl: process.env.NEXT_PUBLIC_AMAZON_WISHLIST_URL?.trim() || null,
