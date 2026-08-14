@@ -4,7 +4,10 @@ import Link from "next/link";
 import useSWR from "swr";
 import {
 	ArrowRight,
+	BookHeart,
+	Brain,
 	CalendarHeart,
+	ChevronDown,
 	Clock3,
 	Coffee,
 	Cpu,
@@ -16,11 +19,14 @@ import {
 	Palette,
 	Radio,
 	ShoppingBag,
+	ShieldCheck,
 	Snowflake,
+	Sprout,
 	Star,
 } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { useLocale } from "@/components/LocaleProvider";
+import { creatorNoteChapters } from "@/lib/creator-notes";
 import { site } from "@/lib/site";
 import { streamSetupGroups } from "@/lib/stream-setup";
 
@@ -40,6 +46,7 @@ export default function InfoPage() {
 	const timeLabel = (value: string) => new Intl.DateTimeFormat(intlLocale, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 	const donationLabel = (donation: Donation) => new Intl.NumberFormat(intlLocale, { style: "currency", currency: donation.currency || "EUR" }).format(donation.amountCents / 100);
 	const setupIcons = { hardware: Cpu, widgets: MonitorPlay, design: Palette, seasonal: Snowflake } as const;
+	const creatorNoteIcons = { balance: Brain, boundaries: ShieldCheck, growth: Sprout } as const;
 
 	return (
 		<>
@@ -211,6 +218,63 @@ export default function InfoPage() {
 					{text(
 						"The linked sources lead directly to Etsy. They are provided as creator credits and are not affiliate links; availability may change.",
 						"Die verlinkten Quellen führen direkt zu Etsy. Sie dienen als Creator-Credits, sind keine Affiliate-Links und können sich in ihrer Verfügbarkeit ändern."
+					)}
+				</p>
+			</section>
+			<section className="content-band creator-notes-section" aria-labelledby="creator-notes-title">
+				<header className="creator-notes-intro">
+					<span className="creator-notes-seal">
+						<BookHeart size={28} />
+					</span>
+					<div>
+						<span className="kicker">{text("From Nachtara's notebook", "Aus Nachtaras Notizbuch")}</span>
+						<h2 id="creator-notes-title">{text("Thoughts from a creator's working life", "Content-Creator-Arbeitsgedanken")}</h2>
+						<p>
+							{text(
+								"Personal principles for staying creative, responsible, and well while streaming.",
+								"Persönliche Grundsätze, die beim Streamen Raum für Kreativität, Verantwortung und das eigene Wohlbefinden lassen."
+							)}
+						</p>
+					</div>
+					<span className="creator-notes-label">{text("Personal · honest · evolving", "Persönlich · ehrlich · nicht in Stein gemeißelt")}</span>
+				</header>
+
+				<div className="creator-notes-accordion">
+					{creatorNoteChapters.map((chapter, index) => {
+						const ChapterIcon = creatorNoteIcons[chapter.id];
+						return (
+							<details className="creator-note-chapter" open={index === 0} key={chapter.id}>
+								<summary>
+									<span className="creator-note-icon">
+										<ChapterIcon size={20} />
+									</span>
+									<span className="creator-note-heading">
+										<small>{chapter.eyebrow[locale]}</small>
+										<strong>{chapter.title[locale]}</strong>
+										<span>{chapter.intro[locale]}</span>
+									</span>
+									<ChevronDown className="creator-note-chevron" size={20} />
+								</summary>
+								<div className="creator-note-body">
+									<blockquote>„{chapter.quote[locale]}“</blockquote>
+									<ol>
+										{chapter.points.map((point) => (
+											<li key={point.title.de}>
+												<strong>{point.title[locale]}</strong>
+												<p>{point.text[locale]}</p>
+											</li>
+										))}
+									</ol>
+								</div>
+							</details>
+						);
+					})}
+				</div>
+				<p className="creator-notes-disclaimer">
+					<HeartHandshake size={15} />
+					{text(
+						"These are Nachtara's personal experiences and working principles, not universal rules or a substitute for professional mental-health support.",
+						"Das sind Nachtaras persönliche Erfahrungen und Arbeitsgrundsätze, keine allgemeingültigen Regeln und kein Ersatz für professionelle Unterstützung bei psychischen Belastungen."
 					)}
 				</p>
 			</section>
