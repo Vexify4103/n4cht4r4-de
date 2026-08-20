@@ -45,7 +45,7 @@ export default function LoginPage() {
 				</div>
 				<div className="login-buttons">
 					<button className="login-btn discord" onClick={() => signIn("discord")}>
-						<DiscordMark size={20} />
+						<DiscordMark size={20} variant="white" />
 						<span>{text("Sign in with Discord", "Mit Discord anmelden")}</span>
 					</button>
 					<button className="login-btn twitch" onClick={() => signIn("twitch")}>

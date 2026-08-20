@@ -159,16 +159,24 @@ export default function CommunityPage() {
 					</header>
 					{!session ? (
 						<div className="community-login-note">
-							<span className="discord-panel-mark">
-								<DiscordMark size={20} />
-							</span>
-							<div>
-								<strong>{text("Write with Discord", "Mit Discord schreiben")}</strong>
-								<p>{text("This keeps your submission connected to your community name.", "So bleibt dein Beitrag mit deinem Community-Namen verbunden.")}</p>
+							<div className="community-discord-copy">
+								<span className="discord-panel-mark">
+									<DiscordMark size={20} variant="white" />
+								</span>
+								<div>
+									<strong>{text("Write with Discord", "Mit Discord schreiben")}</strong>
+									<p>{text("This keeps your submission connected to your community name.", "So bleibt dein Beitrag mit deinem Community-Namen verbunden.")}</p>
+								</div>
 							</div>
 							<button className="login-btn discord compact-login" onClick={() => signIn("discord")}>
-								<DiscordMark size={16} /> {text("Sign in with Discord", "Mit Discord anmelden")}
+								<DiscordMark size={16} variant="white" /> {text("Sign in with Discord", "Mit Discord anmelden")}
 							</button>
+							<small className="discord-brand-note">
+								{text(
+									"Discord is used only for sign-in; this website is independently operated.",
+									"Discord wird hier nur zur Anmeldung genutzt; diese Website wird unabhängig betrieben."
+								)}
+							</small>
 						</div>
 					) : profile && !hasDiscord ? (
 						<div className="community-login-note">

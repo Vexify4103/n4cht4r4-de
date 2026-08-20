@@ -155,7 +155,7 @@ export default function TournamentDetailPage() {
 						<div className="tournament-connection-list" aria-label={text("Required connections", "Benötigte Verbindungen")}>
 							{requiredConnections.includes("discord") && (
 								<span>
-									<DiscordMark size={13} /> Discord
+									<DiscordMark size={13} variant="blurple" /> Discord
 								</span>
 							)}
 							{requiredConnections.includes("riot") && (

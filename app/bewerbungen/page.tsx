@@ -40,7 +40,7 @@ export default function ApplicationsPage() {
 			<section className="content-band application-guide">
 				<div>
 					<span className="discord-guide-mark">
-						<DiscordMark size={14} />
+						<DiscordMark size={14} variant="white" />
 					</span>
 					<strong>{text("Discord first", "Discord zuerst")}</strong>
 					<span>{text("Your main account and our contact channel", "Dein Hauptkonto und unser Kontaktweg")}</span>

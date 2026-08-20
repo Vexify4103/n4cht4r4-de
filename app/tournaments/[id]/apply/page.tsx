@@ -100,7 +100,7 @@ export default function TournamentApplyPage() {
 					{requiresDiscord && (
 						<div className={`requirement-row ${hasDiscord ? "done" : ""}`}>
 							<span className="discord-requirement-mark">
-								<DiscordMark size={13} />
+								<DiscordMark size={13} variant="white" />
 							</span>
 							<div>
 								<strong>Discord</strong>
@@ -152,7 +152,7 @@ export default function TournamentApplyPage() {
 						<h3>{text("Start with Discord", "Starte mit Discord")}</h3>
 						<p>{text("You can then verify your Riot ID directly in your profile.", "Danach kannst du deine Riot-ID direkt im Profil verifizieren.")}</p>
 						<button className="login-btn discord compact-login" onClick={() => signIn("discord")}>
-							<DiscordMark size={17} /> {text("Sign in with Discord", "Mit Discord anmelden")}
+							<DiscordMark size={17} variant="white" /> {text("Sign in with Discord", "Mit Discord anmelden")}
 						</button>
 					</div>
 				) : (

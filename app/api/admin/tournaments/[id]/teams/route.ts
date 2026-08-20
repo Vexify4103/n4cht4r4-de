@@ -8,11 +8,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 type TeamMemberDocument = {
-	applicationId?: string;
-	userId?: string;
+	applicationId: string;
+	userId: string;
 	name: string;
 	role?: string;
-	discordId?: string;
+	discordId: string;
 	opgg?: string;
 	champs?: string[];
 };
@@ -50,19 +50,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	const body = await request.json().catch(() => null);
 	const name = typeof body?.name === "string" ? body.name.trim().slice(0, 64) : "";
 	if (!name) return NextResponse.json({ error: "Teamname ist erforderlich." }, { status: 400 });
-	const rawMembers: unknown[] = Array.isArray(body?.members) ? body.members.slice(0, 10) : [];
-	const members = rawMembers
-		.map((rawMember) => {
-			const member = rawMember && typeof rawMember === "object" ? (rawMember as Record<string, unknown>) : {};
-			return {
-				name: typeof member.name === "string" ? member.name.trim().slice(0, 48) : "",
-				role: typeof member.role === "string" ? member.role.trim().slice(0, 24) : "",
-				opgg: typeof member.opgg === "string" ? member.opgg.trim().slice(0, 300) : "",
-				discordId: typeof member.discordId === "string" ? member.discordId.trim().slice(0, 32) : "",
-				champs: Array.isArray(member.champs) ? member.champs.filter((champion: unknown): champion is string => typeof champion === "string").slice(0, 3) : [],
-			};
-		})
-		.filter((member) => member.name);
+	if (body && typeof body === "object" && "members" in body) {
+		return NextResponse.json({ error: "Spieler werden ausschließlich aus Turnieranmeldungen zugewiesen." }, { status: 400 });
+	}
 	await client.connect();
 	const db = client.db();
 	const tournament = await resolveTournament(db, id);
@@ -74,7 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		id: createId("team"),
 		tournamentId: id,
 		name,
-		members,
+		members: [],
 		seed: null,
 		published: false,
 		discordManaged: false,
@@ -133,6 +123,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 			return NextResponse.json({ removed: true });
 		}
 		const slot = typeof body.slot === "string" ? body.slot.trim().slice(0, 24) : "Spieler";
+		if (
+			typeof application.id !== "string" ||
+			typeof application.userId !== "string" ||
+			!application.userId.trim() ||
+			typeof application.riotId !== "string" ||
+			!application.riotId.trim() ||
+			typeof application.discordId !== "string" ||
+			!application.discordId.trim()
+		) {
+			return NextResponse.json({ error: "Diese Anmeldung hat keine vollständige Discord- und Riot-Verknüpfung und kann nicht zugewiesen werden." }, { status: 409 });
+		}
 		const teamSize = typeof tournament.teamSize === "number" ? tournament.teamSize : 5;
 		const currentMembers = team.members;
 		if (currentMembers.length >= teamSize && !currentMembers.some((member) => member.applicationId === application.id))

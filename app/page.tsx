@@ -59,7 +59,7 @@ export default function Home() {
 						</Link>
 						<a className="button button-discord-link" href="https://discord.gg/g69uYP97Qh" target="_blank" rel="noopener noreferrer">
 							<span className="discord-button-mark">
-								<DiscordMark size={14} />
+								<DiscordMark size={14} variant="white" />
 							</span>{" "}
 							{text("Community on Discord", "Community auf Discord")}
 						</a>

@@ -370,7 +370,7 @@ export default function MePage() {
 				<div className="connection-grid">
 					<article className={`connection-panel ${hasDiscord ? "connected" : ""}`}>
 						<span className="discord-panel-mark">
-							<DiscordMark size={21} />
+							<DiscordMark size={21} variant="white" />
 						</span>
 						<div>
 							<h3>Discord</h3>
@@ -387,7 +387,7 @@ export default function MePage() {
 							</div>
 						) : (
 							<button className="button button-discord" onClick={() => signIn("discord")}>
-								<DiscordMark size={14} /> {text("Connect Discord", "Discord verbinden")}
+								<DiscordMark size={14} variant="white" /> {text("Connect Discord", "Discord verbinden")}
 							</button>
 						)}
 					</article>

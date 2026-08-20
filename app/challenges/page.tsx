@@ -133,7 +133,7 @@ export default function ChallengesPage() {
 					<div>
 						<span className={`connection-badge discord-connection ${hasDiscord ? "connected" : ""}`}>
 							<span className="discord-mark-chip">
-								<DiscordMark size={9} />
+								<DiscordMark size={9} variant="white" />
 							</span>{" "}
 							Discord
 						</span>
@@ -203,7 +203,7 @@ export default function ChallengesPage() {
 							)}
 						</p>
 						<button className="login-btn discord compact-login" onClick={() => signIn("discord")}>
-							<DiscordMark size={17} /> {text("Sign in with Discord", "Mit Discord anmelden")}
+							<DiscordMark size={17} variant="white" /> {text("Sign in with Discord", "Mit Discord anmelden")}
 						</button>
 					</div>
 				)}

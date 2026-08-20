@@ -244,7 +244,6 @@ export function AdminTournamentWorkspace() {
 		try {
 			await request(`/api/admin/tournaments/${id}/teams`, "POST", {
 				name: form.get("name"),
-				members: [],
 			});
 			await refreshTeams();
 			setSeedOrder(null);
@@ -338,10 +337,13 @@ export function AdminTournamentWorkspace() {
 			setNotice(
 				action === "publish"
 					? text(
-							`Roster published. ${result.playerCount} players can now see their team; ${result.notificationCount} notifications were created.`,
-							`Roster veröffentlicht. ${result.playerCount} Spieler sehen jetzt ihre Einteilung; ${result.notificationCount} Benachrichtigungen wurden erstellt.`
+							`Roster published. ${result.playerCount} players can now see their team; ${result.dmQueued} Discord DMs were queued and ${result.dmDisabled} remain website-only.`,
+							`Roster veröffentlicht. ${result.playerCount} Spieler sehen jetzt ihre Einteilung; ${result.dmQueued} Discord-DMs wurden eingeplant, ${result.dmDisabled} bleiben nur auf der Website.`
 						)
-					: text(`${result.notificationCount} players were notified again.`, `${result.notificationCount} Spieler wurden erneut benachrichtigt.`)
+					: text(
+							`${result.dmQueued} Discord DMs were queued again; ${result.dmDisabled} notifications remain website-only.`,
+							`${result.dmQueued} Discord-DMs wurden erneut eingeplant; ${result.dmDisabled} Benachrichtigungen bleiben nur auf der Website.`
+						)
 			);
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : text("The roster could not be published.", "Der Roster konnte nicht veröffentlicht werden."));

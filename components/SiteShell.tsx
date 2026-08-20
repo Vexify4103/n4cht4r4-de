@@ -125,7 +125,7 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 						<span>Community</span>
 						<a href={site.discordUrl} target="_blank" rel="noopener noreferrer">
 							<span className="discord-footer-mark">
-								<DiscordMark size={10} />
+								<DiscordMark size={10} variant="white" />
 							</span>{" "}
 							Discord
 						</a>
@@ -156,7 +156,7 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 							aria-label={text(`${site.creator.name} on Discord`, `${site.creator.name} auf Discord`)}
 						>
 							<span className="discord-footer-mark">
-								<DiscordMark size={9} />
+								<DiscordMark size={9} variant="white" />
 							</span>{" "}
 							Discord
 						</a>

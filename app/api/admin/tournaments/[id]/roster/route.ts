@@ -27,6 +27,15 @@ type RosterTeam = {
 	discord?: { roleId?: string };
 };
 
+type ApplicationDocument = {
+	id: string;
+	tournamentId: string;
+	userId?: string;
+	discordId?: string;
+	status?: string;
+	teamId?: string | null;
+};
+
 function rosterSnapshot(teams: RosterTeam[]) {
 	return teams.flatMap((team) =>
 		(team.members || [])
@@ -64,6 +73,49 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 		return NextResponse.json(
 			{
 				error: `Noch nicht vollständig: ${incompleteTeams.map((team) => `${team.name} (${team.members?.length || 0}/${teamSize})`).join(", ")}.`,
+			},
+			{ status: 409 }
+		);
+	}
+
+	const rosterEntries = teams.flatMap((team) => (team.members || []).map((member) => ({ team, member })));
+	const applicationIds = rosterEntries
+		.map(({ member }) => member.applicationId)
+		.filter((applicationId): applicationId is string => typeof applicationId === "string" && Boolean(applicationId));
+	const applications = applicationIds.length
+		? await db
+				.collection<ApplicationDocument>("tournament_applications")
+				.find({ tournamentId: id, id: { $in: applicationIds } })
+				.toArray()
+		: [];
+	const applicationById = new Map(applications.map((application) => [application.id, application]));
+	const seenApplications = new Set<string>();
+	const seenUsers = new Set<string>();
+	const invalidMembers = rosterEntries.filter(({ team, member }) => {
+		const applicationId = member.applicationId?.trim() || "";
+		const userId = member.userId?.trim() || "";
+		const discordId = member.discordId?.trim() || "";
+		const application = applicationById.get(applicationId);
+		const duplicate = seenApplications.has(applicationId) || seenUsers.has(userId);
+		if (applicationId) seenApplications.add(applicationId);
+		if (userId) seenUsers.add(userId);
+		return (
+			!applicationId ||
+			!userId ||
+			!discordId ||
+			!application ||
+			application.status !== "accepted" ||
+			application.teamId !== team.id ||
+			application.userId !== userId ||
+			application.discordId !== discordId ||
+			duplicate
+		);
+	});
+	if (invalidMembers.length) {
+		const affectedTeams = [...new Set(invalidMembers.map(({ team }) => team.name))].join(", ");
+		return NextResponse.json(
+			{
+				error: `Der Roster enthält Spieler ohne gültige Turnieranmeldung (${affectedTeams}). Entferne alte manuelle Einträge und besetze jeden Platz über den Bewerber-Pool.`,
 			},
 			{ status: 409 }
 		);
@@ -140,11 +192,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 			})
 		)
 	);
+	const dmQueued = notifications.filter((notification) => notification.discordStatus === "pending").length;
+	const dmDisabled = notifications.length - dmQueued;
 
 	await recordTournamentAudit(db, staff, id, body.action === "renotify" ? "roster.renotified" : "roster.published", {
 		teamCount: teams.length,
 		playerCount: snapshot.length,
 		notificationCount: notifications.length,
 	});
-	return NextResponse.json({ published: body.action === "publish", teamCount: teams.length, playerCount: snapshot.length, notificationCount: notifications.length });
+	return NextResponse.json({
+		published: body.action === "publish",
+		teamCount: teams.length,
+		playerCount: snapshot.length,
+		notificationCount: notifications.length,
+		dmQueued,
+		dmDisabled,
+	});
 }

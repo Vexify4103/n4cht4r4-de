@@ -1,6 +1,7 @@
 import { Db } from "mongodb";
 import { TournamentNotification, userIdCandidates } from "@/lib/tournament-community";
 import { ChallengeRewardGrant } from "@/lib/challenge-rewards";
+import { buildTournamentDmPayload } from "@/lib/discord-notification-payload";
 
 export type DiscordQueueJobType =
 	| "team.create-role"
@@ -309,11 +310,32 @@ async function processNotificationJob(db: Db, job: DiscordQueueJob, config: Disc
 	}
 	const channel = await discordRequest<{ id: string }>(config, "/users/@me/channels", "POST", { recipient_id: discordId });
 	if (!channel?.id) throw new DiscordRequestError("Discord hat keinen DM-Kanal zurückgegeben.");
-	const origin = (process.env.NEXT_PUBLIC_APP_URL || "https://n4cht4r4.de").replace(/\/$/, "");
-	await discordRequest(config, `/channels/${channel.id}/messages`, "POST", {
-		content: `**${notification.title}**\n${notification.body}\n${origin}${notification.href}`,
-		allowed_mentions: { parse: [] },
-	});
+	const tournament = notification.tournamentId ? await db.collection("tournaments").findOne({ id: notification.tournamentId }) : null;
+	const team = notification.tournamentId
+		? await db.collection("tournament_teams").findOne({
+				tournamentId: notification.tournamentId,
+				published: true,
+				"publicMembers.userId": { $in: userIdCandidates(notification.userId) },
+			})
+		: null;
+	const publicMembers = Array.isArray(team?.publicMembers) ? (team.publicMembers as { userId?: string; role?: string }[]) : [];
+	const member = publicMembers.find((entry) => userIdCandidates(notification.userId).includes(String(entry.userId || "")));
+	await discordRequest(
+		config,
+		`/channels/${channel.id}/messages`,
+		"POST",
+		buildTournamentDmPayload({
+			title: notification.title,
+			body: notification.body,
+			href: notification.href,
+			tournamentTitle: typeof tournament?.title === "string" ? tournament.title : undefined,
+			tournamentFormat: typeof tournament?.format === "string" ? tournament.format : undefined,
+			tournamentStartsAt: tournament?.startsAt instanceof Date || typeof tournament?.startsAt === "string" ? tournament.startsAt : null,
+			teamName: typeof team?.publicName === "string" ? team.publicName : typeof team?.name === "string" ? team.name : undefined,
+			role: member?.role,
+			reminder: notification.type === "roster.reminder",
+		}) as unknown as Record<string, unknown>
+	);
 	await db.collection<TournamentNotification>("tournament_notifications").updateOne({ id: notification.id }, { $set: { discordStatus: "sent" } });
 	return "completed" as const;
 }
@@ -396,6 +418,9 @@ export async function processNextDiscordQueueJob(db: Db) {
 			await db
 				.collection<ChallengeRewardGrant>("challenge_reward_grants")
 				.updateOne({ id: job.payload.grantId }, { $set: { status: "failed", lastError: message, updatedAt: new Date() } });
+		}
+		if (failed && job.type === "notification.send-dm" && typeof job.payload.notificationId === "string") {
+			await db.collection<TournamentNotification>("tournament_notifications").updateOne({ id: job.payload.notificationId }, { $set: { discordStatus: "failed" } });
 		}
 		return { processed: true, jobId: job.id, status: failed ? "failed" : "requeued", error: message };
 	}

@@ -3968,6 +3968,7 @@ body.obs-page main {
 .social-card.discord .social-icon {
 	border-color: #5865f2;
 	background: #5865f2;
+	color: #fff;
 }
 .social-card.twitch .social-icon {
 	color: #b385ff;
@@ -7194,19 +7195,35 @@ body.obs-page main {
 	margin-top: 22px;
 	padding-top: 18px;
 	display: grid;
-	grid-template-columns: 34px 1fr;
+	grid-template-columns: minmax(0, 1fr);
 	gap: 10px;
 	border-top: 1px dotted var(--line-strong);
 }
 
-.community-login-note > svg,
-.community-login-note > span {
+.community-login-note > svg {
 	color: var(--blossom);
+}
+
+.community-discord-copy {
+	display: grid;
+	grid-template-columns: 48px minmax(0, 1fr);
+	align-items: center;
+	gap: 12px;
+}
+
+.community-login-note .discord-panel-mark {
+	color: #fff;
+}
+
+.discord-brand-note {
+	display: block;
+	color: var(--faint);
+	font-size: 10px;
+	line-height: 1.45;
 }
 
 .community-login-note .button,
 .community-login-note .login-btn {
-	grid-column: 1 / -1;
 	width: 100%;
 	min-width: 0;
 }

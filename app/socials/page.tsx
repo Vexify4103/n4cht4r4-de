@@ -35,7 +35,7 @@ export default function SocialsPage() {
 				<div className="social-grid">
 					{socials.map(({ name, detail, href, icon: Icon, tone }) => (
 						<a className={`social-card ${tone}`} href={href} key={name} target="_blank" rel="noreferrer">
-							<span className="social-icon">{name === "Discord" ? <DiscordMark size={18} /> : Icon ? <Icon size={24} /> : null}</span>
+							<span className="social-icon">{name === "Discord" ? <DiscordMark size={18} variant="white" /> : Icon ? <Icon size={24} /> : null}</span>
 							<span>
 								<strong>{name}</strong>
 								<small>{detail[locale]}</small>
