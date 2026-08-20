@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasTwitchApiCredentials, twitchApiFetch } from "@/lib/twitch-api";
 
 export const runtime = "nodejs";
 
@@ -22,13 +23,8 @@ let clipRequest: Promise<ClipCache> | null = null;
 
 function twitchCredentials() {
 	const broadcasterId = process.env.TWITCH_BROADCASTER_ID;
-	const clientId = process.env.TWITCH_CLIENT_ID;
-	const accessToken = process.env.TWITCH_ACCESS_TOKEN;
-	if (!broadcasterId || !clientId || !accessToken) return null;
-	return {
-		broadcasterId,
-		headers: { "Client-ID": clientId, Authorization: `Bearer ${accessToken}` },
-	};
+	if (!broadcasterId || !hasTwitchApiCredentials()) return null;
+	return { broadcasterId };
 }
 
 async function fetchAllClips(): Promise<ClipCache> {
@@ -40,8 +36,8 @@ async function fetchAllClips(): Promise<ClipCache> {
 	for (let page = 0; page < 10; page += 1) {
 		const params = new URLSearchParams({ broadcaster_id: credentials.broadcasterId, first: "100" });
 		if (cursor) params.set("after", cursor);
-		const response = await fetch(`https://api.twitch.tv/helix/clips?${params}`, { headers: credentials.headers, cache: "no-store" });
-		if (!response.ok) throw new Error(`Twitch Clips antwortete mit Status ${response.status}.`);
+		const response = await twitchApiFetch(`/clips?${params}`, { cache: "no-store" });
+		if (!response?.ok) throw new Error(`Twitch Clips antwortete mit Status ${response?.status || 503}.`);
 		const data = (await response.json()) as { data?: TwitchClip[]; pagination?: { cursor?: string } };
 		clips.push(...(data.data || []));
 		cursor = data.pagination?.cursor;
@@ -52,8 +48,8 @@ async function fetchAllClips(): Promise<ClipCache> {
 	if (gameIds.length) {
 		const params = new URLSearchParams();
 		gameIds.forEach((gameId) => params.append("id", gameId));
-		const response = await fetch(`https://api.twitch.tv/helix/games?${params}`, { headers: credentials.headers, cache: "no-store" });
-		if (response.ok) {
+		const response = await twitchApiFetch(`/games?${params}`, { cache: "no-store" });
+		if (response?.ok) {
 			const data = (await response.json()) as { data?: { id: string; name: string }[] };
 			const gameNames = new Map((data.data || []).map((game) => [game.id, game.name]));
 			clips.forEach((clip) => {

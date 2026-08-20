@@ -2,9 +2,9 @@ import client from "@/lib/db";
 import type { ObjectId } from "mongodb";
 import { getChallengeDefinitions } from "@/lib/challenges";
 import { syncChallengeCompletions } from "@/lib/challenge-rewards";
+import { hasTwitchApiCredentials, twitchApiFetch } from "@/lib/twitch-api";
 
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
-const TWITCH_ACCESS_TOKEN = process.env.TWITCH_ACCESS_TOKEN;
 const BROADCASTER_LOGIN = process.env.TWITCH_BROADCASTER_LOGIN || "n4cht4r4";
 const BROADCASTER_ID = process.env.TWITCH_BROADCASTER_ID;
 const CHATTERS_ACCESS_TOKEN = process.env.TWITCH_CHATTERS_ACCESS_TOKEN;
@@ -91,15 +91,9 @@ export type WatchTimeDiagnostic = {
 };
 
 async function isStreamLive(): Promise<boolean> {
-	if (!TWITCH_CLIENT_ID || !TWITCH_ACCESS_TOKEN) return false;
-
-	const res = await fetch(`https://api.twitch.tv/helix/streams?user_login=${BROADCASTER_LOGIN}`, {
-		headers: {
-			"Client-ID": TWITCH_CLIENT_ID,
-			Authorization: `Bearer ${TWITCH_ACCESS_TOKEN}`,
-		},
+	const res = await twitchApiFetch(`/streams?user_login=${encodeURIComponent(BROADCASTER_LOGIN)}`, {
 		cache: "no-store",
-	}).catch(() => null);
+	});
 
 	if (!res?.ok) return false;
 	const data = await res.json();
@@ -299,7 +293,7 @@ export async function trackWatchTime(): Promise<WatchTimeResult> {
 		return { status: "skipped", reason: "too_soon", matchedUsers: 0, incrementMinutes: 0 };
 	}
 
-	if (!TWITCH_CLIENT_ID || !TWITCH_ACCESS_TOKEN) {
+	if (!hasTwitchApiCredentials()) {
 		return { status: "skipped", reason: "twitch_credentials_missing", matchedUsers: 0, incrementMinutes: 0 };
 	}
 
