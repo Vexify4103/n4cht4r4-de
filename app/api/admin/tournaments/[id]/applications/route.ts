@@ -2,7 +2,6 @@ import { hasTournamentPermission } from "@/lib/tournament-admin";
 import { recordTournamentAudit } from "@/lib/tournament-audit";
 import { ensureTournamentCommunityIndexes, TournamentWishGroup } from "@/lib/tournament-community";
 import client from "@/lib/db";
-import { getRiotIdentityByPuuid, getRiotRank } from "@/lib/riot";
 import { resolveTournament } from "@/lib/tournament-slugs";
 import { Db, ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
@@ -88,7 +87,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 				.toArray()
 		: [];
 	const usersById = new Map(users.map((user) => [user._id.toString(), user]));
-	const now = Date.now();
 
 	await Promise.all(
 		applications.map(async (application) => {
@@ -96,43 +94,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 			const riotPuuid = String(application.riotPuuid || user?.riotPuuid || "");
 			const riotPlatform = String(application.riotPlatform || user?.riotPlatform || "euw1");
 			if (!riotPuuid) return;
-
-			const rankUpdatedAt = user?.riotRankUpdatedAt ? new Date(String(user.riotRankUpdatedAt)).getTime() : 0;
-			const identityUpdatedAt = user?.riotIdentityUpdatedAt ? new Date(String(user.riotIdentityUpdatedAt)).getTime() : 0;
-			const shouldRefreshRank = now - rankUpdatedAt > 15 * 60_000;
-			const [rank, identity] = await Promise.all([
-				shouldRefreshRank ? getRiotRank(riotPuuid, riotPlatform) : Promise.resolve(null),
-				now - identityUpdatedAt > 24 * 60 * 60_000 ? getRiotIdentityByPuuid(riotPuuid, riotPlatform) : Promise.resolve(null),
-			]);
-			const currentRank = shouldRefreshRank ? rank?.label || "Unranked" : String(user?.riotRank || application.currentRank || "Unranked");
-			const riotId = identity ? `${identity.gameName}#${identity.tagLine}` : String(application.riotId || "");
+			const currentRank = String(user?.riotRank || application.currentRank || "Unranked");
+			const riotId = user?.riotSummonerName && user?.riotTagLine ? `${user.riotSummonerName}#${user.riotTagLine}` : String(application.riotId || "");
+			const changed =
+				application.riotPuuid !== riotPuuid || application.riotPlatform !== riotPlatform || application.currentRank !== currentRank || application.riotId !== riotId;
 			application.riotPuuid = riotPuuid;
 			application.riotPlatform = riotPlatform;
 			application.currentRank = currentRank;
 			if (riotId) application.riotId = riotId;
 
-			await Promise.all([
-				db
+			if (changed)
+				await db
 					.collection("tournament_applications")
-					.updateOne({ id: application.id, tournamentId: id }, { $set: { riotPuuid, riotPlatform, currentRank, ...(riotId ? { riotId } : {}) } }),
-				user
-					? db.collection("users").updateOne(
-							{ _id: user._id },
-							{
-								$set: {
-									...(shouldRefreshRank ? { riotRank: rank?.label || "Unranked", riotRankUpdatedAt: new Date() } : {}),
-									...(identity
-										? {
-												riotSummonerName: identity.gameName,
-												riotTagLine: identity.tagLine,
-												riotIdentityUpdatedAt: new Date(),
-											}
-										: {}),
-								},
-							}
-						)
-					: Promise.resolve(),
-			]);
+					.updateOne({ id: application.id, tournamentId: id }, { $set: { riotPuuid, riotPlatform, currentRank, ...(riotId ? { riotId } : {}) } });
 		})
 	);
 

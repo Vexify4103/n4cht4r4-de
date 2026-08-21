@@ -19,6 +19,7 @@ import {
 	LockKeyhole,
 	Pencil,
 	Plus,
+	RefreshCw,
 	Save,
 	Search,
 	Send,
@@ -140,6 +141,15 @@ type WishGroup = {
 	ownerUserId: string;
 	memberUserIds: string[];
 };
+type RiotRefreshState = {
+	active: boolean;
+	batchId: string | null;
+	total: number;
+	queued: number;
+	processing: number;
+	completed: number;
+	failed: number;
+};
 
 function matchLabel(match: Match, locale: "de" | "en") {
 	if (match.placement === "third_place") return locale === "en" ? "Third-place match" : "Spiel um Platz 3";
@@ -177,9 +187,10 @@ export function AdminTournamentWorkspace() {
 	const [tab, setTab] = useState<Tab>("teams");
 	const [notice, setNotice] = useState("");
 	const [dialog, setDialog] = useState<
-		"team" | { edit: Team } | { team: Team; role: string } | { application: Application; applicationAction: "remove" | "ban" | "unban" } | null
+		"team" | { edit: Team } | { team: Team; role: string } | { application: Application; applicationAction: "remove" | "ban" | "unban" } | { riotRefresh: true } | null
 	>(null);
 	const [publishing, setPublishing] = useState(false);
+	const [riotRefreshBusy, setRiotRefreshBusy] = useState(false);
 	const [poolQuery, setPoolQuery] = useState("");
 	const [poolSort, setPoolSort] = useState<"rank-desc" | "rank-asc" | "name">("rank-desc");
 	const [seedOrder, setSeedOrder] = useState<string[] | null>(null);
@@ -191,6 +202,12 @@ export function AdminTournamentWorkspace() {
 		access ? `/api/admin/tournaments/${id}/applications` : null,
 		fetcher
 	);
+	const { data: riotRefresh, mutate: refreshRiotRefresh } = useSWR<RiotRefreshState>(access ? `/api/admin/tournaments/${id}/riot-refresh` : null, fetcher, {
+		refreshInterval: (latest) => (latest?.active ? 5_000 : 0),
+		onSuccess: (latest) => {
+			if (latest.active || (latest.total > 0 && latest.completed + latest.failed === latest.total)) void refreshApplications();
+		},
+	});
 	const tournament = tournamentData?.tournament;
 	const teams = useMemo(() => teamsData?.teams || [], [teamsData]);
 	const matches = matchesData?.matches || [];
@@ -417,6 +434,25 @@ export function AdminTournamentWorkspace() {
 			);
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : text("The application could not be updated.", "Die Anmeldung konnte nicht aktualisiert werden."));
+		}
+	}
+
+	async function startRiotRefresh() {
+		setRiotRefreshBusy(true);
+		try {
+			const result = await request(`/api/admin/tournaments/${id}/riot-refresh`, "POST", {});
+			await refreshRiotRefresh();
+			setDialog(null);
+			setNotice(
+				text(
+					`${result.queued} Riot profiles were queued. The update continues safely in the background.`,
+					`${result.queued} Riot-Profile wurden eingereiht. Die Aktualisierung läuft sicher im Hintergrund weiter.`
+				)
+			);
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("The Riot refresh could not be started.", "Die Riot-Aktualisierung konnte nicht gestartet werden."));
+		} finally {
+			setRiotRefreshBusy(false);
 		}
 	}
 
@@ -766,88 +802,123 @@ export function AdminTournamentWorkspace() {
 				)}
 
 				{tab === "applications" && (
-					<div className="admin-application-list">
-						{applications.map((application) => (
-							<article className="admin-application-sheet" key={application.id}>
-								<header>
-									<div>
-										<small>
-											{text("Solo application", "Solo-Anmeldung")}
-											{groupByUserId.get(application.userId)
-												? ` · ${text("Preferred group", "Wunschgruppe")} ${groupByUserId.get(application.userId)?.name}`
-												: ""}
-										</small>
-										<h2>{application.riotId}</h2>
-									</div>
-									<span
-										className={`status-pill ${application.status === "accepted" ? "registration" : application.status === "rejected" ? "completed" : "announcement"}`}
-									>
-										{text(
-											application.status === "accepted"
-												? "Accepted"
-												: application.status === "banned"
-													? "Banned"
-													: application.status === "rejected"
-														? "Rejected"
-														: application.status === "waitlisted"
-															? "Waitlist"
-															: "Pending",
-											application.status === "accepted"
-												? "Angenommen"
-												: application.status === "banned"
-													? "Gesperrt"
-													: application.status === "rejected"
-														? "Abgelehnt"
-														: application.status === "waitlisted"
-															? "Warteliste"
-															: "Offen"
-										)}
-									</span>
-								</header>
-								<div className="admin-application-connections">
-									<span>Discord: {application.discordId || text("missing", "fehlt")}</span>
-									<span>
-										{text("Riot rank", "Riot-Rang")}: {application.currentRank || "Unranked"}
-									</span>
-									{application.role && (
-										<span>
-											{text("Role", "Rolle")}: {application.role}
-										</span>
-									)}
-									<span>Bot-DMs: {application.discordDmOptIn ? text("enabled", "aktiv") : text("off", "aus")}</span>
-									{application.teamId && <span>{text("Already assigned", "Bereits zugewiesen")}</span>}
-								</div>
-								<p>{application.note}</p>
-								<footer>
-									{application.status === "banned" ? (
-										<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "unban" })}>
-											<Check size={14} /> {text("Lift ban", "Entbannen")}
-										</button>
-									) : (
-										<>
-											<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "remove" })}>
-												<UserMinus size={14} /> {text("Remove", "Entfernen")}
-											</button>
-											<button className="button button-danger-soft button-small" onClick={() => setDialog({ application, applicationAction: "ban" })}>
-												<ShieldAlert size={14} /> {text("Ban", "Bannen")}
-											</button>
-										</>
-									)}
-								</footer>
-							</article>
-						))}
-						{applications.length === 0 && (
-							<div className="empty-state">
-								<ClipboardList size={36} />
-								<h3>{text("No applications yet", "Noch keine Anmeldungen")}</h3>
-								<p>
-									{text(
-										"New individual applications appear here once registration opens.",
-										"Neue Einzelbewerbungen erscheinen nach dem Öffnen der Anmeldung hier."
-									)}
-								</p>
+					<div className="admin-applications-panel">
+						<header className="admin-applications-toolbar">
+							<div>
+								<RefreshCw className={riotRefresh?.active ? "spin" : ""} size={18} />
+								<span>
+									<strong>{text("Stored Riot profiles", "Gespeicherte Riot-Profile")}</strong>
+									<small>
+										{riotRefresh?.active
+											? text(
+													`${riotRefresh.completed + riotRefresh.failed}/${riotRefresh.total} processed`,
+													`${riotRefresh.completed + riotRefresh.failed}/${riotRefresh.total} verarbeitet`
+												)
+											: riotRefresh?.total
+												? text(
+														`${riotRefresh.completed}/${riotRefresh.total} profiles updated${riotRefresh.failed ? `, ${riotRefresh.failed} failed` : ""}.`,
+														`${riotRefresh.completed}/${riotRefresh.total} Profile aktualisiert${riotRefresh.failed ? `, ${riotRefresh.failed} fehlgeschlagen` : ""}.`
+													)
+												: text(
+														"Ranks and Riot IDs are read from the last safe refresh.",
+														"Ränge und Riot-IDs stammen aus der letzten sicheren Aktualisierung."
+													)}
+									</small>
+								</span>
 							</div>
-						)}
+							<button
+								className="button button-secondary button-small"
+								type="button"
+								disabled={riotRefreshBusy || riotRefresh?.active}
+								onClick={() => setDialog({ riotRefresh: true })}
+							>
+								<RefreshCw size={14} />
+								{riotRefresh?.active ? text("Update running", "Aktualisierung läuft") : text("Update all Riot profiles", "Alle Riot-Profile aktualisieren")}
+							</button>
+						</header>
+						<div className="admin-application-list">
+							{applications.map((application) => (
+								<article className="admin-application-sheet" key={application.id}>
+									<header>
+										<div>
+											<small>
+												{text("Solo application", "Solo-Anmeldung")}
+												{groupByUserId.get(application.userId)
+													? ` · ${text("Preferred group", "Wunschgruppe")} ${groupByUserId.get(application.userId)?.name}`
+													: ""}
+											</small>
+											<h2>{application.riotId}</h2>
+										</div>
+										<span
+											className={`status-pill ${application.status === "accepted" ? "registration" : application.status === "rejected" ? "completed" : "announcement"}`}
+										>
+											{text(
+												application.status === "accepted"
+													? "Accepted"
+													: application.status === "banned"
+														? "Banned"
+														: application.status === "rejected"
+															? "Rejected"
+															: application.status === "waitlisted"
+																? "Waitlist"
+																: "Pending",
+												application.status === "accepted"
+													? "Angenommen"
+													: application.status === "banned"
+														? "Gesperrt"
+														: application.status === "rejected"
+															? "Abgelehnt"
+															: application.status === "waitlisted"
+																? "Warteliste"
+																: "Offen"
+											)}
+										</span>
+									</header>
+									<div className="admin-application-connections">
+										<span>Discord: {application.discordId || text("missing", "fehlt")}</span>
+										<span>
+											{text("Riot rank", "Riot-Rang")}: {application.currentRank || "Unranked"}
+										</span>
+										{application.role && (
+											<span>
+												{text("Role", "Rolle")}: {application.role}
+											</span>
+										)}
+										<span>Bot-DMs: {application.discordDmOptIn ? text("enabled", "aktiv") : text("off", "aus")}</span>
+										{application.teamId && <span>{text("Already assigned", "Bereits zugewiesen")}</span>}
+									</div>
+									<p>{application.note}</p>
+									<footer>
+										{application.status === "banned" ? (
+											<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "unban" })}>
+												<Check size={14} /> {text("Lift ban", "Entbannen")}
+											</button>
+										) : (
+											<>
+												<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "remove" })}>
+													<UserMinus size={14} /> {text("Remove", "Entfernen")}
+												</button>
+												<button className="button button-danger-soft button-small" onClick={() => setDialog({ application, applicationAction: "ban" })}>
+													<ShieldAlert size={14} /> {text("Ban", "Bannen")}
+												</button>
+											</>
+										)}
+									</footer>
+								</article>
+							))}
+							{applications.length === 0 && (
+								<div className="empty-state">
+									<ClipboardList size={36} />
+									<h3>{text("No applications yet", "Noch keine Anmeldungen")}</h3>
+									<p>
+										{text(
+											"New individual applications appear here once registration opens.",
+											"Neue Einzelbewerbungen erscheinen nach dem Öffnen der Anmeldung hier."
+										)}
+									</p>
+								</div>
+							)}
+						</div>
 					</div>
 				)}
 
@@ -1175,6 +1246,38 @@ export function AdminTournamentWorkspace() {
 							{text("Create team", "Team erstellen")}
 						</button>
 					</form>
+				</Modal>
+			)}
+			{dialog && typeof dialog === "object" && "riotRefresh" in dialog && (
+				<Modal title={text("Update all Riot profiles", "Alle Riot-Profile aktualisieren")} onClose={() => setDialog(null)}>
+					<div className="roster-form">
+						<p className="muted-note">
+							{text(
+								"This refreshes every linked Riot profile and every stored tournament application by stable PUUID. Riot IDs, Solo/Duo ranks, and published roster names are updated through the background queue.",
+								"Damit werden alle verknüpften Riot-Profile und gespeicherten Turnieranmeldungen über ihre stabile PUUID aktualisiert. Riot-IDs, Solo/Duo-Ränge und Namen in veröffentlichten Rostern laufen sicher über die Hintergrund-Queue."
+							)}
+						</p>
+						<div className="admin-pool-disclosure">
+							<Clock3 size={16} />
+							<span>
+								<strong>{text("Rate limits remain protected", "Ratelimits bleiben geschützt")}</strong>
+								<small>
+									{text(
+										"One profile is processed every five seconds; failed jobs retry with backoff.",
+										"Alle fünf Sekunden wird ein Profil verarbeitet; fehlgeschlagene Jobs werden verzögert erneut versucht."
+									)}
+								</small>
+							</span>
+						</div>
+						<div className="dialog-actions">
+							<button className="button button-secondary" type="button" onClick={() => setDialog(null)}>
+								{text("Cancel", "Abbrechen")}
+							</button>
+							<button className="button button-primary" type="button" disabled={riotRefreshBusy} onClick={startRiotRefresh}>
+								<RefreshCw size={15} /> {riotRefreshBusy ? text("Queuing...", "Wird eingereiht...") : text("Start safe update", "Sichere Aktualisierung starten")}
+							</button>
+						</div>
+					</div>
 				</Modal>
 			)}
 			{dialog && typeof dialog === "object" && "applicationAction" in dialog && (

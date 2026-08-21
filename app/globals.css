@@ -5407,6 +5407,54 @@ body.obs-page main {
 	gap: 14px;
 }
 
+.admin-applications-panel {
+	margin-top: 24px;
+}
+
+.admin-applications-panel .admin-application-list {
+	margin-top: 14px;
+}
+
+.admin-applications-toolbar {
+	padding: 14px 0 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	border-bottom: 1px dotted var(--line-strong);
+}
+
+.admin-applications-toolbar > div,
+.admin-applications-toolbar span {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+}
+
+.admin-applications-toolbar span {
+	align-items: flex-start;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.admin-applications-toolbar svg {
+	color: var(--blossom);
+}
+
+.admin-applications-toolbar small {
+	color: var(--faint);
+}
+
+.spin {
+	animation: interface-spin 1.1s linear infinite;
+}
+
+@keyframes interface-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 .admin-application-sheet {
 	padding: 22px;
 	display: flex;
@@ -6450,6 +6498,7 @@ body.obs-page main {
 	}
 	.admin-workbench-bar,
 	.admin-roster-statusline,
+	.admin-applications-toolbar,
 	.wish-group-create,
 	.wish-group-heading,
 	.profile-tournament-sheet > header {
@@ -6458,7 +6507,8 @@ body.obs-page main {
 	}
 
 	.admin-roster-actions,
-	.admin-roster-actions .button {
+	.admin-roster-actions .button,
+	.admin-applications-toolbar .button {
 		width: 100%;
 	}
 
