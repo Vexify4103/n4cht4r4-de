@@ -6,6 +6,7 @@ import { resolveTournament } from "@/lib/tournament-slugs";
 import { getRiotRank } from "@/lib/riot";
 import { registrationIsOpen } from "@/lib/tournament-registration";
 import { grantTournamentApplicationReward } from "@/lib/tournament-rewards";
+import { ensureTournamentCommunityIndexes } from "@/lib/tournament-community";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 	await client.connect();
 	const db = client.db();
+	await ensureTournamentCommunityIndexes(db);
 	const tournament = await resolveTournament(db, id);
 	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
 	id = String(tournament.id);
@@ -35,21 +37,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	if (!discord) return NextResponse.json({ error: "Für die Anmeldung musst du Discord verbinden." }, { status: 403 });
 	if (!user?.riotVerified || !user.riotPuuid || !user.riotSummonerName || !user.riotTagLine)
 		return NextResponse.json({ error: "Für die Anmeldung musst du deine Riot-ID verifizieren." }, { status: 403 });
+	const activeBan = await db.collection("tournament_bans").findOne({
+		active: true,
+		$or: [{ userId: session.user.id }, { discordId: discord.providerAccountId }, { riotPuuid: String(user.riotPuuid) }],
+	});
+	if (activeBan) return NextResponse.json({ error: "Du bist für zukünftige N4cht4r4-Turniere gesperrt." }, { status: 403 });
 	if (tournament.collectRoles !== false && !role) return NextResponse.json({ error: "Bitte wähle deine bevorzugte Rolle." }, { status: 400 });
 	const existing = await db.collection("tournament_applications").findOne({ tournamentId: id, userId: session.user.id, status: { $in: ["pending", "accepted", "waitlisted"] } });
 	if (existing) return NextResponse.json({ error: "Du hast bereits eine aktive Bewerbung für dieses Turnier." }, { status: 409 });
 
 	const riotId = user?.riotSummonerName && user?.riotTagLine ? `${user.riotSummonerName}#${user.riotTagLine}` : "";
 	const rank = await getRiotRank(String(user.riotPuuid), String(user.riotPlatform || "euw1"));
-	const currentRank = rank?.label || String(user.riotRank || "Unranked");
-	if (rank) {
-		await db.collection("users").updateOne({ _id: userId }, { $set: { riotRank: rank.label, riotRankUpdatedAt: new Date() } });
-	}
+	const currentRank = rank?.label || "Unranked";
+	await db.collection("users").updateOne({ _id: userId }, { $set: { riotRank: currentRank, riotRankUpdatedAt: new Date() } });
 	const application = {
 		id: crypto.randomUUID(),
 		tournamentId: id,
 		userId: session.user.id,
 		discordId: discord?.providerAccountId || null,
+		riotPuuid: String(user.riotPuuid),
+		riotPlatform: String(user.riotPlatform || "euw1"),
 		riotId,
 		currentRank,
 		role,

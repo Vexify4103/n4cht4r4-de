@@ -3003,6 +3003,10 @@ select:focus {
 	font-size: 11px;
 }
 
+.form-checkbox-copy {
+	display: block;
+}
+
 .form-error,
 .form-success,
 .admin-notice {
@@ -5544,6 +5548,13 @@ body.obs-page main {
 
 .roster-form {
 	padding: 24px;
+}
+
+.dialog-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 9px;
 }
 
 .admin-roster-actions {

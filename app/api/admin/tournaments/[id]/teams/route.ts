@@ -122,6 +122,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 			]);
 			return NextResponse.json({ removed: true });
 		}
+		const activeBan = await db.collection("tournament_bans").findOne({
+			active: true,
+			$or: [{ userId: application.userId }, { discordId: application.discordId || "__none__" }, { riotPuuid: application.riotPuuid || "__none__" }],
+		});
+		if (application.status === "banned" || activeBan) return NextResponse.json({ error: "Diese Person ist für Turniere gesperrt." }, { status: 409 });
+		if (application.status === "rejected") return NextResponse.json({ error: "Diese Anmeldung ist nicht für die Teamzuweisung freigegeben." }, { status: 409 });
 		const slot = typeof body.slot === "string" ? body.slot.trim().slice(0, 24) : "Spieler";
 		if (
 			typeof application.id !== "string" ||

@@ -51,6 +51,7 @@ export async function ensureTournamentCommunityIndexes(db: Db) {
 			db.collection("tournament_wish_groups").createIndex({ tournamentId: 1, memberUserIds: 1 }, { unique: true }),
 			db.collection("tournament_notifications").createIndex({ userId: 1, createdAt: -1 }),
 			db.collection("tournament_applications").createIndex({ tournamentId: 1, userId: 1 }),
+			db.collection("tournament_bans").createIndex({ userId: 1 }, { unique: true }),
 		]).catch((error) => {
 			indexPromise = null;
 			throw error;

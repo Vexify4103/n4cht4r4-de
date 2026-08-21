@@ -130,7 +130,7 @@ type Application = {
 	note: string;
 	discordDmOptIn?: boolean;
 	teamId?: string | null;
-	status: "pending" | "accepted" | "waitlisted" | "rejected";
+	status: "pending" | "accepted" | "waitlisted" | "rejected" | "banned";
 	createdAt: string;
 };
 type WishGroup = {
@@ -176,7 +176,9 @@ export function AdminTournamentWorkspace() {
 	const { id } = useParams<{ id: string }>();
 	const [tab, setTab] = useState<Tab>("teams");
 	const [notice, setNotice] = useState("");
-	const [dialog, setDialog] = useState<"team" | { edit: Team } | { team: Team; role: string } | null>(null);
+	const [dialog, setDialog] = useState<
+		"team" | { edit: Team } | { team: Team; role: string } | { application: Application; applicationAction: "remove" | "ban" | "unban" } | null
+	>(null);
 	const [publishing, setPublishing] = useState(false);
 	const [poolQuery, setPoolQuery] = useState("");
 	const [poolSort, setPoolSort] = useState<"rank-desc" | "rank-asc" | "name">("rank-desc");
@@ -195,7 +197,7 @@ export function AdminTournamentWorkspace() {
 	const applications = useMemo(() => applicationData?.applications || [], [applicationData]);
 	const wishGroups = applicationData?.wishGroups || [];
 	const assignedApplicationIds = new Set(teams.flatMap((team) => team.members.map((member) => member.applicationId).filter(Boolean)));
-	const availableApplications = applications.filter((application) => application.status !== "rejected" && !assignedApplicationIds.has(application.id));
+	const availableApplications = applications.filter((application) => !["rejected", "banned"].includes(application.status) && !assignedApplicationIds.has(application.id));
 	const applicationById = useMemo(() => new Map(applications.map((application) => [application.id, application])), [applications]);
 	const visibleApplications = useMemo(() => {
 		const query = poolQuery.trim().toLowerCase();
@@ -401,13 +403,20 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
-	async function reviewApplication(applicationId: string, status: Application["status"]) {
+	async function manageApplication(applicationId: string, action: "remove" | "ban" | "unban") {
 		try {
-			await request(`/api/admin/tournaments/${id}/applications`, "PATCH", { applicationId, status });
-			await refreshApplications();
-			setNotice(text("Application status saved.", "Der Bewerbungsstatus wurde gespeichert."));
+			await request(`/api/admin/tournaments/${id}/applications`, action === "remove" ? "DELETE" : "PATCH", { applicationId, action });
+			await Promise.all([refreshApplications(), refreshTeams(), refreshTournament()]);
+			setDialog(null);
+			setNotice(
+				action === "ban"
+					? text("The user was banned from future tournaments.", "Die Person wurde für zukünftige Turniere gesperrt.")
+					: action === "unban"
+						? text("The tournament ban was lifted.", "Die Turniersperre wurde aufgehoben.")
+						: text("The application was removed.", "Die Anmeldung wurde entfernt.")
+			);
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : text("The application could not be updated.", "Die Bewerbung konnte nicht aktualisiert werden."));
+			setNotice(error instanceof Error ? error.message : text("The application could not be updated.", "Die Anmeldung konnte nicht aktualisiert werden."));
 		}
 	}
 
@@ -776,18 +785,22 @@ export function AdminTournamentWorkspace() {
 										{text(
 											application.status === "accepted"
 												? "Accepted"
-												: application.status === "rejected"
-													? "Rejected"
-													: application.status === "waitlisted"
-														? "Waitlist"
-														: "Pending",
+												: application.status === "banned"
+													? "Banned"
+													: application.status === "rejected"
+														? "Rejected"
+														: application.status === "waitlisted"
+															? "Waitlist"
+															: "Pending",
 											application.status === "accepted"
 												? "Angenommen"
-												: application.status === "rejected"
-													? "Abgelehnt"
-													: application.status === "waitlisted"
-														? "Warteliste"
-														: "Offen"
+												: application.status === "banned"
+													? "Gesperrt"
+													: application.status === "rejected"
+														? "Abgelehnt"
+														: application.status === "waitlisted"
+															? "Warteliste"
+															: "Offen"
 										)}
 									</span>
 								</header>
@@ -806,15 +819,20 @@ export function AdminTournamentWorkspace() {
 								</div>
 								<p>{application.note}</p>
 								<footer>
-									<button className="button button-secondary button-small" onClick={() => reviewApplication(application.id, "waitlisted")}>
-										{text("Waitlist", "Warteliste")}
-									</button>
-									<button className="button button-secondary button-small" onClick={() => reviewApplication(application.id, "rejected")}>
-										{text("Reject", "Ablehnen")}
-									</button>
-									<button className="button button-primary button-small" onClick={() => reviewApplication(application.id, "accepted")}>
-										<Check size={14} /> {text("Accept", "Annehmen")}
-									</button>
+									{application.status === "banned" ? (
+										<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "unban" })}>
+											<Check size={14} /> {text("Lift ban", "Entbannen")}
+										</button>
+									) : (
+										<>
+											<button className="button button-secondary button-small" onClick={() => setDialog({ application, applicationAction: "remove" })}>
+												<UserMinus size={14} /> {text("Remove", "Entfernen")}
+											</button>
+											<button className="button button-danger-soft button-small" onClick={() => setDialog({ application, applicationAction: "ban" })}>
+												<ShieldAlert size={14} /> {text("Ban", "Bannen")}
+											</button>
+										</>
+									)}
 								</footer>
 							</article>
 						))}
@@ -1157,6 +1175,57 @@ export function AdminTournamentWorkspace() {
 							{text("Create team", "Team erstellen")}
 						</button>
 					</form>
+				</Modal>
+			)}
+			{dialog && typeof dialog === "object" && "applicationAction" in dialog && (
+				<Modal
+					title={
+						dialog.applicationAction === "ban"
+							? text("Ban from tournaments", "Für Turniere sperren")
+							: dialog.applicationAction === "unban"
+								? text("Lift tournament ban", "Turniersperre aufheben")
+								: text("Remove application", "Anmeldung entfernen")
+					}
+					onClose={() => setDialog(null)}
+				>
+					<div className="roster-form">
+						<p>
+							<strong>{dialog.application.riotId}</strong>
+						</p>
+						<p className="muted-note">
+							{dialog.applicationAction === "ban"
+								? text(
+										"This removes the application and any roster or preferred-group assignment. The linked user will be blocked from all future tournament applications until the ban is lifted.",
+										"Die Anmeldung sowie jede Roster- oder Wunschgruppen-Zuweisung werden entfernt. Die verknüpfte Person kann sich bis zur Aufhebung der Sperre für kein zukünftiges Turnier anmelden."
+									)
+								: dialog.applicationAction === "unban"
+									? text(
+											"The user may apply to tournaments again. This application returns to the open applicant pool.",
+											"Die Person kann sich wieder für Turniere anmelden. Diese Anmeldung kehrt in den offenen Bewerber-Pool zurück."
+										)
+									: text(
+											"This application and its roster or preferred-group assignment will be removed. The user may apply to future tournaments again.",
+											"Diese Anmeldung sowie ihre Roster- oder Wunschgruppen-Zuweisung werden entfernt. Die Person kann sich weiterhin für zukünftige Turniere anmelden."
+										)}
+						</p>
+						<div className="dialog-actions">
+							<button className="button button-secondary" type="button" onClick={() => setDialog(null)}>
+								{text("Cancel", "Abbrechen")}
+							</button>
+							<button
+								className={`button ${dialog.applicationAction === "unban" ? "button-primary" : "button-danger-soft"}`}
+								type="button"
+								onClick={() => manageApplication(dialog.application.id, dialog.applicationAction)}
+							>
+								{dialog.applicationAction === "ban" ? <ShieldAlert size={15} /> : <Check size={15} />}
+								{dialog.applicationAction === "ban"
+									? text("Ban permanently", "Verbindlich sperren")
+									: dialog.applicationAction === "unban"
+										? text("Lift ban", "Sperre aufheben")
+										: text("Remove application", "Anmeldung entfernen")}
+							</button>
+						</div>
+					</div>
 				</Modal>
 			)}
 			{dialog && typeof dialog === "object" && "edit" in dialog && (

@@ -56,6 +56,18 @@ export async function resolveRiotIdentity(gameName: string, tagLine: string, reg
 	};
 }
 
+export async function getRiotIdentityByPuuid(puuid: string, platform = "euw1"): Promise<RiotIdentity | null> {
+	if (!RIOT_API_KEY) return null;
+
+	const response = await riotApiFetch(`https://europe.api.riotgames.com/riot/account/v1/accounts/by-puuid/${encodeURIComponent(puuid)}`, {
+		headers: { "X-Riot-Token": RIOT_API_KEY },
+	}).catch(() => null);
+	if (!response?.ok) return null;
+	const account = (await response.json()) as { puuid?: string; gameName?: string; tagLine?: string };
+	if (!account.puuid || !account.gameName || !account.tagLine) return null;
+	return { puuid: account.puuid, gameName: account.gameName, tagLine: account.tagLine, platform };
+}
+
 export async function getRiotProfileIcon(puuid: string, platform: string): Promise<number | null> {
 	if (!RIOT_API_KEY) return null;
 
@@ -71,14 +83,10 @@ export async function getRiotProfileIcon(puuid: string, platform: string): Promi
 export async function getRiotRank(puuid: string, platform: string): Promise<RiotRank | null> {
 	if (!RIOT_API_KEY) return null;
 	const headers = { "X-Riot-Token": RIOT_API_KEY };
-	const summonerResponse = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`, { headers }).catch(() => null);
-	if (!summonerResponse?.ok) return null;
-	const summoner = (await summonerResponse.json()) as { id?: string };
-	if (!summoner.id) return null;
-	const entriesResponse = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`, { headers }).catch(() => null);
+	const entriesResponse = await riotApiFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`, { headers }).catch(() => null);
 	if (!entriesResponse?.ok) return null;
 	const entries = (await entriesResponse.json()) as Array<{ queueType?: string; tier?: string; rank?: string; leaguePoints?: number }>;
-	const entry = entries.find((candidate) => candidate.queueType === "RANKED_SOLO_5x5") || entries.find((candidate) => candidate.queueType === "RANKED_FLEX_SR");
+	const entry = entries.find((candidate) => candidate.queueType === "RANKED_SOLO_5x5");
 	if (!entry?.tier) return null;
 	const tier = entry.tier.toUpperCase();
 	const rank = entry.rank || "I";

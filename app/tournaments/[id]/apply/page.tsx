@@ -234,12 +234,14 @@ export default function TournamentApplyPage() {
 								<strong className="form-checkbox-heading">
 									Discord-DMs <span className="field-optional">{text("Optional", "Optional")}</span>
 								</strong>
-								{text(
-									"The N4cht4r4 Discord bot may send me messages about team assignment and important tournament changes. I can change this later on",
-									"Der N4cht4r4 Discord-Bot darf mir Nachrichten zu Team-Zuteilung und wichtigen Änderungen dieses Turniers senden. Das kann ich später auf"
-								)}{" "}
-								<Link href="/me">/me</Link>
-								{text(".", "ändern.")}
+								<span className="form-checkbox-copy">
+									{text(
+										"The N4cht4r4 Discord bot may send me messages about team assignment and important tournament changes. I can change this later on",
+										"Der N4cht4r4 Discord-Bot darf mir Nachrichten zu Team-Zuteilung und wichtigen Änderungen dieses Turniers senden. Das kann ich später auf"
+									)}{" "}
+									<Link href="/me">/me</Link>
+									{text(".", " ändern.")}
+								</span>
 							</span>
 						</label>
 						<label className="form-checkbox">
