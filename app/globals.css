@@ -5014,6 +5014,11 @@ body.obs-page main {
 	font-size: 11px;
 }
 
+.requirement-row .discord-requirement-mark {
+	display: inline-grid;
+	place-items: center;
+}
+
 .application-requirements .button {
 	width: 100%;
 	margin-top: 18px;
