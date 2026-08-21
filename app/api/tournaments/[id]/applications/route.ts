@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	const body = await request.json().catch(() => null);
 	const role = typeof body?.role === "string" ? body.role.trim().slice(0, 24) : "";
 	const note = typeof body?.note === "string" ? body.note.trim().slice(0, 1_500) : "";
-	if (note.length < 20 || body?.accepted !== true) return NextResponse.json({ error: "Bitte fülle alle Pflichtfelder aus und akzeptiere die Bedingungen." }, { status: 400 });
+	if (body?.accepted !== true) return NextResponse.json({ error: "Bitte akzeptiere die Teilnahmebedingungen und Datenschutzhinweise." }, { status: 400 });
 
 	await client.connect();
 	const db = client.db();

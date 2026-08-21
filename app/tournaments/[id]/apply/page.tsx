@@ -25,6 +25,7 @@ export default function TournamentApplyPage() {
 			registrationOpensAt?: string | null;
 			registrationClosesAt?: string | null;
 			applicationModes?: ("solo" | "team")[];
+			wishGroupMode?: "disabled" | "duo" | "team";
 			requiredConnections?: ("discord" | "riot")[];
 			collectRoles?: boolean;
 			registrationNote?: string;
@@ -41,6 +42,7 @@ export default function TournamentApplyPage() {
 	const requiredConnections = tournament?.requiredConnections || ["discord", "riot"];
 	const requiresDiscord = requiredConnections.includes("discord");
 	const requiresRiot = requiredConnections.includes("riot");
+	const wishGroupsEnabled = tournament?.wishGroupMode === "duo" || tournament?.wishGroupMode === "team";
 	const connectionsReady = (!requiresDiscord || hasDiscord) && (!requiresRiot || profile?.riotVerified);
 
 	async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -87,8 +89,12 @@ export default function TournamentApplyPage() {
 				kicker={`${title} · ${text("Application", "Bewerbung")}`}
 				title={text("Your place among the participants", "Dein Platz im Teilnehmerfeld")}
 				copy={text(
-					"Everyone applies individually. Afterwards, you can create a non-binding preferred group with friends on your profile.",
-					"Alle melden sich einzeln an. Danach kannst du auf deinem Profil eine unverbindliche Wunschgruppe mit Freunden bilden."
+					wishGroupsEnabled
+						? "Everyone applies individually. Afterwards, you can create a non-binding preferred group with friends on your profile."
+						: "Everyone applies individually. Connect Discord and verify your Riot ID before submitting.",
+					wishGroupsEnabled
+						? "Alle melden sich einzeln an. Danach kannst du auf deinem Profil eine unverbindliche Wunschgruppe mit Freunden bilden."
+						: "Alle melden sich einzeln an. Verbinde Discord und verifiziere vor dem Absenden deine Riot-ID."
 				)}
 			/>
 			<section className="content-band application-layout">
@@ -166,19 +172,26 @@ export default function TournamentApplyPage() {
 						<div>
 							<span className="kicker">{text("Player application", "Spielerbewerbung")}</span>
 							<h2>{text("Tell us a little about yourself", "Erzähl uns kurz von dir")}</h2>
+							<p className="application-required-legend">
+								<span aria-hidden="true">*</span> {text("Required field", "Pflichtfeld")}
+							</p>
 						</div>
 						{notice && <p className={`form-${notice.type}`}>{notice.text}</p>}
 						<div className="form-group">
-							<label htmlFor="riotId">{text("Verified Riot ID", "Verifizierte Riot-ID")}</label>
-							<input
-								id="riotId"
-								value={profile?.riotVerified ? `${profile.riotSummonerName}#${profile.riotTagLine}` : text("Not verified yet", "Noch nicht verifiziert")}
-								readOnly
-							/>
+							<span className="form-field-label">{text("Verified Riot ID", "Verifizierte Riot-ID")}</span>
+							<output className="verified-riot-value" aria-label={text("Verified Riot ID", "Verifizierte Riot-ID")}>
+								<CheckCircle2 size={17} />
+								<span>{profile?.riotVerified ? `${profile.riotSummonerName}#${profile.riotTagLine}` : text("Not verified yet", "Noch nicht verifiziert")}</span>
+							</output>
 						</div>
 						{tournament?.collectRoles !== false && (
 							<div className="form-group">
-								<label htmlFor="role">{text("Preferred role", "Bevorzugte Rolle")}</label>
+								<label htmlFor="role">
+									{text("Preferred role", "Bevorzugte Rolle")}{" "}
+									<span className="field-required" aria-hidden="true">
+										*
+									</span>
+								</label>
 								<select id="role" name="role" required>
 									<option value="">{text("Please choose", "Bitte wählen")}</option>
 									<option>Top</option>
@@ -191,7 +204,9 @@ export default function TournamentApplyPage() {
 							</div>
 						)}
 						<div className="form-group">
-							<label htmlFor="note">{text("Short introduction", "Kurzvorstellung")}</label>
+							<label htmlFor="note">
+								{text("Short introduction", "Kurzvorstellung")} <span className="field-optional">{text("Optional", "Optional")}</span>
+							</label>
 							<textarea
 								id="note"
 								name="note"
@@ -199,22 +214,26 @@ export default function TournamentApplyPage() {
 									"Availability, experience, and anything tournament staff should know.",
 									"Verfügbarkeit, Erfahrung und alles, was die Turnierleitung wissen sollte."
 								)}
-								required
 							/>
 						</div>
-						<div className="wish-group-disclosure">
-							<strong>{text("Preferred groups are not fixed teams.", "Wunschgruppen sind keine festen Teams.")}</strong>
-							<span>
-								{text("After your solo application, you can create a group on", "Nach deiner Solo-Anmeldung kannst du auf")} <Link href="/me">/me</Link>{" "}
-								{text(
-									"or join one with a code. Tournament staff will try to honour preferences, but cannot guarantee them when skill differences would prevent fair teams.",
-									"eine Gruppe erstellen oder per Code beitreten. Die Turnierleitung versucht Wünsche zu berücksichtigen, kann sie bei zu großen Skill-Unterschieden für faire Teams aber nicht garantieren."
-								)}
-							</span>
-						</div>
+						{wishGroupsEnabled && (
+							<div className="wish-group-disclosure">
+								<strong>{text("Preferred groups are not fixed teams.", "Wunschgruppen sind keine festen Teams.")}</strong>
+								<span>
+									{text("After your solo application, you can create a group on", "Nach deiner Solo-Anmeldung kannst du auf")} <Link href="/me">/me</Link>{" "}
+									{text(
+										"or join one with a code. Tournament staff will try to honour preferences, but cannot guarantee them when skill differences would prevent fair teams.",
+										"eine Gruppe erstellen oder per Code beitreten. Die Turnierleitung versucht Wünsche zu berücksichtigen, kann sie bei zu großen Skill-Unterschieden für faire Teams aber nicht garantieren."
+									)}
+								</span>
+							</div>
+						)}
 						<label className="form-checkbox">
 							<input name="discordDmOptIn" type="checkbox" />
 							<span>
+								<strong className="form-checkbox-heading">
+									Discord-DMs <span className="field-optional">{text("Optional", "Optional")}</span>
+								</strong>
 								{text(
 									"The N4cht4r4 Discord bot may send me messages about team assignment and important tournament changes. I can change this later on",
 									"Der N4cht4r4 Discord-Bot darf mir Nachrichten zu Team-Zuteilung und wichtigen Änderungen dieses Turniers senden. Das kann ich später auf"
@@ -226,6 +245,12 @@ export default function TournamentApplyPage() {
 						<label className="form-checkbox">
 							<input name="accepted" type="checkbox" required />
 							<span>
+								<strong className="form-checkbox-heading">
+									{text("Consent", "Zustimmung")}{" "}
+									<span className="field-required" aria-hidden="true">
+										*
+									</span>
+								</strong>
 								{text("I accept the", "Ich akzeptiere die")} <Link href="/agb">{text("terms of participation", "Teilnahmebedingungen")}</Link>{" "}
 								{text("and have read the", "und habe die")} <Link href="/datenschutz">{text("privacy notice", "Datenschutzhinweise")}</Link> {text(".", "gelesen.")}
 							</span>

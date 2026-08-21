@@ -2912,6 +2912,51 @@ main {
 	font-weight: 800;
 }
 
+.application-required-legend {
+	margin: 8px 0 0;
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.application-required-legend span,
+.field-required {
+	color: var(--blossom-strong);
+	font-weight: 900;
+}
+
+.field-optional {
+	margin-left: 6px;
+	color: var(--faint);
+	font-size: 9px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.form-field-label {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+}
+
+.verified-riot-value {
+	min-height: 44px;
+	padding: 10px 12px;
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	border: 1px solid color-mix(in srgb, var(--success) 45%, var(--line));
+	border-radius: 5px;
+	color: var(--ink-strong);
+	background: color-mix(in srgb, var(--success) 8%, var(--surface-soft));
+	font-weight: 800;
+	user-select: text;
+}
+
+.verified-riot-value > svg {
+	flex: 0 0 auto;
+	color: var(--success);
+}
+
 input,
 textarea,
 select {
@@ -2949,6 +2994,13 @@ select:focus {
 	height: 17px;
 	min-height: 0;
 	margin-top: 3px;
+}
+
+.form-checkbox-heading {
+	display: block;
+	margin-bottom: 3px;
+	color: var(--ink-strong);
+	font-size: 11px;
 }
 
 .form-error,
