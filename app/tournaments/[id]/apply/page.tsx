@@ -145,15 +145,21 @@ export default function TournamentApplyPage() {
 						</Link>
 					</div>
 				) : !session ? (
-					<div className="empty-state">
+					<div className="empty-state discord-auth-state">
 						<span className="discord-empty-mark">
-							<DiscordMark size={27} variant="blurple" />
+							<DiscordMark size={22} variant="white" />
 						</span>
 						<h3>{text("Start with Discord", "Starte mit Discord")}</h3>
 						<p>{text("You can then verify your Riot ID directly in your profile.", "Danach kannst du deine Riot-ID direkt im Profil verifizieren.")}</p>
 						<button className="login-btn discord compact-login" onClick={() => signIn("discord")}>
 							<DiscordMark size={17} variant="white" /> {text("Sign in with Discord", "Mit Discord anmelden")}
 						</button>
+						<small className="discord-auth-disclaimer">
+							{text(
+								"Discord is used only for sign-in and tournament contact. This website is independently operated.",
+								"Discord wird nur zur Anmeldung und für den Turnierkontakt genutzt. Diese Website wird unabhängig betrieben."
+							)}
+						</small>
 					</div>
 				) : (
 					<form className="app-form" onSubmit={submit}>

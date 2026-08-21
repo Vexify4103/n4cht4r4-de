@@ -3863,9 +3863,9 @@ body.obs-page main {
 }
 
 .discord-requirement-mark {
-	width: 28px;
-	height: 25px;
-	border-radius: 5px;
+	width: 34px;
+	height: 30px;
+	border-radius: 6px;
 }
 
 .discord-guide-mark {
@@ -3876,10 +3876,38 @@ body.obs-page main {
 }
 
 .discord-empty-mark {
-	min-width: 48px;
-	min-height: 40px;
+	width: 64px;
+	height: 56px;
 	display: inline-grid;
 	place-items: center;
+	border-radius: 8px;
+	color: #fff;
+	background: #5865f2;
+}
+
+.discord-auth-state {
+	min-height: 320px;
+	padding: 42px 28px;
+	border-color: color-mix(in srgb, #5865f2 48%, var(--line));
+	background: color-mix(in srgb, #5865f2 7%, var(--surface));
+}
+
+.discord-auth-state h3 {
+	margin-top: 18px;
+}
+
+.discord-auth-state .compact-login {
+	margin-top: 20px;
+	background: #5865f2;
+}
+
+.discord-auth-disclaimer {
+	max-width: 440px;
+	margin-top: 14px;
+	color: var(--faint);
+	font-size: 10px;
+	line-height: 1.5;
+	text-align: center;
 }
 
 .icon-action {
@@ -4961,7 +4989,7 @@ body.obs-page main {
 	min-height: 70px;
 	padding: 12px 0;
 	display: grid;
-	grid-template-columns: 28px 1fr 20px;
+	grid-template-columns: 34px 1fr 20px;
 	align-items: center;
 	gap: 8px;
 	border-top: 1px dotted var(--line);

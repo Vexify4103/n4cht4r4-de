@@ -102,15 +102,21 @@ export default function ApplicationTypePage() {
 						</Link>
 					</div>
 				) : !session ? (
-					<div className="empty-state">
+					<div className="empty-state discord-auth-state">
 						<span className="discord-empty-mark">
-							<DiscordMark size={27} variant="blurple" />
+							<DiscordMark size={22} variant="white" />
 						</span>
 						<h3>{text("Sign in with Discord", "Mit Discord anmelden")}</h3>
 						<p>{text("Discord is your main account for applications.", "Discord ist dein Hauptkonto für die Bewerbung.")}</p>
 						<button className="login-btn discord compact-login" onClick={() => signIn("discord")}>
 							<DiscordMark size={17} variant="white" /> {text("Sign in with Discord", "Mit Discord anmelden")}
 						</button>
+						<small className="discord-auth-disclaimer">
+							{text(
+								"Discord is used only for sign-in and application contact. This website is independently operated.",
+								"Discord wird nur zur Anmeldung und für den Bewerbungskontakt genutzt. Diese Website wird unabhängig betrieben."
+							)}
+						</small>
 					</div>
 				) : (
 					<form className="app-form" onSubmit={submit}>
