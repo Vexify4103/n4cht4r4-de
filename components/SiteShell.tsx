@@ -1,32 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import {
-	BookOpenText,
-	Copyright,
-	Film,
-	Flower2,
-	Gamepad2,
-	HeartHandshake,
-	Home,
-	Info,
-	MessageCircleHeart,
-	Menu,
-	Sparkles,
-	Target,
-	Trophy,
-	Twitch,
-	UsersRound,
-	X,
-} from "lucide-react";
+import { Film, Flower2, Gamepad2, Home, Info, MessageCircleHeart, Menu, Target, Trophy, UsersRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SakuraAtmosphere } from "@/components/SakuraAtmosphere";
 import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLocale } from "@/components/LocaleProvider";
-import { DiscordMark } from "@/components/DiscordMark";
 import { site } from "@/lib/site";
 
 const navItems = [
@@ -95,88 +78,56 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 
 			<main>{children}</main>
 
-			<footer className="site-footer">
-				<div className="footer-main">
-					<div className="footer-brand">
-						<span className="brand-sigil">
-							<Flower2 size={20} />
-						</span>
-						<div>
-							<strong>N4cht4r4</strong>
-							<p>{text("Streams, events, and a cozy place for the community.", "Streams, Events und ein gemütlicher Platz für die Community.")}</p>
+			{!pathname.startsWith("/admin") && (
+				<footer className="site-footer">
+					<div className="footer-main">
+						<div className="footer-intro">
+							<span className="footer-mark">
+								<Image src="/favicon.svg" alt="" width={52} height={52} />
+							</span>
+							<h2>
+								{text("Soft at heart.", "Sanft im Herzen.")}
+								<br />
+								{text("Loud on stream.", "Laut im Stream.")}
+							</h2>
+						</div>
+						<div className="footer-links">
+							<strong>{text("Explore", "Entdecken")}</strong>
+							<Link href="/tournaments">{text("Tournaments", "Turniere")}</Link>
+							<Link href="/challenges">Challenges</Link>
+							<Link href="/projects">{text("Community projects", "Community-Projekte")}</Link>
+							<Link href="/community">{text("Community wall & fan art", "Pinnwand & Fanart")}</Link>
+							<Link href="/engagement">{text("Causes & charity", "Engagement & Charity")}</Link>
+						</div>
+						<div className="footer-links">
+							<strong>{text("More & legal", "Mehr & Rechtliches")}</strong>
+							<Link href="/info">{text("About N4cht4r4", "Über N4cht4r4")}</Link>
+							<Link href="/clips">Clips</Link>
+							<Link href="/socials">Socials</Link>
+							<Link href="/datenschutz">{text("Privacy", "Datenschutz")}</Link>
+							<Link href="/agb">{text("Terms of use", "Nutzungsbedingungen")}</Link>
 						</div>
 					</div>
-					<div className="footer-links">
-						<span>{text("Explore", "Entdecken")}</span>
-						<Link href="/tournaments">
-							<Trophy size={14} /> {text("Tournaments", "Turniere")}
-						</Link>
-						<Link href="/challenges">
-							<Target size={14} /> Challenges
-						</Link>
-						<Link href="/bewerbungen">
-							<BookOpenText size={14} /> {text("Applications", "Bewerbungen")}
-						</Link>
-						<Link href="/projects">
-							<Gamepad2 size={14} /> {text("Community projects", "Community-Projekte")}
-						</Link>
-					</div>
-					<div className="footer-links">
-						<span>Community</span>
-						<a href={site.discordUrl} target="_blank" rel="noopener noreferrer">
-							<span className="discord-footer-mark">
-								<DiscordMark size={10} variant="white" />
-							</span>{" "}
-							Discord
-						</a>
-						<a href={site.twitchUrl} target="_blank" rel="noopener noreferrer">
-							<Twitch size={14} /> Twitch
-						</a>
-						<Link href="/socials">
-							<Sparkles size={14} /> {text("All socials", "Alle Socials")}
-						</Link>
-						<Link href="/community">
-							<MessageCircleHeart size={14} /> {text("Community wall & fan art", "Pinnwand & Fanart")}
-						</Link>
-						<Link href="/engagement">
-							<HeartHandshake size={14} /> {text("Causes & charity", "Engagement & Charity")}
-						</Link>
-					</div>
-				</div>
-				<div className="footer-bottom">
-					<span>
-						<Copyright size={13} /> 2026 N4cht4r4
-					</span>
-					<span className="footer-credit">
-						{text("Website by", "Website von")} {site.creator.name}
-						<a
-							href={site.creator.discordUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							aria-label={text(`${site.creator.name} on Discord`, `${site.creator.name} auf Discord`)}
-						>
-							<span className="discord-footer-mark">
-								<DiscordMark size={9} variant="white" />
-							</span>{" "}
-							Discord
-						</a>
-						{site.creator.twitchUrl && (
+					<div className="footer-bottom">
+						<div className="footer-bottom-meta">
+							<span>© 2026 N4cht4r4</span>
+							<span className="footer-bottom-separator" aria-hidden="true">
+								·
+							</span>
 							<a
-								href={site.creator.twitchUrl}
+								className="footer-signature"
+								href={site.creator.twitchUrl || site.creator.discordUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								aria-label={text(`${site.creator.name} on Twitch`, `${site.creator.name} auf Twitch`)}
+								aria-label={text(`Website by ${site.creator.name} — visit on Twitch`, `Website von ${site.creator.name} — auf Twitch besuchen`)}
 							>
-								<Twitch size={13} /> Twitch
+								{text("Website by", "Website von")} {site.creator.name} <span aria-hidden="true">↗</span>
 							</a>
-						)}
-					</span>
-					<div>
-						<Link href="/datenschutz">{text("Privacy", "Datenschutz")}</Link>
-						<Link href="/agb">{text("Terms of use", "Nutzungsbedingungen")}</Link>
+						</div>
+						<span>{text("For cozy streams and blooming communities.", "Für gemütliche Streams und eine Community, die gemeinsam aufblüht.")}</span>
 					</div>
-				</div>
-			</footer>
+				</footer>
+			)}
 		</body>
 	);
 }
