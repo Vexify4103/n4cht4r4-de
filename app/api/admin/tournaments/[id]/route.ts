@@ -68,7 +68,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 		const startsAt = new Date(String(update.startsAt));
 		if (Number.isNaN(startsAt.getTime())) return NextResponse.json({ error: "Der Turnierstart ist ungültig." }, { status: 400 });
 		update.startsAt = startsAt.toISOString();
-		update.date = startsAt.toISOString().slice(0, 10);
+		update.date = startsAt.toISOString();
 	}
 	if (update.published !== undefined) update.published = update.published === true;
 	if (update.teamSize !== undefined && (!Number.isInteger(Number(update.teamSize)) || Number(update.teamSize) < 1 || Number(update.teamSize) > 10))

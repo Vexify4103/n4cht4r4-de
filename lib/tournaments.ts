@@ -48,6 +48,7 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		? value.applicationModes.filter((mode): mode is TournamentApplicationMode => mode === "solo" || mode === "team")
 		: undefined;
 	const requiredConnections: TournamentConnection[] = ["discord", "riot"];
+	const startsAt = typeof value.startsAt === "string" ? value.startsAt : value.startsAt instanceof Date ? value.startsAt.toISOString() : null;
 
 	const registrationState = registrationWindowState(value);
 
@@ -57,8 +58,8 @@ export function normalizeTournament(value: Record<string, unknown>): TournamentR
 		game: value.game,
 		format: value.format,
 		status: value.status,
-		date: typeof value.date === "string" ? value.date : null,
-		startsAt: typeof value.startsAt === "string" ? value.startsAt : value.startsAt instanceof Date ? value.startsAt.toISOString() : null,
+		date: startsAt || (typeof value.date === "string" ? value.date : null),
+		startsAt,
 		maxTeams: typeof value.maxTeams === "number" ? value.maxTeams : null,
 		currentTeams: typeof value.currentTeams === "number" ? value.currentTeams : 0,
 		registrationOpen: registrationState === "open",
