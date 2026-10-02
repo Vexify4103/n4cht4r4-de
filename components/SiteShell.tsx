@@ -104,6 +104,8 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
 							<Link href="/info">{text("About N4cht4r4", "Über N4cht4r4")}</Link>
 							<Link href="/clips">Clips</Link>
 							<Link href="/socials">Socials</Link>
+							<Link href="/bewerbungen">{text("Team applications", "Team-Bewerbungen")}</Link>
+							<Link href="/bewerbungen/appeal">{text("Ban appeal", "Entbannungsantrag")}</Link>
 							<Link href="/datenschutz">{text("Privacy", "Datenschutz")}</Link>
 							<Link href="/agb">{text("Terms of use", "Nutzungsbedingungen")}</Link>
 						</div>

@@ -40,17 +40,23 @@ export const defaultCommunityProjects: CommunityProject[] = [
 		game: "Palworld",
 		summary: "Gemeinsam erkunden, Basen bauen und einen Server gestalten, auf dem Fortschritt und gemütliches Zusammenspielen zusammenpassen.",
 		details: "Serverregeln, Starttermin, Einstellungen und Zugangsdaten werden veröffentlicht, sobald die nächste Runde feststeht.",
-		status: "planning",
-		statusLabel: "In Vorbereitung",
+		status: "ended",
+		statusLabel: "Beendet",
 		imageUrl: "/images/community-palworld-v1.png",
 		applicationHref: null,
 		rules: ["Gemeinsame Ressourcen fair nutzen", "Basen anderer respektieren", "Keine Exploits oder absichtliche Serverbelastung", "Absprachen im Discord beachten"],
 		order: 20,
-		published: true,
+		published: false,
 	},
 ];
 
 export async function ensureCommunityIndexes(db: Db) {
+	await db
+		.collection("community_projects")
+		.updateMany(
+			{ id: "palworld-community-server", retirementVersion: { $ne: "2026-10" } },
+			{ $set: { status: "ended", statusLabel: "Beendet", published: false, retirementVersion: "2026-10" } }
+		);
 	await Promise.all([
 		db.collection("community_posts").createIndex({ id: 1 }, { unique: true }),
 		db.collection("community_posts").createIndex({ status: 1, createdAt: -1 }),
@@ -65,7 +71,13 @@ export async function seedDefaultCommunityProjects(db: Db) {
 	const now = new Date();
 	await Promise.all(
 		defaultCommunityProjects.map((project) =>
-			db.collection("community_projects").updateOne({ id: project.id }, { $setOnInsert: { ...project, createdAt: now, updatedAt: now } }, { upsert: true })
+			db
+				.collection("community_projects")
+				.updateOne(
+					{ id: project.id },
+					{ $setOnInsert: { ...project, ...(project.id === "palworld-community-server" ? { retirementVersion: "2026-10" } : {}), createdAt: now, updatedAt: now } },
+					{ upsert: true }
+				)
 		)
 	);
 }

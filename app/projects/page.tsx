@@ -27,8 +27,8 @@ export default function ProjectsPage() {
 				kicker={text("Together instead of alone", "Gemeinsam statt allein")}
 				title={text("Nachtara's community worlds.", "Nachtaras Community-Welten.")}
 				copy={text(
-					"Minecraft seasons, Palworld servers, and everything the community builds, plays, or makes a little chaotic next.",
-					"Minecraft-Saisons, Palworld-Server und alles, was die Community als Nächstes gemeinsam baut, spielt oder ein kleines bisschen chaotisch macht."
+					"Minecraft seasons, community servers, and everything the community builds, plays, or makes a little chaotic next.",
+					"Minecraft-Saisons, Community-Server und alles, was die Community als Nächstes gemeinsam baut, spielt oder ein kleines bisschen chaotisch macht."
 				)}
 				icon={<Gamepad2 size={44} strokeWidth={1.6} />}
 			>

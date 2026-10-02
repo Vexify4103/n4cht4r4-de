@@ -115,6 +115,9 @@ export default function AdminTournamentsPage() {
 						<h2>{text("Published and planned tournaments", "Veröffentlichte und geplante Turniere")}</h2>
 					</div>
 					<div className="admin-ledger-tools">
+						<Link className="button button-secondary button-small" href="/admin/content">
+							<Flower2 size={16} /> {text("News & applications", "News & Bewerbungen")}
+						</Link>
 						<Link className="button button-secondary button-small" href="/admin/community">
 							<MessageCircleHeart size={14} /> Community
 						</Link>

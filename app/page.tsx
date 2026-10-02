@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BookHeart, Flower2, Gamepad2, HeartHandshake, Sparkles, Target, Trophy } from "lucide-react";
 import { HomeLivePanel } from "@/components/HomeLivePanel";
+import { HomeNews } from "@/components/HomeNews";
 import { DiscordMark } from "@/components/DiscordMark";
 import { useLocale } from "@/components/LocaleProvider";
 import { currentEngagement } from "@/lib/engagement";
@@ -29,8 +30,8 @@ const gardenPaths = [
 		eyebrow: { en: "Shared worlds", de: "Gemeinsame Welten" },
 		title: { en: "Community projects", de: "Community Projekte" },
 		copy: {
-			en: "Minecraft, Palworld, and future servers with status, rules, and applications in one place.",
-			de: "Minecraft, Palworld und kommende Server mit Status, Regeln und Bewerbungen an einem Ort.",
+			en: "Minecraft and future community servers with status, rules, and applications in one place.",
+			de: "Minecraft und kommende Community-Server mit Status, Regeln und Bewerbungen an einem Ort.",
 		},
 		href: "/projects",
 		link: { en: "Discover projects", de: "Projekte entdecken" },
@@ -78,6 +79,7 @@ export default function Home() {
 				</div>
 				<HomeLivePanel />
 			</section>
+			<HomeNews />
 
 			<section className="section-shell garden-intro">
 				<div className="section-heading">

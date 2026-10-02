@@ -31,18 +31,32 @@ export default function ApplicationTypePage() {
 		setSubmitting(true);
 		setNotice(null);
 		const values = Object.fromEntries(new FormData(event.currentTarget));
-		const response = await fetch("/api/applications", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ ...values, type, accepted: values.accepted === "on" }),
-		});
-		const result = await response.json();
-		setSubmitting(false);
-		setNotice(
-			response.ok
-				? { type: "success", text: text("Your application has arrived.", "Deine Bewerbung ist angekommen.") }
-				: { type: "error", text: result.error || text("The application could not be sent.", "Die Bewerbung konnte nicht gesendet werden.") }
-		);
+		try {
+			const response = await fetch("/api/applications", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ ...values, type, accepted: values.accepted === "on" }),
+			});
+			const result = await response.json();
+			setNotice(
+				response.ok
+					? {
+							type: "success",
+							text:
+								type === "appeal"
+									? text(
+											"Your appeal has arrived. You can check the decision under your applications.",
+											"Dein Antrag ist angekommen. Die Entscheidung findest du unter deinen Bewerbungen."
+										)
+									: text("Your application has arrived.", "Deine Bewerbung ist angekommen."),
+						}
+					: { type: "error", text: result.error || text("The application could not be sent.", "Die Bewerbung konnte nicht gesendet werden.") }
+			);
+		} catch {
+			setNotice({ type: "error", text: text("Could not reach the server. Please try again.", "Der Server ist gerade nicht erreichbar. Bitte versuche es erneut.") });
+		} finally {
+			setSubmitting(false);
+		}
 	}
 
 	if (!definition)
@@ -55,7 +69,7 @@ export default function ApplicationTypePage() {
 	return (
 		<>
 			<PageHero
-				kicker={text("Community application", "Community-Bewerbung")}
+				kicker={type === "appeal" ? text("A second look", "Ein zweiter Blick") : text("Community application", "Community-Bewerbung")}
 				title={locale === "en" ? definition.labelEn : definition.label}
 				copy={locale === "en" ? definition.descriptionEn : definition.description}
 				icon={<ClipboardList size={44} strokeWidth={1.6} />}
@@ -122,24 +136,39 @@ export default function ApplicationTypePage() {
 					<form className="app-form" onSubmit={submit}>
 						<div>
 							<span className="kicker">{locale === "en" ? definition.labelEn : definition.label}</span>
-							<h2>{text("Your application", "Deine Bewerbung")}</h2>
+							<h2>{type === "appeal" ? text("Your appeal", "Dein Entbannungsantrag") : text("Your application", "Deine Bewerbung")}</h2>
 						</div>
 						{notice && <p className={`form-${notice.type}`}>{notice.text}</p>}
+						<p className="muted-note">{text("Fields marked * are required.", "Felder mit * sind Pflichtfelder.")}</p>
+						{(type === "jobs" || type === "appeal") && (
+							<div className="form-group">
+								<label htmlFor="role">{type === "jobs" ? text("Position *", "Bereich *") : text("Where were you banned? *", "Wo wurdest du gebannt? *")}</label>
+								<select id="role" name="role" defaultValue="" required>
+									<option value="" disabled>
+										{text("Please select", "Bitte auswählen")}
+									</option>
+									{type === "jobs" ? (
+										<>
+											<option value="moderation">{text("Moderation (stream / Discord)", "Moderation (Stream / Discord)")}</option>
+											<option value="cutter">{text("Video editor", "Cutter / Videoschnitt")}</option>
+										</>
+									) : (
+										<>
+											<option value="discord">Discord</option>
+											<option value="community">{text("Website / community", "Website / Community")}</option>
+										</>
+									)}
+								</select>
+							</div>
+						)}
 						<div className="form-group">
-							<label htmlFor="discord">{text("Discord name", "Discord-Name")}</label>
+							<label htmlFor="discord">{text("Discord name *", "Discord-Name *")}</label>
 							<input id="discord" name="discord" placeholder={text("Your Discord name", "Dein Discord-Name")} required />
 						</div>
-						{(type === "jobs" || type === "game-team") && (
+						{type === "game-team" && (
 							<div className="form-group">
 								<label htmlFor="role">{text("Preferred role", "Gewünschte Rolle")}</label>
-								<input
-									id="role"
-									name="role"
-									placeholder={
-										type === "jobs" ? text("Moderation, editor, Discord team...", "Moderation, Cutter, Discord-Team...") : "Top, Jungle, Mid, Bot, Support"
-									}
-									required
-								/>
+								<input id="role" name="role" placeholder="Top, Jungle, Mid, Bot, Support" required />
 							</div>
 						)}
 						{type === "minecraft" && (
@@ -161,12 +190,20 @@ export default function ApplicationTypePage() {
 							</>
 						)}
 						<div className="form-group">
-							<label htmlFor="reason">{text("Why would you like to join?", "Warum möchtest du mitmachen?")}</label>
+							<label htmlFor="reason">
+								{type === "appeal"
+									? text("What happened, and why should we reconsider? *", "Was ist passiert und warum sollten wir den Bann prüfen? *")
+									: text("Why would you like to join? *", "Warum möchtest du mitmachen? *")}
+							</label>
 							<textarea id="reason" name="reason" minLength={20} required />
 						</div>
 						<div className="form-group">
-							<label htmlFor="experience">{text("Experience and availability", "Erfahrung und Verfügbarkeit")}</label>
-							<textarea id="experience" name="experience" required />
+							<label htmlFor="experience">
+								{type === "appeal"
+									? text("Date, context, or evidence (optional)", "Datum, Kontext oder Belege (optional)")
+									: text("Experience and availability *", "Erfahrung und Verfügbarkeit *")}
+							</label>
+							<textarea id="experience" name="experience" required={type !== "appeal"} />
 						</div>
 						<label className="form-checkbox">
 							<input name="accepted" type="checkbox" required />
@@ -176,7 +213,12 @@ export default function ApplicationTypePage() {
 							</span>
 						</label>
 						<button className="button button-primary" disabled={!ready || submitting} type="submit">
-							{submitting ? text("Sending...", "Wird gesendet...") : text("Submit application", "Bewerbung absenden")} <ExternalLink size={15} />
+							{submitting
+								? text("Sending...", "Wird gesendet...")
+								: type === "appeal"
+									? text("Submit appeal", "Antrag absenden")
+									: text("Submit application", "Bewerbung absenden")}{" "}
+							<ExternalLink size={15} />
 						</button>
 					</form>
 				)}

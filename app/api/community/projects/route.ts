@@ -19,8 +19,8 @@ export async function GET() {
 			db.collection("community_projects").countDocuments({}),
 		]);
 		const projects = records.map((record) => cleanCommunityProject(record)).filter((project) => project !== null);
-		return NextResponse.json({ projects: storedCount ? projects : defaultCommunityProjects });
+		return NextResponse.json({ projects: storedCount ? projects : defaultCommunityProjects.filter((project) => project.published) });
 	} catch {
-		return NextResponse.json({ projects: defaultCommunityProjects });
+		return NextResponse.json({ projects: defaultCommunityProjects.filter((project) => project.published) });
 	}
 }

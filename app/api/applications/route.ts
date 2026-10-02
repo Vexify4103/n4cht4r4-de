@@ -37,6 +37,10 @@ export async function POST(request: NextRequest) {
 	const discord = text(body.discord, 64);
 	const reason = text(body.reason, 2_000);
 	const experience = text(body.experience, 2_000);
+	const role = text(body.role, 32);
+	if (applicationType === "jobs" && !["moderation", "cutter"].includes(role)) return NextResponse.json({ error: "Bitte wähle Moderation oder Cutter aus." }, { status: 400 });
+	if (applicationType === "appeal" && !["discord", "community"].includes(role))
+		return NextResponse.json({ error: "Entbannungsanträge sind nur für Discord und die Website möglich. Twitch-Banns bitte über Twitch anfechten." }, { status: 400 });
 	if (!discord || reason.length < 20) {
 		return NextResponse.json({ error: "Bitte fülle Discord-Name und eine aussagekräftige Begründung aus." }, { status: 400 });
 	}
@@ -49,7 +53,10 @@ export async function POST(request: NextRequest) {
 	const user = await db.collection("users").findOne(userFilter);
 	const accountIds: unknown[] = [user?._id, user?._id?.toString()].filter(Boolean);
 	if (user?._id && ObjectId.isValid(user._id.toString())) accountIds.push(new ObjectId(user._id.toString()));
-	const accounts = await db.collection("accounts").find({ userId: { $in: accountIds } }).toArray();
+	const accounts = await db
+		.collection("accounts")
+		.find({ userId: { $in: accountIds } })
+		.toArray();
 	const providers = new Set(accounts.map((account) => account.provider));
 
 	if (definition.requires.includes("discord") && !providers.has("discord")) {
@@ -60,7 +67,8 @@ export async function POST(request: NextRequest) {
 	}
 
 	const applications = db.collection("applications");
-	const existing = await applications.findOne({ userId: session.user.id, type: applicationType, status: "pending" });
+	if (applicationType !== "appeal" && !experience) return NextResponse.json({ error: "Bitte ergänze deine Erfahrung und Verfügbarkeit." }, { status: 400 });
+	const existing = await applications.findOne({ userId: session.user.id, type: applicationType, status: "pending", ...(applicationType === "jobs" ? { role } : {}) });
 	if (existing) {
 		return NextResponse.json({ error: "Du hast für diesen Bereich bereits eine offene Bewerbung." }, { status: 409 });
 	}
@@ -73,7 +81,7 @@ export async function POST(request: NextRequest) {
 		experience,
 		riotName: text(body.riotName, 32),
 		riotTag: text(body.riotTag, 16),
-		role: text(body.role, 32),
+		role,
 		age: text(body.age, 3),
 		availability: text(body.availability, 500),
 		minecraftName: text(body.minecraftName, 32),

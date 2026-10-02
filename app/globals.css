@@ -1,3 +1,222 @@
+/* Community announcements and Nachtara's content desk. */
+.home-news {
+	padding-block: 34px 48px;
+}
+.home-news .kicker,
+.content-admin .kicker {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.home-news h2 {
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 30px;
+}
+.news-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 22px;
+}
+.news-note {
+	position: relative;
+	padding: 28px 24px 24px;
+	border-radius: 8px;
+	border: 1px solid var(--line-strong);
+	background: var(--surface-solid);
+	color: var(--ink);
+	min-width: 0;
+}
+.news-note::before {
+	content: "";
+	position: absolute;
+	width: 50px;
+	height: 14px;
+	top: -7px;
+	left: 22px;
+	background: var(--blossom-soft);
+	border: 1px solid var(--line-strong);
+	transform: rotate(-5deg);
+}
+.news-meta {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 8px;
+	color: var(--muted);
+	font-size: 12px;
+}
+.news-meta span {
+	display: inline-flex;
+	gap: 7px;
+	align-items: center;
+	color: var(--blossom);
+}
+.news-note h3 {
+	font-family: Georgia, serif;
+	font-size: 22px;
+	margin: 18px 0 12px;
+	color: var(--ink-strong);
+}
+.news-note p,
+.content-review p {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.news-note p {
+	color: var(--muted);
+	line-height: 1.7;
+}
+.news-note .text-link {
+	margin-top: 18px;
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+}
+.news-note:only-child {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+	column-gap: 40px;
+}
+.news-note:only-child .news-meta {
+	grid-column: 1 / -1;
+}
+.news-note:only-child p {
+	grid-column: 2;
+	grid-row: 2 / 4;
+}
+.news-note:only-child .text-link {
+	justify-self: start;
+}
+.content-admin {
+	padding-bottom: 60px;
+}
+.content-admin h1 {
+	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-size: 36px;
+}
+.content-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	margin-block: 25px;
+	border-bottom: 1px solid var(--line);
+}
+.content-tabs button {
+	padding: 12px 4px;
+	border: 0;
+	border-bottom: 3px solid transparent;
+	background: none;
+	color: var(--muted);
+	cursor: pointer;
+}
+.content-tabs button[aria-selected="true"] {
+	color: var(--blossom);
+	border-bottom-color: var(--blossom);
+}
+.news-editor {
+	margin-block: 24px;
+	max-width: 760px;
+}
+.content-review-list {
+	display: grid;
+	margin-top: 24px;
+	gap: 24px;
+}
+.content-review {
+	padding: 24px 0;
+	border-block-start: 1px solid var(--line-strong);
+	min-width: 0;
+}
+.content-review header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 20px;
+}
+.content-review header > span {
+	font-size: 13px;
+	color: var(--muted);
+}
+.content-review h3 {
+	font-family: Georgia, serif;
+	font-size: 23px;
+	margin: 8px 0;
+	overflow-wrap: anywhere;
+}
+.content-review label,
+.news-editor > label {
+	display: grid;
+	gap: 8px;
+}
+.content-review textarea {
+	width: 100%;
+	min-height: 85px;
+	margin-bottom: 16px;
+}
+.application-phase-list {
+	display: grid;
+	gap: 14px;
+	margin-block: 20px 30px;
+}
+.content-admin .application-phase-list label {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+.content-admin .application-phase-list label > span:first-child {
+	min-width: 170px;
+}
+.content-admin .application-phase-list input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	min-height: 18px;
+	padding: 0;
+	accent-color: var(--blossom-strong);
+}
+.content-admin .news-editor .form-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.content-filter {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+.content-filter select {
+	width: auto;
+}
+.content-admin button:focus-visible,
+.home-news a:focus-visible {
+	outline: 2px solid var(--blossom);
+	outline-offset: 4px;
+}
+@media (max-width: 900px) {
+	.news-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 600px) {
+	.news-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.news-note:only-child {
+		display: block;
+	}
+	.content-review header {
+		flex-direction: column;
+		gap: 5px;
+	}
+	.content-admin h1 {
+		font-size: 28px;
+	}
+	.home-news h2 {
+		font-size: 25px;
+	}
+}
+
 :root {
 	--ink: #f7edf5;
 	--ink-strong: #fff9fd;

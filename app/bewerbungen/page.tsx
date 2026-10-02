@@ -10,7 +10,7 @@ import type { ApplicationDefinition, ApplicationType } from "@/lib/applications"
 import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
-const icons: Record<ApplicationType, typeof Trophy> = { tournaments: Trophy, jobs: ShieldCheck, minecraft: Hammer, "game-team": Gamepad2 };
+const icons: Record<ApplicationType, typeof Trophy> = { tournaments: Trophy, jobs: ShieldCheck, minecraft: Hammer, "game-team": Gamepad2, appeal: ShieldCheck };
 
 type Tournament = { id: string; title: string; registrationOpen?: boolean; status: string; date: string | null };
 
@@ -20,7 +20,7 @@ export default function ApplicationsPage() {
 	const { data: applicationData } = useSWR<{ applications: Record<ApplicationType, ApplicationDefinition> }>("/api/applications", fetcher);
 	const { data: tournamentData } = useSWR<{ tournaments: Tournament[] }>("/api/tournaments", fetcher);
 	const { data: myData } = useSWR<{
-		applications: { id: string; category: string; type?: string; title?: string; status: string; tournamentSlug?: string; createdAt: string }[];
+		applications: { id: string; category: string; type?: string; title?: string; status: string; tournamentSlug?: string; createdAt: string; reviewNote?: string }[];
 	}>(session ? "/api/applications/my" : null, fetcher);
 	const definitions = applicationData?.applications;
 	const openTournaments = (tournamentData?.tournaments || []).filter((tournament) => tournament.registrationOpen);
@@ -118,6 +118,7 @@ export default function ApplicationsPage() {
 												: definitions?.[application.type as ApplicationType]?.label) ||
 											application.type}
 									</strong>
+									{application.reviewNote && <p>{String(application.reviewNote)}</p>}
 								</div>
 								<span className={`status-pill ${application.status === "accepted" ? "registration" : application.status === "rejected" ? "" : "announcement"}`}>
 									{application.status === "pending"
