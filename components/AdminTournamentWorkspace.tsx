@@ -440,6 +440,24 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
+	async function resetBracket() {
+		const completed = matches.filter((match) => match.status === "completed").length;
+		const question = completed
+			? text(
+					`Reset the bracket? ${completed} saved results will be discarded. This cannot be undone.`,
+					`Turnierbaum zurücksetzen? ${completed} eingetragene Ergebnisse werden verworfen. Das lässt sich nicht rückgängig machen.`
+				)
+			: text("Reset the bracket? All matches and pairings will be deleted.", "Turnierbaum zurücksetzen? Alle Matches und Paarungen werden gelöscht.");
+		if (!window.confirm(question)) return;
+		try {
+			await request(`/api/admin/tournaments/${id}/bracket`, "DELETE", { confirmCompleted: completed > 0 });
+			await Promise.all([refreshMatches(), refreshTournament()]);
+			setNotice(text("The bracket was reset. You can create it again now.", "Der Turnierbaum wurde zurückgesetzt. Du kannst ihn jetzt neu erstellen."));
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("The bracket could not be reset.", "Der Turnierbaum konnte nicht zurückgesetzt werden."));
+		}
+	}
+
 	async function manageApplication(applicationId: string, action: "remove" | "ban" | "unban") {
 		try {
 			await request(`/api/admin/tournaments/${id}/applications`, action === "remove" ? "DELETE" : "PATCH", { applicationId, action });
@@ -997,6 +1015,19 @@ export function AdminTournamentWorkspace() {
 									))}
 								</div>
 							</form>
+						)}
+						{matches.length > 0 && tournament.status !== "completed" && (
+							<div className="admin-settings-footer">
+								<span className="muted-note">
+									{text(
+										"Wrong teams or seeding? Reset the bracket and create it again.",
+										"Falsche Teams oder Setzliste? Setze den Turnierbaum zurück und erstelle ihn neu."
+									)}
+								</span>
+								<button className="button button-danger-soft button-small" type="button" onClick={resetBracket}>
+									<RefreshCw size={14} /> {text("Reset bracket", "Turnierbaum zurücksetzen")}
+								</button>
+							</div>
 						)}
 						<div className="admin-results">
 							{matches.map((match) => {

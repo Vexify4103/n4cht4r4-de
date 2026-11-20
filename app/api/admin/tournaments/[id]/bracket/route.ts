@@ -7,6 +7,33 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+	const staff = await hasTournamentPermission("tournament_admin");
+	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Zurücksetzen des Turnierbaums." }, { status: 403 });
+	let { id } = await params;
+	const body = await request.json().catch(() => null);
+	await client.connect();
+	const db = client.db();
+	const tournament = await resolveTournament(db, id);
+	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
+	id = String(tournament.id);
+	if (tournament.status === "completed")
+		return NextResponse.json({ error: "Das Turnier ist bereits abgeschlossen. Ein abgeschlossener Turnierbaum kann nicht zurückgesetzt werden." }, { status: 409 });
+	const completedMatches = await db.collection("tournament_matches").countDocuments({ tournamentId: id, status: "completed" });
+	if (completedMatches > 0 && body?.confirmCompleted !== true)
+		return NextResponse.json(
+			{ error: `Es wurden bereits ${completedMatches} Ergebnisse eingetragen. Bestätige das Zurücksetzen ausdrücklich, um sie zu verwerfen.` },
+			{ status: 409 }
+		);
+	const [matches, groups] = await Promise.all([
+		db.collection("tournament_matches").deleteMany({ tournamentId: id }),
+		db.collection("tournament_groups").deleteMany({ tournamentId: id }),
+		db.collection("tournament_standings").deleteMany({ tournamentId: id }),
+	]);
+	await recordTournamentAudit(db, staff, id, "bracket.reset", { deletedMatches: matches.deletedCount, deletedGroups: groups.deletedCount, completedMatches });
+	return NextResponse.json({ reset: true, deletedMatches: matches.deletedCount });
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
 	const staff = await hasTournamentPermission("tournament_admin");
 	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Generieren von Spielplänen." }, { status: 403 });
