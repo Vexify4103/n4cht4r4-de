@@ -58,7 +58,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	const tournament = await resolveTournament(db, id);
 	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
 	id = String(tournament.id);
-	if (typeof tournament.maxTeams === "number" && Number(tournament.currentTeams || 0) >= tournament.maxTeams)
+	const existingTeamCount = await db.collection("tournament_teams").countDocuments({ tournamentId: id });
+	if (typeof tournament.maxTeams === "number" && existingTeamCount >= tournament.maxTeams)
 		return NextResponse.json({ error: `Dieses Turnier ist mit ${tournament.maxTeams} Teams bereits voll.` }, { status: 409 });
 	const team = {
 		id: createId("team"),
@@ -74,6 +75,30 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	await db.collection("tournaments").updateOne({ id }, { $inc: { currentTeams: 1 }, $set: { rosterDirty: true } });
 	await recordTournamentAudit(db, staff, id, "team.created", { teamId: team.id, name, draft: true });
 	return NextResponse.json({ team }, { status: 201 });
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+	const staff = await hasTournamentPermission("referee");
+	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Löschen von Teams." }, { status: 403 });
+	let { id } = await params;
+	const body = await request.json().catch(() => null);
+	if (typeof body?.teamId !== "string" || !body.teamId) return NextResponse.json({ error: "Team fehlt." }, { status: 400 });
+	await client.connect();
+	const db = client.db();
+	const tournament = await resolveTournament(db, id);
+	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
+	id = String(tournament.id);
+	const team = await db.collection<TeamDocument>("tournament_teams").findOne({ id: body.teamId, tournamentId: id });
+	if (!team) return NextResponse.json({ error: "Team nicht gefunden." }, { status: 404 });
+	if ((team.members || []).length)
+		return NextResponse.json({ error: "Nur leere Teams können gelöscht werden. Schicke die Spieler zuerst zurück in den Bewerber-Pool." }, { status: 409 });
+	const usedInMatches = await db.collection("tournament_matches").countDocuments({ tournamentId: id, $or: [{ teamAId: team.id }, { teamBId: team.id }] });
+	if (usedInMatches) return NextResponse.json({ error: "Dieses Team steht bereits im Turnierbaum. Setze zuerst den Turnierbaum zurück." }, { status: 409 });
+	await db.collection("tournament_teams").deleteOne({ id: team.id, tournamentId: id });
+	const remainingTeams = await db.collection("tournament_teams").countDocuments({ tournamentId: id });
+	await db.collection("tournaments").updateOne({ id }, { $set: { currentTeams: remainingTeams, rosterDirty: true, updatedAt: new Date() } });
+	await recordTournamentAudit(db, staff, id, "team.deleted", { teamId: team.id, name: team.name, discordRoleId: team.discord?.roleId ?? null });
+	return NextResponse.json({ deleted: true, currentTeams: remainingTeams, discordRoleLeft: Boolean(team.discord?.roleId) });
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

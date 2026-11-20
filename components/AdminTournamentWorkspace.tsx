@@ -291,6 +291,26 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
+	async function deleteTeam(team: Team) {
+		if (!window.confirm(text(`Delete the empty team ${team.name}?`, `Leeres Team ${team.name} wirklich löschen?`))) return;
+		try {
+			const result = await request(`/api/admin/tournaments/${id}/teams`, "DELETE", { teamId: team.id });
+			await Promise.all([refreshTeams(), refreshTournament()]);
+			setSeedOrder(null);
+			setDialog(null);
+			setNotice(
+				result.discordRoleLeft
+					? text(
+							`${team.name} was deleted. Its Discord role and channels still exist; remove them in Discord.`,
+							`${team.name} wurde gelöscht. Discord-Rolle und Kanäle bestehen noch; bitte in Discord entfernen.`
+						)
+					: text(`${team.name} was deleted.`, `${team.name} wurde gelöscht.`)
+			);
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("The team could not be deleted.", "Team konnte nicht gelöscht werden."));
+		}
+	}
+
 	function moveSeed(teamId: string, direction: -1 | 1) {
 		const ids = orderedTeams.map((team) => team.id);
 		const index = ids.indexOf(teamId);
@@ -1347,6 +1367,11 @@ export function AdminTournamentWorkspace() {
 						<button className="button button-primary" type="submit">
 							{text("Save changes", "Änderungen speichern")}
 						</button>
+						{dialog.edit.members.length === 0 && (
+							<button className="button button-danger-soft" type="button" onClick={() => deleteTeam(dialog.edit)}>
+								<X size={15} /> {text("Delete empty team", "Leeres Team löschen")}
+							</button>
+						)}
 					</form>
 				</Modal>
 			)}
