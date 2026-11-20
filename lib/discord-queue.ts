@@ -44,6 +44,9 @@ type DiscordGuildConfig = DiscordBotConfig & { guildId: string };
 let discordBlockedUntil = 0;
 let queueIndexPromise: Promise<unknown> | null = null;
 
+// VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | ATTACH_FILES | READ_MESSAGE_HISTORY | ADD_REACTIONS | PIN_MESSAGES (1 << 51).
+export const TEAM_TEXT_ALLOW = "2251799813803072";
+
 class DiscordRequestError extends Error {
 	constructor(
 		message: string,
@@ -267,7 +270,15 @@ async function processTeamJob(db: Db, job: DiscordQueueJob, config: DiscordConfi
 	};
 	if (job.type === "team.create-text-channel") {
 		if (discord.textChannelId) return "skipped" as const;
-		const channel = await createTeamChannel(0, "3072");
+		// Team chat: view, send, read history, embed links, attach files, react, pin. PIN_MESSAGES (1 << 51) replaced
+		// MANAGE_MESSAGES for pinning in Feb 2026. If the bot lacks a bit it cannot grant it, so fall back to view + send.
+		let channel;
+		try {
+			channel = await createTeamChannel(0, TEAM_TEXT_ALLOW);
+		} catch (error) {
+			if (!(error instanceof DiscordRequestError && (error.status === 403 || error.status === 400))) throw error;
+			channel = await createTeamChannel(0, "3072");
+		}
 		if (!channel?.id) throw new DiscordRequestError("Discord hat keinen Textkanal zurückgegeben.");
 		await db.collection("tournament_teams").updateOne({ id: team.id }, { $set: { "discord.textChannelId": channel.id } });
 		return "completed" as const;

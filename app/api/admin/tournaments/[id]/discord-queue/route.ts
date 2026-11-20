@@ -20,13 +20,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 	const staff = await hasTournamentPermission("tournament_admin");
 	if (!staff) return NextResponse.json({ error: "Keine Berechtigung zum Aendern der Discord-Queue." }, { status: 403 });
 	const body = await request.json().catch(() => null);
-	if (body?.action !== "cancel") return NextResponse.json({ error: "Ungueltige Queue-Aktion." }, { status: 400 });
+	if (body?.action !== "cancel" && body?.action !== "retry") return NextResponse.json({ error: "Ungueltige Queue-Aktion." }, { status: 400 });
 	let { id } = await params;
 	await client.connect();
 	const db = client.db();
 	const tournament = await resolveTournament(db, id);
 	if (!tournament) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
 	id = String(tournament.id);
+	if (body.action === "retry") {
+		// Players who joined the Discord server late get their team role and DM on the next worker run.
+		const retried = await db.collection("discord_queue").updateMany(
+			{ tournamentId: id, status: "failed" },
+			{ $set: { status: "queued", attempts: 0, runAfter: new Date(), updatedAt: new Date() } }
+		);
+		return NextResponse.json({ retried: retried.modifiedCount });
+	}
 	const result = await db.collection("discord_queue").updateMany(
 		{ tournamentId: id, status: { $in: ["queued", "failed"] } },
 		{ $set: { status: "cancelled", cancelledAt: new Date(), lastError: "Von der Turnierleitung gestoppt." } },

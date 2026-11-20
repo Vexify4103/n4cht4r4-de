@@ -394,6 +394,25 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
+	async function retryDiscordJobs() {
+		setPublishing(true);
+		try {
+			const result = await request(`/api/admin/tournaments/${id}/discord-queue`, "PATCH", { action: "retry" });
+			setNotice(
+				result.retried
+					? text(
+							`${result.retried} failed Discord jobs were queued again. Players who joined the server since then now get their team role and DM.`,
+							`${result.retried} fehlgeschlagene Discord-Aufgaben wurden neu eingeplant. Wer inzwischen auf dem Server ist, bekommt jetzt Teamrolle und DM.`
+						)
+					: text("No failed Discord jobs.", "Keine fehlgeschlagenen Discord-Aufgaben.")
+			);
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("Discord jobs could not be retried.", "Discord-Aufgaben konnten nicht neu gestartet werden."));
+		} finally {
+			setPublishing(false);
+		}
+	}
+
 	async function saveResult(event: FormEvent<HTMLFormElement>, match: Match) {
 		event.preventDefault();
 		const form = new FormData(event.currentTarget);
@@ -634,6 +653,16 @@ export function AdminTournamentWorkspace() {
 							{tournament.rosterPublishedAt && (
 								<button className="button button-secondary" disabled={publishing} onClick={() => publishRoster("renotify")}>
 									<BellRing size={16} /> {text("Notify again", "Erneut informieren")}
+								</button>
+							)}
+							{tournament.rosterPublishedAt && (
+								<button
+									className="button button-secondary"
+									disabled={publishing}
+									onClick={retryDiscordJobs}
+									title={text("For players who joined the Discord server after publishing", "Für Spieler, die erst nach dem Veröffentlichen auf den Discord-Server gekommen sind")}
+								>
+									<RefreshCw size={16} /> {text("Retry Discord roles", "Discord-Rollen erneut vergeben")}
 								</button>
 							)}
 							<button className="button button-primary" disabled={publishing || !teams.length} onClick={() => publishRoster("publish")}>
@@ -1008,11 +1037,13 @@ export function AdminTournamentWorkspace() {
 												<option value="" disabled>
 													{text("Select team", "Team auswählen")}
 												</option>
-												{teams.filter((team) => team.members.length > 0).map((team) => (
-													<option value={team.id} key={team.id}>
-														{team.name}
-													</option>
-												))}
+												{teams
+													.filter((team) => team.members.length > 0)
+													.map((team) => (
+														<option value={team.id} key={team.id}>
+															{team.name}
+														</option>
+													))}
 											</select>
 											<span>{text("versus", "gegen")}</span>
 											<select
@@ -1025,11 +1056,13 @@ export function AdminTournamentWorkspace() {
 													{text("Select team", "Team auswählen")}
 												</option>
 												<option value="__bye__">{text("Bye (first team advances)", "Freilos (erstes Team kommt weiter)")}</option>
-												{teams.filter((team) => team.members.length > 0).map((team) => (
-													<option value={team.id} key={team.id}>
-														{team.name}
-													</option>
-												))}
+												{teams
+													.filter((team) => team.members.length > 0)
+													.map((team) => (
+														<option value={team.id} key={team.id}>
+															{team.name}
+														</option>
+													))}
 											</select>
 										</fieldset>
 									))}
