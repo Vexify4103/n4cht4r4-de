@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { CalendarDays, Swords, Users } from "lucide-react";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { TournamentRules } from "@/components/TournamentRules";
+import { TournamentBracketTree } from "@/components/TournamentBracketTree";
 import { PublicTeam, TournamentTeamCard } from "@/components/TournamentTeamCard";
 import { useLocale, type Locale } from "@/components/LocaleProvider";
 
@@ -27,6 +28,10 @@ type Match = {
 	status: string;
 	bye?: boolean;
 	scheduledAt: string | null;
+	nextMatchId?: string;
+	nextSlot?: "teamAId" | "teamBId";
+	loserNextMatchId?: string;
+	loserNextSlot?: "teamAId" | "teamBId";
 };
 type Standing = { groupId?: string; rank: number; teamId: string; teamName: string; wins: number; losses: number; points: number };
 
@@ -101,57 +106,7 @@ function MatchSchedule({ matches, names }: { matches: Match[]; names: Map<string
 	);
 }
 
-function BracketLane({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
-	const { locale, text } = useLocale();
-	const rounds = [...new Set(matches.map((match) => match.round))].sort((a, b) => a - b);
-	return (
-		<div className="visual-bracket">
-			{rounds.map((round, roundIndex) => (
-				<section className="bracket-column" key={round}>
-					<header>
-						<span>
-							{text("Round", "Runde")} {round}
-						</span>
-						<h2>
-							{matches[0]?.bracket === "finals"
-								? round === 1
-									? "Grand Final"
-									: "Reset"
-								: roundIndex === rounds.length - 1
-									? matches[0]?.bracket === "upper"
-										? text("Winner final", "Winner-Finale")
-										: matches[0]?.bracket === "lower"
-											? text("Loser final", "Loser-Finale")
-											: text("Final", "Finale")
-									: rounds.length === 2
-										? text("Semifinal", "Halbfinale")
-										: `${text("Round", "Runde")} ${round}`}
-						</h2>
-					</header>
-					<div className="bracket-column-matches">
-						{matches
-							.filter((match) => match.round === round)
-							.map((match) => (
-								<article className={`bracket-match ${match.placement === "third_place" ? "is-placement" : ""}`} key={match.id}>
-									<small className="bracket-match-label">{matchLabel(match, locale)}</small>
-									<div className={match.winnerTeamId && match.winnerTeamId === match.teamAId ? "winner" : ""}>
-										<span>{match.teamAId ? names.get(match.teamAId) || "Team A" : text("TBD", "Noch offen")}</span>
-										<b>{match.status === "completed" ? match.scoreA : "–"}</b>
-									</div>
-									<div className={match.winnerTeamId && match.winnerTeamId === match.teamBId ? "winner" : ""}>
-										<span>{match.teamBId ? names.get(match.teamBId) || "Team B" : match.bye ? text("Bye", "Freilos") : text("TBD", "Noch offen")}</span>
-										<b>{match.status === "completed" ? match.scoreB : "–"}</b>
-									</div>
-								</article>
-							))}
-					</div>
-				</section>
-			))}
-		</div>
-	);
-}
-
-function Bracket({ matches, names }: { matches: Match[]; names: Map<string, string> }) {
+function Bracket({ matches, names, bestOf }: { matches: Match[]; names: Map<string, string>; bestOf: number }) {
 	const { text } = useLocale();
 	if (!matches.length)
 		return (
@@ -164,37 +119,7 @@ function Bracket({ matches, names }: { matches: Match[]; names: Map<string, stri
 				)}
 			/>
 		);
-	const hasDoubleElimination = matches.some((match) => match.bracket === "lower");
-	if (!hasDoubleElimination) return <BracketLane matches={matches} names={names} />;
-	const lanes = [
-		{ key: "upper", title: "Winner Bracket", copy: text("Winners stay on the direct path to the Grand Final.", "Wer gewinnt, bleibt auf dem direkten Weg ins Grand Final.") },
-		{
-			key: "lower",
-			title: "Loser Bracket",
-			copy: text("After a loss, this bracket offers a second chance to reach the final.", "Nach einer Niederlage bleibt hier die zweite Chance auf das Finale."),
-		},
-		{
-			key: "finals",
-			title: "Grand Final",
-			copy: text("The Winner Bracket champion meets the Loser Bracket champion.", "Der Sieger des Winner Brackets trifft auf den Sieger des Loser Brackets."),
-		},
-	] as const;
-	return (
-		<div className="double-elimination-bracket">
-			{lanes.map((lane) => {
-				const laneMatches = matches.filter((match) => match.bracket === lane.key && match.status !== "skipped");
-				return laneMatches.length ? (
-					<section className={`bracket-lane bracket-lane-${lane.key}`} key={lane.key}>
-						<header>
-							<span>{lane.title}</span>
-							<p>{lane.copy}</p>
-						</header>
-						<BracketLane matches={laneMatches} names={names} />
-					</section>
-				) : null;
-			})}
-		</div>
-	);
+	return <TournamentBracketTree matches={matches} names={names} bestOf={bestOf} />;
 }
 
 function Empty({ icon: Icon, title, copy }: { icon: typeof Swords; title: string; copy: string }) {
@@ -210,9 +135,9 @@ function Empty({ icon: Icon, title, copy }: { icon: typeof Swords; title: string
 export function TournamentPublicView({ view }: { view: View }) {
 	const { locale, text } = useLocale();
 	const { id } = useParams<{ id: string }>();
-	const { data: tournamentData } = useSWR<{ tournament: { title: string; rules: string[]; game: string } }>(`/api/tournaments/${id}`, fetcher);
+	const { data: tournamentData } = useSWR<{ tournament: { title: string; rules: string[]; game: string; seriesBestOf?: number } }>(`/api/tournaments/${id}`, fetcher);
 	const { data: teamsData } = useSWR<{ teams: PublicTeam[] }>(`/api/tournaments/${id}/teams`, fetcher);
-	const { data: matchesData } = useSWR<{ matches: Match[] }>(`/api/tournaments/${id}/matches`, fetcher);
+	const { data: matchesData } = useSWR<{ matches: Match[] }>(`/api/tournaments/${id}/matches`, fetcher, { refreshInterval: 20000 });
 	const { data: groupsData } = useSWR<{ groups: { id: string; name: string }[]; standings: Standing[] }>(`/api/tournaments/${id}/groups`, fetcher);
 	const teams = teamsData?.teams || [];
 	const matches = matchesData?.matches || [];
@@ -230,7 +155,7 @@ export function TournamentPublicView({ view }: { view: View }) {
 			/>
 			<section className="content-band tournament-view">
 				{view === "schedule" && <MatchSchedule matches={matches.filter((match) => match.status !== "skipped")} names={names} />}
-				{view === "playoffs" && <Bracket matches={matches.filter((match) => match.stage === "playoff")} names={names} />}
+				{view === "playoffs" && <Bracket matches={matches.filter((match) => match.stage === "playoff")} names={names} bestOf={[1, 3, 5].includes(Number(tournamentData?.tournament.seriesBestOf)) ? Number(tournamentData?.tournament.seriesBestOf) : 1} />}
 				{view === "teams" &&
 					(teams.length ? (
 						<div className="tournament-team-grid">

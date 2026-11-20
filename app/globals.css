@@ -9959,3 +9959,248 @@ html[data-theme="sakura-night"] .member-profile-hero {
 		font-size: 23px;
 	}
 }
+
+/* Playoff tree with drawn paths (components/TournamentBracketTree.tsx). */
+.bracket-tree {
+	display: grid;
+	gap: 18px;
+}
+
+.bracket-tree-teams {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.bracket-tree-teams > span {
+	margin-right: 4px;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.bracket-tree-teams button {
+	padding: 6px 12px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface-soft);
+	color: var(--muted);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.bracket-tree-teams button:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.bracket-tree-teams button[aria-pressed="true"] {
+	border-color: var(--blossom);
+	background: var(--blossom-soft);
+	color: var(--ink-strong);
+}
+
+.bracket-tree-scroll {
+	overflow-x: auto;
+	padding: 20px 12px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--surface);
+}
+
+.bracket-tree-canvas {
+	position: relative;
+	margin: 0 auto;
+}
+
+.bracket-tree-lines {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	overflow: visible;
+}
+
+.bracket-tree-lines path {
+	fill: none;
+	stroke: var(--line-strong);
+	stroke-width: 1.5;
+	stroke-linejoin: round;
+	transition:
+		stroke 0.2s,
+		opacity 0.2s;
+}
+
+.bracket-tree-lines path.is-decided {
+	stroke: color-mix(in srgb, var(--blossom) 70%, var(--line-strong));
+	stroke-width: 2;
+}
+
+.is-filtering .bracket-tree-lines path {
+	opacity: 0.3;
+}
+
+.is-filtering .bracket-tree-lines path.is-highlighted {
+	stroke: var(--blossom-strong);
+	stroke-width: 3;
+	opacity: 1;
+}
+
+.bracket-tree-lane {
+	position: absolute;
+	left: 0;
+	display: flex;
+	align-items: baseline;
+	gap: 16px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.bracket-tree-lane strong {
+	color: var(--ink-strong);
+	font-family: var(--font-hand), "Segoe Print", cursive;
+	font-size: 24px;
+}
+
+.bracket-tree-lane span {
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.bracket-tree-column {
+	position: absolute;
+	color: var(--blossom);
+	font-size: 13px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.bracket-tree-card {
+	position: absolute;
+	z-index: 1;
+	display: grid;
+	grid-template-rows: 26px 30px 30px 22px;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--surface-solid);
+	transition:
+		opacity 0.2s,
+		border-color 0.2s;
+}
+
+.bracket-tree-card.is-final {
+	border-color: color-mix(in srgb, var(--gold) 55%, var(--line));
+}
+
+.bracket-tree-card.is-skipped {
+	opacity: 0.45;
+}
+
+.bracket-tree-card.is-dimmed {
+	opacity: 0.3;
+}
+
+.bracket-tree-card.is-highlighted {
+	border-color: var(--blossom);
+	box-shadow: 0 0 0 1px var(--blossom);
+}
+
+.bracket-tree-card > header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 0 10px;
+	background: var(--surface-soft);
+	font-size: 12px;
+}
+
+.bracket-tree-card > header span {
+	color: var(--ink);
+	font-weight: 700;
+}
+
+.bracket-tree-card > header small {
+	color: var(--faint);
+	font-size: 11px;
+}
+
+.bracket-tree-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 0 10px;
+	border-top: 1px solid var(--line);
+	font-size: 14px;
+}
+
+.bracket-tree-row button {
+	min-width: 0;
+	overflow: hidden;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font: inherit;
+	font-weight: 600;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.bracket-tree-row button:hover {
+	text-decoration: underline;
+}
+
+.bracket-tree-row em {
+	overflow: hidden;
+	color: var(--faint);
+	font-size: 12px;
+	font-style: normal;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bracket-tree-row b {
+	color: var(--faint);
+	font-variant-numeric: tabular-nums;
+}
+
+.bracket-tree-row.is-winner {
+	background: var(--blossom-soft);
+}
+
+.bracket-tree-row.is-winner button,
+.bracket-tree-row.is-winner b {
+	color: var(--ink-strong);
+}
+
+.bracket-tree-row.is-loser button {
+	color: var(--faint);
+	font-weight: 400;
+}
+
+.bracket-tree-row.is-selected {
+	box-shadow: inset 3px 0 0 var(--blossom);
+}
+
+.bracket-tree-card > footer {
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	padding: 0 10px;
+	border-top: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 11px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+	.bracket-tree-scroll {
+		padding: 16px;
+	}
+}
