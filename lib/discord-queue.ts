@@ -74,6 +74,13 @@ function getDiscordBotConfig(): DiscordBotConfig | null {
 	return botToken ? { botToken } : null;
 }
 
+function staffRoleIds() {
+	return (process.env.TOURNAMENT_ADMIN_ROLE_IDS || "")
+		.split(",")
+		.map((value) => value.trim())
+		.filter((value) => /^\d{5,25}$/.test(value));
+}
+
 function channelSlug(name: string, suffix: "chat" | "voice") {
 	const clean =
 		name
@@ -236,17 +243,31 @@ async function processTeamJob(db: Db, job: DiscordQueueJob, config: DiscordConfi
 	}
 
 	if (!discord.roleId) throw new DiscordRequestError("Teamrolle wurde noch nicht erstellt.");
+	const teamRoleId = discord.roleId;
+	// Staff roles get the same access as the team so referees can follow every team channel.
+	const createTeamChannel = async (type: 0 | 2, allow: string) => {
+		const name = channelSlug(team.name as string, type === 0 ? "chat" : "voice");
+		const baseOverwrites = [
+			{ id: config.guildId, type: 0, deny: "1024" },
+			{ id: teamRoleId, type: 0, allow },
+		];
+		const staffOverwrites = staffRoleIds()
+			.filter((roleId) => roleId !== teamRoleId && roleId !== config.guildId)
+			.map((roleId) => ({ id: roleId, type: 0, allow }));
+		const create = (permission_overwrites: Record<string, unknown>[]) =>
+			discordRequest<{ id: string }>(config, `/guilds/${config.guildId}/channels`, "POST", { name, type, parent_id: config.categoryId, permission_overwrites });
+		if (!staffOverwrites.length) return create(baseOverwrites);
+		try {
+			return await create([...baseOverwrites, ...staffOverwrites]);
+		} catch (error) {
+			// A stale staff role ID must never block team channels; fall back to team-only access.
+			if (error instanceof DiscordRequestError && error.status === 400) return create(baseOverwrites);
+			throw error;
+		}
+	};
 	if (job.type === "team.create-text-channel") {
 		if (discord.textChannelId) return "skipped" as const;
-		const channel = await discordRequest<{ id: string }>(config, `/guilds/${config.guildId}/channels`, "POST", {
-			name: channelSlug(team.name as string, "chat"),
-			type: 0,
-			parent_id: config.categoryId,
-			permission_overwrites: [
-				{ id: config.guildId, type: 0, deny: "1024" },
-				{ id: discord.roleId, type: 0, allow: "3072" },
-			],
-		});
+		const channel = await createTeamChannel(0, "3072");
 		if (!channel?.id) throw new DiscordRequestError("Discord hat keinen Textkanal zurückgegeben.");
 		await db.collection("tournament_teams").updateOne({ id: team.id }, { $set: { "discord.textChannelId": channel.id } });
 		return "completed" as const;
@@ -254,15 +275,8 @@ async function processTeamJob(db: Db, job: DiscordQueueJob, config: DiscordConfi
 
 	if (job.type === "team.create-voice-channel") {
 		if (discord.voiceChannelId) return "skipped" as const;
-		const channel = await discordRequest<{ id: string }>(config, `/guilds/${config.guildId}/channels`, "POST", {
-			name: channelSlug(team.name as string, "voice"),
-			type: 2,
-			parent_id: config.categoryId,
-			permission_overwrites: [
-				{ id: config.guildId, type: 0, deny: "1024" },
-				{ id: discord.roleId, type: 0, allow: "1049600" },
-			],
-		});
+		// View channel + connect + speak.
+		const channel = await createTeamChannel(2, "3146752");
 		if (!channel?.id) throw new DiscordRequestError("Discord hat keinen Voice-Kanal zurückgegeben.");
 		await db.collection("tournament_teams").updateOne({ id: team.id }, { $set: { "discord.voiceChannelId": channel.id } });
 		return "completed" as const;
