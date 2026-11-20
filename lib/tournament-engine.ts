@@ -178,7 +178,8 @@ export function createSingleEliminationMatches(tournamentId: string, teamIds: st
 	return matches;
 }
 
-export function createDoubleEliminationMatches(tournamentId: string, teamIds: string[]) {
+/** Without `grandFinalReset` the Grand Final is a single match: whoever wins it takes the title. */
+export function createDoubleEliminationMatches(tournamentId: string, teamIds: string[], options: { grandFinalReset?: boolean } = {}) {
 	if (teamIds.length < 3 || teamIds.length > 32) {
 		throw new Error("Double Elimination benötigt 3 bis 32 Teams. Fehlende Plätze bis zur nächsten Zweierpotenz werden zu Freilosen.");
 	}
@@ -305,9 +306,9 @@ export function createDoubleEliminationMatches(tournamentId: string, teamIds: st
 	upper.at(-1)![0].nextSlot = "teamAId";
 	lower.at(-1)![0].nextMatchId = grandFinal.id;
 	lower.at(-1)![0].nextSlot = "teamBId";
-	grandFinal.nextMatchId = bracketReset.id;
+	if (options.grandFinalReset) grandFinal.nextMatchId = bracketReset.id;
 
-	const matches = [...upper.flat(), ...lower.flat(), grandFinal, bracketReset];
+	const matches = [...upper.flat(), ...lower.flat(), grandFinal, ...(options.grandFinalReset ? [bracketReset] : [])];
 	applyByes(matches);
 	return matches;
 }

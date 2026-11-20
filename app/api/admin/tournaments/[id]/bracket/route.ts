@@ -73,7 +73,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 				tournament.bracketType === "double_elimination"
 					? createDoubleEliminationMatches(
 							id,
-							teams.map((team) => team.id)
+							teams.map((team) => team.id),
+							{ grandFinalReset: tournament.grandFinalReset === true }
 						)
 					: createSingleEliminationMatches(
 							id,

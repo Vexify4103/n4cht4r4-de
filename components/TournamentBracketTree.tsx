@@ -170,7 +170,8 @@ export function TournamentBracketTree({ matches, names, bestOf = 1 }: { matches:
 		return text("TBD", "Noch offen");
 	};
 	const route = (match: TreeMatch) => {
-		if (match.matchType === "grand_final") return text("If the loser-bracket team wins: reset", "Gewinnt das LB-Team: Reset");
+		if (match.matchType === "grand_final")
+			return match.nextMatchId ? text("If the loser-bracket team wins: reset", "Gewinnt das LB-Team: Reset") : text("Winner takes the title", "Sieger holt den Titel");
 		if (match.matchType === "bracket_reset") return text("Decides the title", "Entscheidet den Titel");
 		if (match.placement === "third_place") return text("Winner takes third place", "Sieger wird Dritter");
 		const loserTarget = match.loserNextMatchId ? matches.find((entry) => entry.id === match.loserNextMatchId) : undefined;
