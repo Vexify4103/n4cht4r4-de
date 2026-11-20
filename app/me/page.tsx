@@ -504,7 +504,8 @@ export default function MePage() {
 									{busy === "confirm" ? <Loader2 className="spin" size={17} /> : <Check size={17} />} {text("Check profile icon now", "Profilbild jetzt prüfen")}
 								</button>{" "}
 								<button className="button button-secondary" disabled={busy !== null} onClick={() => verify("cancel")}>
-									{busy === "cancel" ? <Loader2 className="spin" size={17} /> : <X size={17} />} {text("Wrong account? Start over", "Falsches Konto? Neu starten")}
+									{busy === "cancel" ? <Loader2 className="spin" size={17} /> : <X size={17} />}{" "}
+									{text("Wrong account? Start over", "Falsches Konto? Neu starten")}
 								</button>
 							</div>
 						</div>

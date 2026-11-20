@@ -1,7 +1,7 @@
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import { recordTournamentAudit } from "@/lib/tournament-audit";
 import client from "@/lib/db";
-import { rebuildGroupStandings, TournamentMatch } from "@/lib/tournament-engine";
+import { rebuildGroupStandings, resolveByesInDb, TournamentMatch } from "@/lib/tournament-engine";
 import { resolveTournament } from "@/lib/tournament-slugs";
 import { grantTournamentWinnerRewards, resolveTournamentChampionTeamId } from "@/lib/tournament-rewards";
 import type { Db } from "mongodb";
@@ -44,7 +44,7 @@ async function resetDownstreamMatches(db: Db, tournamentId: string, sourceIds: s
 						winnerTeamId: null,
 						status: match?.matchType === "bracket_reset" ? "conditional" : "scheduled",
 					},
-					$unset: { completedAt: "" },
+					$unset: { completedAt: "", bye: "" },
 				}
 			);
 		}
@@ -52,7 +52,7 @@ async function resetDownstreamMatches(db: Db, tournamentId: string, sourceIds: s
 
 	const completedMatches = await db
 		.collection<TournamentMatch>("tournament_matches")
-		.find({ tournamentId, stage: "playoff", status: "completed", id: { $nin: [...downstream] } })
+		.find({ tournamentId, stage: "playoff", $or: [{ status: "completed" }, { status: "skipped", bye: true }], id: { $nin: [...downstream] } })
 		.toArray();
 	for (const completed of completedMatches) {
 		if (completed.matchType !== "grand_final" && completed.nextMatchId && completed.nextSlot && completed.winnerTeamId) {
@@ -67,6 +67,7 @@ async function resetDownstreamMatches(db: Db, tournamentId: string, sourceIds: s
 				.updateOne({ id: completed.loserNextMatchId, tournamentId }, { $set: { [completed.loserNextSlot]: loserTeamId } });
 		}
 	}
+	await resolveByesInDb(db, tournamentId);
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -113,26 +114,39 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 			teamAId: typeof pairing?.teamAId === "string" ? pairing.teamAId : "",
 			teamBId: typeof pairing?.teamBId === "string" ? pairing.teamBId : "",
 		}));
-		const selectedTeamIds = normalized.flatMap((pairing: { teamAId: string; teamBId: string }) => [pairing.teamAId, pairing.teamBId]);
+		// The second team must be chosen explicitly; BYE_TEAM_ID means the first team advances without playing.
+		const BYE_TEAM_ID = "__bye__";
+		const selectedTeamIds = normalized
+			.flatMap((pairing: { teamAId: string; teamBId: string }) => [pairing.teamAId, pairing.teamBId])
+			.filter((teamId: string) => teamId && teamId !== BYE_TEAM_ID);
 		if (
 			normalized.some(
 				(pairing: { matchId: string; teamAId: string; teamBId: string }) =>
-					!matchIds.has(pairing.matchId) || !pairing.teamAId || !pairing.teamBId || pairing.teamAId === pairing.teamBId
+					!matchIds.has(pairing.matchId) || !pairing.teamAId || pairing.teamAId === BYE_TEAM_ID || !pairing.teamBId || pairing.teamAId === pairing.teamBId
 			) ||
 			new Set(normalized.map((pairing: { matchId: string }) => pairing.matchId)).size !== firstRoundMatches.length ||
 			new Set(selectedTeamIds).size !== selectedTeamIds.length
 		) {
-			return NextResponse.json({ error: "Jedes Team darf in der ersten Runde genau einmal vorkommen." }, { status: 400 });
+			return NextResponse.json({ error: "Jedes Team darf in der ersten Runde genau einmal vorkommen. Wähle für leere Plätze ausdrücklich „Freilos“." }, { status: 400 });
 		}
-		const teamCount = await db.collection("tournament_teams").countDocuments({ tournamentId: id, id: { $in: selectedTeamIds } });
-		if (teamCount !== selectedTeamIds.length) return NextResponse.json({ error: "Mindestens ein ausgewähltes Team gehört nicht zu diesem Turnier." }, { status: 400 });
+		const eligibleTeams = await db
+			.collection("tournament_teams")
+			.find({ tournamentId: id, "members.0": { $exists: true } })
+			.project({ _id: 0, id: 1 })
+			.toArray();
+		const eligibleIds = new Set(eligibleTeams.map((team) => String(team.id)));
+		if (selectedTeamIds.some((teamId: string) => !eligibleIds.has(teamId)))
+			return NextResponse.json({ error: "Mindestens ein ausgewähltes Team gehört nicht zu diesem Turnier oder hat keine Spieler." }, { status: 400 });
+		if (selectedTeamIds.length !== eligibleIds.size)
+			return NextResponse.json({ error: "Jedes Team mit Spielern muss in der ersten Runde genau einmal eingeteilt sein." }, { status: 400 });
+		for (const pairing of normalized as { teamBId: string }[]) if (pairing.teamBId === BYE_TEAM_ID) pairing.teamBId = "";
 		await db.collection<TournamentMatch>("tournament_matches").bulkWrite(
 			normalized.map((pairing: { matchId: string; teamAId: string; teamBId: string }) => ({
 				updateOne: {
 					filter: { id: pairing.matchId, tournamentId: id },
 					update: {
-						$set: { teamAId: pairing.teamAId, teamBId: pairing.teamBId, scoreA: 0, scoreB: 0, winnerTeamId: null, status: "scheduled" },
-						$unset: { completedAt: "" },
+						$set: { teamAId: pairing.teamAId, teamBId: pairing.teamBId || null, scoreA: 0, scoreB: 0, winnerTeamId: null, status: "scheduled" },
+						$unset: { completedAt: "", bye: "" },
 					},
 				},
 			}))
@@ -173,6 +187,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 	const winsNeeded = Math.ceil(seriesBestOf / 2);
 	if (Math.max(body.scoreA, body.scoreB) !== winsNeeded || Math.min(body.scoreA, body.scoreB) >= winsNeeded)
 		return NextResponse.json({ error: `Dieses Match ist Best of ${seriesBestOf}. Das Siegerteam braucht genau ${winsNeeded} Maps.` }, { status: 400 });
+	if (match?.status === "skipped" || match?.status === "conditional")
+		return NextResponse.json({ error: "Dieses Match ist ein Freilos oder wird nicht gespielt." }, { status: 400 });
 	if (!match?.teamAId || !match.teamBId) return NextResponse.json({ error: "Dieses Match ist noch nicht vollständig besetzt." }, { status: 400 });
 	const winnerTeamId = body.scoreA > body.scoreB ? match.teamAId : match.teamBId;
 	const update = { scoreA: body.scoreA, scoreB: body.scoreB, winnerTeamId, status: "completed" as const, completedAt: new Date() };
@@ -201,6 +217,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 	}
 	if (match.stage === "group" && match.groupId) await rebuildGroupStandings(db, id, match.groupId);
 	if (match.stage === "playoff") {
+		await resolveByesInDb(db, id);
 		const openPlayoffMatches = await db
 			.collection<TournamentMatch>("tournament_matches")
 			.countDocuments({ tournamentId: id, stage: "playoff", status: { $nin: ["completed", "skipped", "conditional"] } });

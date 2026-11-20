@@ -22,10 +22,72 @@ export type TournamentMatch = {
 	nextSlot?: "teamAId" | "teamBId";
 	loserNextMatchId?: string;
 	loserNextSlot?: "teamAId" | "teamBId";
+	/** Set when the match was skipped because a slot can never be filled (free win). */
+	bye?: boolean;
 };
 
 export function createId(prefix: string) {
 	return `${prefix}_${crypto.randomUUID()}`;
+}
+
+/** Standard bracket seed order, e.g. 8 -> [1, 8, 4, 5, 2, 7, 3, 6], so top seeds meet late and receive byes first. */
+export function bracketSeedOrder(size: number): number[] {
+	let order = [1];
+	while (order.length < size) {
+		const next = order.length * 2;
+		order = order.flatMap((seed) => [seed, next + 1 - seed]);
+	}
+	return order;
+}
+
+/** Places seeded team IDs into first-round slots; empty entries become byes. */
+function seededSlots(teamIds: string[], size: number) {
+	return bracketSeedOrder(size).map((seed) => teamIds[seed - 1] || null);
+}
+
+/**
+ * Resolves byes in place: a scheduled match whose open slot can never be filled
+ * (no feeder left that could still deliver a team) is skipped, and its single team
+ * advances. Returns the IDs of every match that changed.
+ */
+export function applyByes(matches: TournamentMatch[]) {
+	const byId = new Map(matches.map((match) => [match.id, match]));
+	const feeders = new Map<string, TournamentMatch[]>();
+	const addFeeder = (targetId: string | undefined, slot: string | undefined, source: TournamentMatch) => {
+		if (!targetId || !slot) return;
+		const key = `${targetId}:${slot}`;
+		feeders.set(key, [...(feeders.get(key) || []), source]);
+	};
+	for (const match of matches) {
+		if (match.matchType !== "grand_final") addFeeder(match.nextMatchId, match.nextSlot, match);
+		addFeeder(match.loserNextMatchId, match.loserNextSlot, match);
+	}
+	const finished = (match: TournamentMatch) => match.status === "completed" || match.status === "skipped";
+	const slotIsDead = (match: TournamentMatch, slot: "teamAId" | "teamBId") => !match[slot] && (feeders.get(`${match.id}:${slot}`) || []).every(finished);
+
+	const changed = new Set<string>();
+	let progress = true;
+	while (progress) {
+		progress = false;
+		for (const match of matches) {
+			if (match.status !== "scheduled" || match.matchType === "bracket_reset") continue;
+			const deadA = slotIsDead(match, "teamAId");
+			const deadB = slotIsDead(match, "teamBId");
+			if (!(deadA || deadB) || (!deadA && !match.teamAId) || (!deadB && !match.teamBId)) continue;
+			const winnerTeamId = match.teamAId || match.teamBId || null;
+			Object.assign(match, { status: "skipped", bye: true, winnerTeamId, scoreA: 0, scoreB: 0 });
+			changed.add(match.id);
+			if (winnerTeamId && match.nextMatchId && match.nextSlot && match.matchType !== "grand_final") {
+				const next = byId.get(match.nextMatchId);
+				if (next) {
+					next[match.nextSlot] = winnerTeamId;
+					changed.add(next.id);
+				}
+			}
+			progress = true;
+		}
+	}
+	return [...changed];
 }
 
 export function createRoundRobinMatches(tournamentId: string, groupId: string, teamIds: string[]) {
@@ -56,6 +118,7 @@ export function createRoundRobinMatches(tournamentId: string, groupId: string, t
 export function createSingleEliminationMatches(tournamentId: string, teamIds: string[]) {
 	const size = 2 ** Math.ceil(Math.log2(Math.max(teamIds.length, 2)));
 	const rounds = Math.log2(size);
+	const slots = seededSlots(teamIds, size);
 	const matchesByRound: TournamentMatch[][] = [];
 
 	for (let round = 1; round <= rounds; round += 1) {
@@ -67,8 +130,8 @@ export function createSingleEliminationMatches(tournamentId: string, teamIds: st
 				stage: "playoff",
 				round,
 				position: index + 1,
-				teamAId: round === 1 ? teamIds[index * 2] || null : null,
-				teamBId: round === 1 ? teamIds[index * 2 + 1] || null : null,
+				teamAId: round === 1 ? slots[index * 2] : null,
+				teamBId: round === 1 ? slots[index * 2 + 1] : null,
 				scoreA: 0,
 				scoreB: 0,
 				winnerTeamId: null,
@@ -110,14 +173,17 @@ export function createSingleEliminationMatches(tournamentId: string, teamIds: st
 		matchesByRound[rounds - 1].push(thirdPlaceMatch);
 	}
 
-	return matchesByRound.flat();
+	const matches = matchesByRound.flat();
+	applyByes(matches);
+	return matches;
 }
 
 export function createDoubleEliminationMatches(tournamentId: string, teamIds: string[]) {
-	const size = teamIds.length;
-	if (size < 4 || size > 32 || (size & (size - 1)) !== 0) {
-		throw new Error("Double Elimination benötigt 4, 8, 16 oder 32 Teams.");
+	if (teamIds.length < 3 || teamIds.length > 32) {
+		throw new Error("Double Elimination benötigt 3 bis 32 Teams. Fehlende Plätze bis zur nächsten Zweierpotenz werden zu Freilosen.");
 	}
+	const size = Math.max(4, 2 ** Math.ceil(Math.log2(teamIds.length)));
+	const slots = seededSlots(teamIds, size);
 
 	const upperRoundCount = Math.log2(size);
 	const upper: TournamentMatch[][] = [];
@@ -132,8 +198,8 @@ export function createDoubleEliminationMatches(tournamentId: string, teamIds: st
 				matchType: "standard" as const,
 				round,
 				position: index + 1,
-				teamAId: round === 1 ? teamIds[index * 2] || null : null,
-				teamBId: round === 1 ? teamIds[index * 2 + 1] || null : null,
+				teamAId: round === 1 ? slots[index * 2] : null,
+				teamBId: round === 1 ? slots[index * 2 + 1] : null,
 				scoreA: 0,
 				scoreB: 0,
 				winnerTeamId: null,
@@ -241,7 +307,40 @@ export function createDoubleEliminationMatches(tournamentId: string, teamIds: st
 	lower.at(-1)![0].nextSlot = "teamBId";
 	grandFinal.nextMatchId = bracketReset.id;
 
-	return [...upper.flat(), ...lower.flat(), grandFinal, bracketReset];
+	const matches = [...upper.flat(), ...lower.flat(), grandFinal, bracketReset];
+	applyByes(matches);
+	return matches;
+}
+
+/** Loads the playoff matches, resolves any byes that became decidable, and saves the changed matches. */
+export async function resolveByesInDb(db: Db, tournamentId: string) {
+	const collection = db.collection<TournamentMatch>("tournament_matches");
+	const matches = (await collection.find({ tournamentId, stage: "playoff" }).project<TournamentMatch>({ _id: 0 }).toArray()) as TournamentMatch[];
+	const changedIds = applyByes(matches);
+	if (!changedIds.length) return 0;
+	const byId = new Map(matches.map((match) => [match.id, match]));
+	await collection.bulkWrite(
+		changedIds.map((matchId) => {
+			const match = byId.get(matchId)!;
+			return {
+				updateOne: {
+					filter: { id: matchId, tournamentId },
+					update: {
+						$set: {
+							teamAId: match.teamAId,
+							teamBId: match.teamBId,
+							status: match.status,
+							winnerTeamId: match.winnerTeamId,
+							scoreA: match.scoreA,
+							scoreB: match.scoreB,
+							...(match.bye ? { bye: true } : {}),
+						},
+					},
+				},
+			};
+		})
+	);
+	return changedIds.length;
 }
 
 export async function rebuildGroupStandings(db: Db, tournamentId: string, groupId: string) {

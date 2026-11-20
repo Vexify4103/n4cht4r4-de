@@ -121,6 +121,8 @@ type Match = {
 	scoreA: number;
 	scoreB: number;
 	status?: string;
+	winnerTeamId?: string | null;
+	bye?: boolean;
 };
 type Application = {
 	id: string;
@@ -1006,7 +1008,7 @@ export function AdminTournamentWorkspace() {
 												<option value="" disabled>
 													{text("Select team", "Team auswählen")}
 												</option>
-												{teams.map((team) => (
+												{teams.filter((team) => team.members.length > 0).map((team) => (
 													<option value={team.id} key={team.id}>
 														{team.name}
 													</option>
@@ -1015,14 +1017,15 @@ export function AdminTournamentWorkspace() {
 											<span>{text("versus", "gegen")}</span>
 											<select
 												aria-label={`${text("Second team in match", "Zweites Team in Match")} ${match.position}`}
-												defaultValue={match.teamBId || ""}
+												defaultValue={match.teamBId || (match.bye ? "__bye__" : "")}
 												name={`teamB-${match.id}`}
 												required
 											>
 												<option value="" disabled>
 													{text("Select team", "Team auswählen")}
 												</option>
-												{teams.map((team) => (
+												<option value="__bye__">{text("Bye (first team advances)", "Freilos (erstes Team kommt weiter)")}</option>
+												{teams.filter((team) => team.members.length > 0).map((team) => (
 													<option value={team.id} key={team.id}>
 														{team.name}
 													</option>
@@ -1048,7 +1051,19 @@ export function AdminTournamentWorkspace() {
 						)}
 						<div className="admin-results">
 							{matches.map((match) => {
-								const ready = Boolean(match.teamAId && match.teamBId);
+								if (match.bye)
+									return (
+										<article className="admin-match-sheet" key={`${match.id}-bye-${match.winnerTeamId}`}>
+											<div>
+												<small>{matchLabel(match, locale)}</small>
+												<strong>
+													{match.winnerTeamId ? names.get(match.winnerTeamId) : text("No team", "Kein Team")}{" "}
+													<span>{text("advances with a bye", "kommt per Freilos weiter")}</span>
+												</strong>
+											</div>
+										</article>
+									);
+								const ready = Boolean(match.teamAId && match.teamBId) && match.status !== "skipped" && match.status !== "conditional";
 								return (
 									<article
 										className={`admin-match-sheet ${match.placement === "third_place" ? "is-placement" : ""}`}
@@ -1095,8 +1110,8 @@ export function AdminTournamentWorkspace() {
 									<p>
 										{tournament.bracketType === "double_elimination"
 											? text(
-													"Once 4, 8, 16, or 32 teams are confirmed, the complete double-elimination bracket can be created.",
-													"Sobald 4, 8, 16 oder 32 Teams bestätigt sind, kann der vollständige Double-Elimination-Baum erstellt werden."
+													"Works with 3 to 32 teams. Empty teams are left out, and missing places up to 4, 8, 16, or 32 become byes for the top seeds. Save the seeding first.",
+													"Funktioniert mit 3 bis 32 Teams. Leere Teams werden ignoriert, fehlende Plätze bis 4, 8, 16 oder 32 werden zu Freilosen für die besten Setzplätze. Speichere vorher die Setzliste."
 												)
 											: text(
 													"Pairings are prepared here once all teams are confirmed.",
@@ -1105,7 +1120,11 @@ export function AdminTournamentWorkspace() {
 									</p>
 									{tournament.bracketType === "double_elimination" && (
 										<button className="button button-primary" onClick={generateBracket} type="button">
-											<Swords size={15} /> {text(`Create bracket from ${teams.length} teams`, `Turnierbaum aus ${teams.length} Teams erstellen`)}
+											<Swords size={15} />{" "}
+											{text(
+												`Create bracket from ${teams.filter((team) => team.members.length > 0).length} teams`,
+												`Turnierbaum aus ${teams.filter((team) => team.members.length > 0).length} Teams erstellen`
+											)}
 										</button>
 									)}
 								</div>

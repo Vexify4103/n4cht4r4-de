@@ -49,12 +49,12 @@ export async function GET() {
 			riotVerificationChallenge:
 				user?.riotVerificationChallenge?.profileIconId && new Date(user.riotVerificationChallenge.expiresAt).getTime() > Date.now()
 					? {
-						profileIconId: user.riotVerificationChallenge.profileIconId,
-						profileIconUrl: profileIconUrl(user.riotVerificationChallenge.profileIconId),
-						expiresAt: new Date(user.riotVerificationChallenge.expiresAt).toISOString(),
-						gameName: typeof user.riotVerificationChallenge.gameName === "string" ? user.riotVerificationChallenge.gameName : null,
-						tagLine: typeof user.riotVerificationChallenge.tagLine === "string" ? user.riotVerificationChallenge.tagLine : null,
-					}
+							profileIconId: user.riotVerificationChallenge.profileIconId,
+							profileIconUrl: profileIconUrl(user.riotVerificationChallenge.profileIconId),
+							expiresAt: new Date(user.riotVerificationChallenge.expiresAt).toISOString(),
+							gameName: typeof user.riotVerificationChallenge.gameName === "string" ? user.riotVerificationChallenge.gameName : null,
+							tagLine: typeof user.riotVerificationChallenge.tagLine === "string" ? user.riotVerificationChallenge.tagLine : null,
+						}
 					: null,
 		});
 	} catch (e) {

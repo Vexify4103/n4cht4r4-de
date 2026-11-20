@@ -47,7 +47,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 	id = String(tournament.id);
 	if ((tournament.bracketType === "single_elimination" || tournament.bracketType === "double_elimination") && body.stage !== "playoffs")
 		return NextResponse.json({ error: "Dieses Turnier hat keine Gruppenphase. Bitte erstelle den Playoff-Baum." }, { status: 400 });
-	const teams = await db.collection("tournament_teams").find({ tournamentId: id }).project({ _id: 0, id: 1, seed: 1 }).sort({ seed: 1, name: 1 }).toArray();
+	// Empty draft teams never enter the bracket; missing places become byes for the top seeds.
+	// Mongo sorts null seeds first; unseeded teams must come last so byes go to real top seeds.
+	const teams = (
+		await db
+			.collection("tournament_teams")
+			.find({ tournamentId: id, "members.0": { $exists: true } })
+			.project({ _id: 0, id: 1, seed: 1, name: 1 })
+			.toArray()
+	).sort(
+		(left, right) =>
+			(typeof left.seed === "number" ? left.seed : Number.MAX_SAFE_INTEGER) - (typeof right.seed === "number" ? right.seed : Number.MAX_SAFE_INTEGER) ||
+			String(left.name).localeCompare(String(right.name), "de")
+	);
 	if (tournament.maxTeams === 4 && teams.length !== 4)
 		return NextResponse.json({ error: "Fuer dieses Turnier werden genau vier Teams fuer die Halbfinals benoetigt." }, { status: 400 });
 	if (teams.length < 2) return NextResponse.json({ error: "Für einen Spielplan werden mindestens zwei Teams benötigt." }, { status: 400 });

@@ -24,6 +24,7 @@ type Match = {
 	scoreA: number;
 	scoreB: number;
 	status: string;
+	bye?: boolean;
 	scheduledAt: string | null;
 };
 type Standing = { groupId?: string; rank: number; teamId: string; teamName: string; wins: number; losses: number; points: number };
@@ -133,7 +134,7 @@ function BracketLane({ matches, names }: { matches: Match[]; names: Map<string, 
 										<b>{match.status === "completed" ? match.scoreA : "–"}</b>
 									</div>
 									<div className={match.winnerTeamId && match.winnerTeamId === match.teamBId ? "winner" : ""}>
-										<span>{match.teamBId ? names.get(match.teamBId) || "Team B" : text("TBD", "Noch offen")}</span>
+										<span>{match.teamBId ? names.get(match.teamBId) || "Team B" : match.bye ? text("Bye", "Freilos") : text("TBD", "Noch offen")}</span>
 										<b>{match.status === "completed" ? match.scoreB : "–"}</b>
 									</div>
 								</article>
@@ -223,7 +224,7 @@ export function TournamentPublicView({ view }: { view: View }) {
 				copy={meta.copy}
 			/>
 			<section className="content-band tournament-view">
-				{view === "schedule" && <MatchSchedule matches={matches} names={names} />}
+				{view === "schedule" && <MatchSchedule matches={matches.filter((match) => match.status !== "skipped")} names={names} />}
 				{view === "playoffs" && <Bracket matches={matches.filter((match) => match.stage === "playoff")} names={names} />}
 				{view === "teams" &&
 					(teams.length ? (
