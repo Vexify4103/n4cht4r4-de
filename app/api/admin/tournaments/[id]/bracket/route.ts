@@ -83,6 +83,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 			return NextResponse.json({ error: error instanceof Error ? error.message : "Der Turnierbaum konnte nicht erstellt werden." }, { status: 400 });
 		}
 		await db.collection("tournament_matches").insertMany(matches);
+		// A generated bracket means the event is running; otherwise the page keeps saying "Anmeldung offen" until pairings are saved.
+		await db.collection("tournaments").updateOne({ id, status: { $ne: "completed" } }, { $set: { status: "live", updatedAt: new Date() } });
 		await recordTournamentAudit(db, staff, id, "bracket.playoffs_generated", { teamCount: teams.length, matchCount: matches.length });
 		return NextResponse.json({ matches });
 	}
