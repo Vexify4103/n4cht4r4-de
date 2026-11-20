@@ -88,6 +88,12 @@ export async function POST(request: Request) {
 		});
 	}
 
+	if (body.action === "cancel") {
+		// Lets users drop a challenge for the wrong Riot account and start over with the right one.
+		await users.updateOne({ _id: userId }, { $unset: { riotVerificationChallenge: "" } });
+		return NextResponse.json({ status: "cancelled" });
+	}
+
 	if (body.action === "confirm") {
 		const user = await users.findOne({ _id: userId });
 		const challenge = user?.riotVerificationChallenge as VerificationChallenge | undefined;

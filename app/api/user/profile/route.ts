@@ -46,13 +46,16 @@ export async function GET() {
 			riotVerified: user?.riotVerified || false,
 			riotSummonerName: user?.riotSummonerName || null,
 			riotTagLine: user?.riotTagLine || null,
-			riotVerificationChallenge: user?.riotVerificationChallenge?.profileIconId
-				? {
-					profileIconId: user.riotVerificationChallenge.profileIconId,
-					profileIconUrl: profileIconUrl(user.riotVerificationChallenge.profileIconId),
-					expiresAt: new Date(user.riotVerificationChallenge.expiresAt).toISOString(),
-				}
-				: null,
+			riotVerificationChallenge:
+				user?.riotVerificationChallenge?.profileIconId && new Date(user.riotVerificationChallenge.expiresAt).getTime() > Date.now()
+					? {
+						profileIconId: user.riotVerificationChallenge.profileIconId,
+						profileIconUrl: profileIconUrl(user.riotVerificationChallenge.profileIconId),
+						expiresAt: new Date(user.riotVerificationChallenge.expiresAt).toISOString(),
+						gameName: typeof user.riotVerificationChallenge.gameName === "string" ? user.riotVerificationChallenge.gameName : null,
+						tagLine: typeof user.riotVerificationChallenge.tagLine === "string" ? user.riotVerificationChallenge.tagLine : null,
+					}
+					: null,
 		});
 	} catch (e) {
 		console.error("Profile API error:", e);

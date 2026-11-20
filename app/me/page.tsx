@@ -39,7 +39,7 @@ type Profile = {
 	riotVerified: boolean;
 	riotSummonerName: string | null;
 	riotTagLine: string | null;
-	riotVerificationChallenge: { profileIconId: number; profileIconUrl: string; expiresAt: string } | null;
+	riotVerificationChallenge: { profileIconId: number; profileIconUrl: string; expiresAt: string; gameName?: string | null; tagLine?: string | null } | null;
 };
 type ConnectionAction = {
 	target: "discord" | "twitch" | "riot";
@@ -141,7 +141,7 @@ export default function MePage() {
 	const { data: tournamentProfile, mutate: refreshTournamentProfile } = useSWR<TournamentProfileData>(status === "authenticated" ? "/api/user/tournaments" : null, fetcher);
 	const [riotName, setRiotName] = useState("");
 	const [riotTag, setRiotTag] = useState("");
-	const [busy, setBusy] = useState<"start" | "confirm" | null>(null);
+	const [busy, setBusy] = useState<"start" | "confirm" | "cancel" | null>(null);
 	const [error, setError] = useState("");
 	const [connectionAction, setConnectionAction] = useState<ConnectionAction | null>(null);
 	const [connectionBusy, setConnectionBusy] = useState(false);
@@ -156,7 +156,7 @@ export default function MePage() {
 		if (status === "unauthenticated") router.replace("/login");
 	}, [status, router]);
 
-	async function verify(action: "start" | "confirm") {
+	async function verify(action: "start" | "confirm" | "cancel") {
 		setBusy(action);
 		setError("");
 		try {
@@ -168,6 +168,8 @@ export default function MePage() {
 			const result = await response.json();
 			if (!response.ok || (action === "confirm" && !result.verified)) {
 				setError(result.error || text("Riot verification is not complete yet.", "Die Riot-Verifizierung ist noch nicht abgeschlossen."));
+				// An expired challenge is removed on the server; refresh so the start form comes back.
+				if (response.status === 410) await mutate();
 			} else {
 				await mutate();
 			}
@@ -482,6 +484,14 @@ export default function MePage() {
 							<div>
 								<span className="kicker">{text("Your task", "Deine Aufgabe")}</span>
 								<h3>{text("Set this image as your Riot profile icon.", "Setze dieses Bild als Riot-Profilbild.")}</h3>
+								{challenge.gameName && (
+									<p>
+										{text("Riot account being verified:", "Zu prüfendes Riot-Konto:")}{" "}
+										<strong>
+											{challenge.gameName}#{challenge.tagLine}
+										</strong>
+									</p>
+								)}
 								<p>
 									{text(
 										"You can change it back immediately afterwards. This task expires at",
@@ -492,6 +502,9 @@ export default function MePage() {
 								</p>
 								<button className="button button-primary" disabled={busy !== null} onClick={() => verify("confirm")}>
 									{busy === "confirm" ? <Loader2 className="spin" size={17} /> : <Check size={17} />} {text("Check profile icon now", "Profilbild jetzt prüfen")}
+								</button>{" "}
+								<button className="button button-secondary" disabled={busy !== null} onClick={() => verify("cancel")}>
+									{busy === "cancel" ? <Loader2 className="spin" size={17} /> : <X size={17} />} {text("Wrong account? Start over", "Falsches Konto? Neu starten")}
 								</button>
 							</div>
 						</div>
