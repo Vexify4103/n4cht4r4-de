@@ -4949,6 +4949,206 @@ body.obs-page main {
 	font-size: 27px;
 }
 
+/* Rules page: table of contents + linkable sections (layout adapted from the Lauchgruen rulebook). */
+.rules-layout {
+	display: grid;
+	grid-template-columns: 250px minmax(0, 1fr);
+	gap: 40px;
+	align-items: start;
+}
+
+.rules-layout .tournament-rules {
+	max-width: 900px;
+	margin: 0;
+}
+
+.rules-sidebar {
+	position: sticky;
+	top: 100px;
+}
+
+.rules-toc {
+	display: grid;
+	gap: 2px;
+	padding: 18px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+}
+
+.rules-toc-label {
+	margin: 0 0 8px;
+	color: var(--faint);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.rules-toc a,
+.rules-toc-mobile nav a {
+	padding: 7px 10px;
+	border-left: 2px solid transparent;
+	border-radius: 0 5px 5px 0;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.35;
+	text-decoration: none;
+}
+
+.rules-toc a:hover,
+.rules-toc-mobile nav a:hover {
+	color: var(--ink-strong);
+	background: var(--surface-soft);
+}
+
+.rules-toc a[aria-current="location"],
+.rules-toc-mobile nav a[aria-current="location"] {
+	border-left-color: var(--blossom);
+	color: var(--ink-strong);
+	background: var(--blossom-soft);
+	font-weight: 700;
+}
+
+.rules-toc-meta {
+	margin-top: 10px;
+	color: var(--faint);
+	font-size: 12px;
+}
+
+.rules-toc-mobile {
+	display: none;
+}
+
+.rules-section {
+	scroll-margin-top: 100px;
+}
+
+.rules-section + .rules-section {
+	margin-top: 40px;
+}
+
+.rules-section-header {
+	margin-bottom: 14px;
+	padding-bottom: 10px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	border-bottom: 1px solid var(--line-strong);
+}
+
+.rules-section-header h2 {
+	margin: 0;
+	font-size: 27px;
+}
+
+.rules-content .rule-item {
+	scroll-margin-top: 100px;
+	margin-bottom: 8px;
+}
+
+.rules-content .rule-item:target {
+	border-color: var(--blossom);
+	background: var(--blossom-soft);
+}
+
+.rules-content .rule-text {
+	flex: 1;
+	line-height: 1.55;
+}
+
+.rules-content .rule-text a {
+	color: var(--blossom);
+}
+
+.rules-copy {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.rules-copy button {
+	width: 30px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	color: var(--faint);
+	background: transparent;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.rules-section-header:hover .rules-copy button,
+.rule-item:hover .rules-copy button,
+.rules-copy button:focus-visible {
+	opacity: 1;
+}
+
+.rules-copy button:hover {
+	border-color: var(--line);
+	color: var(--blossom);
+}
+
+.rules-copy-status {
+	position: absolute;
+	right: 0;
+	top: 100%;
+	z-index: 2;
+	white-space: nowrap;
+	color: var(--blossom);
+	font-size: 12px;
+}
+
+@media (hover: none) {
+	.rules-copy button {
+		opacity: 0.7;
+	}
+}
+
+@media (max-width: 900px) {
+	.rules-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 18px;
+	}
+
+	.rules-sidebar {
+		position: static;
+	}
+
+	.rules-toc {
+		display: none;
+	}
+
+	.rules-toc-mobile {
+		display: block;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--surface);
+	}
+
+	.rules-toc-mobile summary {
+		padding: 14px 16px;
+		display: flex;
+		justify-content: space-between;
+		font-weight: 800;
+		cursor: pointer;
+	}
+
+	.rules-toc-mobile summary span {
+		color: var(--faint);
+		font-weight: 600;
+	}
+
+	.rules-toc-mobile nav {
+		padding: 0 10px 12px;
+		display: grid;
+		gap: 2px;
+	}
+}
+
 .group-table {
 	padding: 26px;
 	border: 1px solid var(--line);

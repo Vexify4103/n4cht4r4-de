@@ -1324,8 +1324,8 @@ export function AdminTournamentWorkspace() {
 							</div>
 							<label className="settings-note">
 								{text(
-									"One rule per line. Start a line with ## to make it a section heading. Empty lines are ignored.",
-									"Eine Regel pro Zeile. Eine Zeile mit ## beginnen, um sie zur Abschnittsüberschrift zu machen. Leere Zeilen werden ignoriert."
+									"One rule per line. Start a line with ## to make it a section heading (it appears in the table of contents). **bold**, *italic* and [text](https://link) are supported. Empty lines are ignored.",
+									"Eine Regel pro Zeile. Eine Zeile mit ## beginnen, um sie zur Abschnittsüberschrift zu machen (erscheint im Inhaltsverzeichnis). **fett**, *kursiv* und [Text](https://link) werden unterstützt. Leere Zeilen werden ignoriert."
 								)}
 								<textarea
 									name="rules"
