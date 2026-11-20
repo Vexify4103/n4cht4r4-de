@@ -9,7 +9,7 @@
 	gap: 8px;
 }
 .home-news h2 {
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 30px;
 }
 .news-grid {
@@ -92,7 +92,7 @@
 	padding-bottom: 60px;
 }
 .content-admin h1 {
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 36px;
 }
 .content-tabs {
@@ -304,7 +304,7 @@
 
 .challenge-journal-heading h2 {
 	margin: 5px 0 7px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(24px, 4vw, 34px);
 }
 
@@ -366,7 +366,7 @@
 	grid-column: 2;
 	grid-row: 1;
 	margin: 0 0 5px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 21px;
 }
 
@@ -504,7 +504,7 @@
 }
 
 .admin-sanctuary .ledger-index {
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 18px;
 }
 
@@ -705,7 +705,7 @@
 
 .admin-seeding-row > strong {
 	color: var(--blossom);
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 18px;
 }
 
@@ -914,7 +914,7 @@ h3 {
 
 h1,
 .home-hero h1 {
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-weight: 700;
 }
 
@@ -1003,7 +1003,7 @@ main {
 }
 
 .brand-copy strong {
-	font-family: "Segoe Print", cursive;
+	font-family: var(--font-hand), "Segoe Print", cursive;
 	font-size: 18px;
 	color: var(--ink-strong);
 }
@@ -1148,8 +1148,7 @@ main {
 
 .user-dropdown-header small {
 	color: var(--faint);
-	font-size: 10px;
-	text-transform: uppercase;
+	font-size: 12px;
 }
 
 .user-dropdown-item {
@@ -1215,7 +1214,6 @@ main {
 	border: 1px solid var(--line-strong);
 	border-radius: 8px 8px 8px 3px;
 	background: var(--surface-soft);
-	box-shadow: inset 0 0 18px var(--blossom-soft);
 }
 
 .footer-mark img {
@@ -1227,7 +1225,7 @@ main {
 .footer-intro h2 {
 	margin: 0;
 	color: var(--ink-strong);
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(28px, 4vw, 40px);
 	font-weight: 650;
 	line-height: 1.12;
@@ -1246,9 +1244,8 @@ main {
 .footer-links strong {
 	margin-bottom: 5px;
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .footer-links a {
@@ -1298,9 +1295,8 @@ main {
 	align-items: center;
 	gap: 7px;
 	color: var(--blossom);
-	font-size: 11px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 13px;
+	font-weight: 700;
 }
 
 .button {
@@ -1334,7 +1330,7 @@ main {
 .button-primary {
 	color: #fff;
 	background: var(--blossom-strong);
-	box-shadow: 0 8px 24px color-mix(in srgb, var(--blossom-strong) 28%, transparent);
+	box-shadow: 0 4px 12px rgba(20, 8, 18, 0.22);
 }
 
 .button-primary:hover {
@@ -1579,15 +1575,33 @@ main {
 }
 
 /* Home */
+/* Home hero sits on the same sakura night scene as the tournament pages; the text side stays calm. */
 .home-hero {
 	width: min(100% - 40px, 1320px);
-	min-height: 720px;
-	margin: 0 auto;
-	padding: 66px 70px 58px;
+	min-height: 640px;
+	margin: 24px auto 0;
+	padding: 64px 68px 56px;
 	display: grid;
 	grid-template-columns: minmax(320px, 0.78fr) minmax(540px, 1.22fr);
 	align-items: center;
 	gap: 48px;
+	overflow: hidden;
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	background:
+		linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--surface-solid) 94%, transparent) 0%,
+			color-mix(in srgb, var(--surface-solid) 72%, transparent) 46%,
+			color-mix(in srgb, var(--surface-solid) 20%, transparent) 100%
+		),
+		var(--background-image) center 30% / cover;
+	box-shadow: var(--shadow);
+}
+
+.news-heading-flower {
+	color: var(--blossom);
+	vertical-align: -3px;
 }
 
 .home-hero-copy {
@@ -1684,9 +1698,8 @@ main {
 	align-items: center;
 	gap: 7px;
 	color: var(--muted);
-	font-size: 11px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 13px;
+	font-weight: 700;
 }
 
 .live-state.is-live {
@@ -1744,9 +1757,8 @@ main {
 
 .live-panel-stream-copy > span {
 	color: #ff7395;
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .live-panel-stream-copy h2 {
@@ -1789,9 +1801,8 @@ main {
 
 .live-panel-copy > span {
 	color: var(--gold);
-	font-size: 11px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 13px;
+	font-weight: 700;
 }
 
 .live-panel-copy h2 {
@@ -1850,9 +1861,8 @@ main {
 	display: block;
 	margin-top: 17px;
 	color: var(--gold);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .garden-path h3 {
@@ -2108,7 +2118,7 @@ main {
 
 .stream-setup-intro h2 {
 	margin: 4px 0 5px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 28px;
 }
 
@@ -2123,10 +2133,9 @@ main {
 	min-width: 100px;
 	display: grid;
 	color: var(--faint);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: 12px;
+	font-weight: 700;
 	text-align: right;
-	text-transform: uppercase;
 }
 
 .stream-setup-count strong {
@@ -2219,9 +2228,8 @@ main {
 	display: block;
 	margin-bottom: 3px;
 	color: var(--faint);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .stream-setup-entry strong {
@@ -2277,7 +2285,7 @@ main {
 
 .creator-notes-intro h2 {
 	margin: 4px 0 5px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 28px;
 }
 
@@ -2291,11 +2299,10 @@ main {
 .creator-notes-label {
 	max-width: 180px;
 	color: var(--faint);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: 12px;
+	font-weight: 700;
 	line-height: 1.5;
 	text-align: right;
-	text-transform: uppercase;
 }
 
 .creator-notes-accordion {
@@ -2347,9 +2354,8 @@ main {
 
 .creator-note-heading small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .creator-note-heading strong {
@@ -2390,7 +2396,7 @@ main {
 	align-self: start;
 	border-left: 2px solid var(--blossom);
 	color: var(--ink);
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 17px;
 	line-height: 1.65;
 }
@@ -2676,9 +2682,8 @@ main {
 	border-radius: 14px;
 	color: var(--muted);
 	background: var(--surface-soft);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .challenge-badge.active,
@@ -2843,9 +2848,8 @@ main {
 
 .sakura-team-card > header span {
 	color: var(--faint);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .sakura-team-card h3 {
@@ -2946,7 +2950,6 @@ main {
 .bracket-round h3 {
 	color: var(--blossom);
 	font-size: 15px;
-	text-transform: uppercase;
 }
 
 .bracket-match {
@@ -3166,9 +3169,8 @@ main {
 .field-optional {
 	margin-left: 6px;
 	color: var(--faint);
-	font-size: 9px;
-	font-weight: 800;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .form-field-label {
@@ -3366,8 +3368,7 @@ select:focus {
 
 .roster-team > header span {
 	color: var(--blossom);
-	font-size: 10px;
-	text-transform: uppercase;
+	font-size: 12px;
 }
 
 .roster-team h2 {
@@ -3414,9 +3415,8 @@ select:focus {
 
 .roster-slot span {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .match-admin-item {
@@ -3543,15 +3543,14 @@ body.obs-page main {
 	align-items: center;
 	gap: 7px;
 	color: #f49bc5;
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .obs-team-card h1 {
 	margin: 8px 0 16px;
 	color: #fff;
-	font-family: "Segoe Print", cursive;
+	font-family: var(--font-hand), "Segoe Print", cursive;
 	font-size: 26px;
 	line-height: 1.15;
 }
@@ -3646,8 +3645,7 @@ body.obs-page main {
 		align-items: center;
 		justify-content: space-between;
 		color: var(--faint);
-		font-size: 11px;
-		text-transform: uppercase;
+		font-size: 13px;
 	}
 
 	.mobile-nav-head button {
@@ -3678,7 +3676,7 @@ body.obs-page main {
 
 	.home-hero {
 		min-height: auto;
-		padding: 72px 20px;
+		padding: 56px 28px;
 		grid-template-columns: 1fr;
 	}
 
@@ -3845,7 +3843,7 @@ body.obs-page main {
 
 	.home-hero {
 		width: min(100% - 24px, 1320px);
-		padding: 54px 0;
+		padding: 40px 20px;
 		gap: 34px;
 	}
 
@@ -4099,13 +4097,18 @@ body.obs-page main {
 	background: #9146ff;
 }
 
+/* Secondary hero action: quiet outline so the pink tournament button stays the one primary action. */
 .button-discord-link {
-	color: #fff;
-	background: #5865f2;
-	box-shadow: 0 8px 24px rgba(88, 101, 242, 0.24);
+	color: var(--ink-strong);
+	border: 1px solid var(--line-strong);
+	background: var(--surface-soft);
 }
 
-.button-discord-link:hover,
+.button-discord-link:hover {
+	border-color: #5865f2;
+	background: color-mix(in srgb, #5865f2 16%, var(--surface-soft));
+}
+
 .button-discord:hover,
 .login-btn.discord:hover {
 	background: #5865f2;
@@ -4398,9 +4401,8 @@ body.obs-page main {
 
 .clip-copy small {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .clip-copy h2 {
@@ -4508,9 +4510,8 @@ body.obs-page main {
 .tournament-game {
 	margin-top: 36px;
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .tournament-card h3 {
@@ -4573,9 +4574,8 @@ body.obs-page main {
 
 .tournament-facts span {
 	color: var(--faint);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .tournament-facts strong {
@@ -4648,7 +4648,6 @@ body.obs-page main {
 .next-match-panel > small {
 	margin-top: 28px;
 	color: var(--faint);
-	text-transform: uppercase;
 }
 
 .next-match-teams {
@@ -4714,9 +4713,8 @@ body.obs-page main {
 
 .team-card-heading small {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .team-card-heading h3 {
@@ -4749,9 +4747,8 @@ body.obs-page main {
 
 .team-player > span {
 	color: var(--faint);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .team-player > strong {
@@ -4869,9 +4866,8 @@ body.obs-page main {
 
 .bracket-column > header span {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .bracket-column > header h2 {
@@ -4898,9 +4894,8 @@ body.obs-page main {
 	padding: 4px 10px 7px;
 	border-bottom: 1px solid var(--line);
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .bracket-match.is-placement {
@@ -4980,9 +4975,7 @@ body.obs-page main {
 	margin: 0 0 8px;
 	color: var(--faint);
 	font-size: 12px;
-	font-weight: 800;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
+	font-weight: 700;
 }
 
 .rules-toc a,
@@ -5452,9 +5445,8 @@ body.obs-page main {
 
 .application-card > div small {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .application-card.closed {
@@ -5542,9 +5534,8 @@ body.obs-page main {
 
 .application-history small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 /* Admin workbench */
@@ -5647,9 +5638,8 @@ body.obs-page main {
 
 .admin-team-sheet header small {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .admin-team-sheet h2 {
@@ -5685,9 +5675,8 @@ body.obs-page main {
 
 .admin-role-slot > span {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .admin-role-slot > strong {
@@ -5769,9 +5758,8 @@ body.obs-page main {
 .admin-pairing-grid legend {
 	padding: 0 7px;
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .admin-pairing-grid fieldset > span {
@@ -5815,7 +5803,6 @@ body.obs-page main {
 
 .admin-match-sheet small {
 	color: var(--blossom);
-	text-transform: uppercase;
 }
 
 .admin-match-sheet strong span {
@@ -5919,9 +5906,8 @@ body.obs-page main {
 
 .admin-application-sheet small {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .admin-application-sheet p {
@@ -6459,9 +6445,8 @@ body.obs-page main {
 
 .wish-group-heading span {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .wish-group-heading h4,
@@ -6576,9 +6561,8 @@ body.obs-page main {
 	gap: 10px;
 	border-top: 1px solid var(--line);
 	color: var(--muted);
-	font-size: 10px;
-	font-weight: 800;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .challenge-reward {
@@ -6615,9 +6599,8 @@ body.obs-page main {
 
 .challenge-unlocked-badge small {
 	color: var(--muted);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .challenge-unlocked-badge strong {
@@ -6701,9 +6684,8 @@ body.obs-page main {
 
 .profile-badge small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .profile-badge strong {
@@ -6817,9 +6799,8 @@ body.obs-page main {
 
 .challenge-admin-form header small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .challenge-admin-fields {
@@ -6833,9 +6814,8 @@ body.obs-page main {
 	display: grid;
 	gap: 5px;
 	color: var(--muted);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .challenge-admin-fields label.wide {
@@ -7411,9 +7391,8 @@ body.obs-page main {
 
 .badge-showcase-preview small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .badge-showcase-preview strong {
@@ -7470,7 +7449,7 @@ body.obs-page main {
 .community-moderation-area h2,
 .community-project-admin-area h2 {
 	margin: 5px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 31px;
 }
 
@@ -7544,9 +7523,8 @@ body.obs-page main {
 	color: #fff;
 	background: rgba(27, 17, 30, 0.72);
 	backdrop-filter: blur(8px);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 	z-index: 2;
 }
 
@@ -7568,14 +7546,13 @@ body.obs-page main {
 
 .project-game {
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .community-project-copy h2 {
 	margin: 8px 0 12px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 34px;
 }
 
@@ -7607,9 +7584,8 @@ body.obs-page main {
 	align-items: center;
 	gap: 7px;
 	color: var(--blossom);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .project-rule-notes small {
@@ -7657,7 +7633,7 @@ body.obs-page main {
 
 .community-own-submissions h2 {
 	margin: 5px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(22px, 3vw, 31px);
 }
 
@@ -7734,10 +7710,9 @@ body.obs-page main {
 	align-items: center;
 	gap: 5px;
 	color: var(--gold);
-	font-size: 8px;
-	font-weight: 900;
+	font-size: 10px;
+	font-weight: 700;
 	line-height: 1.35;
-	text-transform: uppercase;
 }
 
 .community-own-entry.rejected .community-own-status {
@@ -7765,7 +7740,7 @@ body.obs-page main {
 
 .community-compose h2 {
 	margin: 6px 0 5px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 25px;
 }
 
@@ -7823,9 +7798,8 @@ body.obs-page main {
 	display: grid;
 	gap: 6px;
 	color: var(--muted);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .community-compose-form input,
@@ -8056,7 +8030,7 @@ body.obs-page main {
 
 .community-post-paper h3 {
 	margin: 17px 0 3px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 20px;
 }
 
@@ -8171,7 +8145,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .member-profile-hero h1 {
 	margin: 7px 0 5px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(36px, 6vw, 64px);
 	letter-spacing: 0;
 }
@@ -8203,7 +8177,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 .member-profile-badges h2,
 .member-profile-section-head h2 {
 	margin: 5px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 27px;
 }
 
@@ -8272,9 +8246,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	align-items: center;
 	gap: 6px;
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .member-contribution h3 {
@@ -8329,9 +8302,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .member-tournament-list small {
 	color: var(--blossom);
-	font-size: 8px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 10px;
+	font-weight: 700;
 }
 
 .member-tournament-list strong {
@@ -8500,9 +8472,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	align-items: center;
 	gap: 6px;
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .moderation-copy > header small,
@@ -8529,9 +8500,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	display: grid;
 	gap: 5px;
 	color: var(--faint);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .moderation-copy textarea {
@@ -8695,14 +8665,13 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .community-project-editor header small {
 	color: var(--blossom);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .community-project-editor h2 {
 	margin: 2px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 22px;
 }
 
@@ -8731,9 +8700,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	display: grid;
 	gap: 6px;
 	color: var(--muted);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .community-project-editor-fields label.wide {
@@ -8999,9 +8967,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .ledger-timing small {
 	color: var(--faint);
-	font-size: 9px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .ledger-timing small.is-open {
@@ -9020,7 +8987,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .admin-settings-intro h2 {
 	margin: 5px 0 7px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 31px;
 }
 
@@ -9080,7 +9047,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .admin-settings-heading h3 {
 	margin: 2px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 23px;
 }
 
@@ -9098,9 +9065,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	display: grid;
 	gap: 7px;
 	color: var(--muted);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .admin-settings-fields input,
@@ -9192,9 +9158,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .registration-timeline label > span {
 	color: var(--muted);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .registration-timeline label small {
@@ -9228,7 +9193,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .clips-archive-toolbar h2 {
 	margin: 4px 0 3px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 30px;
 }
 
@@ -9629,7 +9594,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .engagement-hero-copy h1 {
 	margin: 10px 0 15px;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(40px, 6vw, 68px);
 	line-height: 1.08;
 }
@@ -9668,7 +9633,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .engagement-hero-mark small {
 	color: var(--ink);
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 14px;
 }
 
@@ -9707,7 +9672,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 .engagement-journal-heading h2 {
 	max-width: 760px;
 	margin: 8px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(26px, 4vw, 38px);
 	line-height: 1.25;
 }
@@ -9795,9 +9760,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .engagement-entry-body > header span {
 	color: var(--blossom);
-	font-size: 11px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 13px;
+	font-weight: 700;
 }
 
 .engagement-entry-body time {
@@ -9809,7 +9773,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .engagement-entry-body h3 {
 	margin: 9px 0 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: 27px;
 	line-height: 1.25;
 }
@@ -9860,9 +9824,8 @@ html[data-theme="sakura-night"] .member-profile-hero {
 
 .engagement-transparency span {
 	color: var(--moss);
-	font-size: 10px;
-	font-weight: 900;
-	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 700;
 }
 
 .engagement-transparency h2 {
@@ -9913,7 +9876,7 @@ html[data-theme="sakura-night"] .member-profile-hero {
 .home-engagement-note h2,
 .info-engagement-note h2 {
 	margin: 3px 0;
-	font-family: "Segoe Print", "Bradley Hand", cursive;
+	font-family: var(--font-hand), "Segoe Print", "Bradley Hand", cursive;
 	font-size: clamp(20px, 3vw, 27px);
 }
 

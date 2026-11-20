@@ -25,7 +25,7 @@ export function HomeNews() {
 					<Megaphone size={16} /> {text("Fresh from the garden", "Frisch aus dem Garten")}
 				</span>
 				<h2 id="news-title">
-					{text("What's blooming?", "Was blüht gerade auf?")} <span aria-hidden="true">🌸</span>
+					{text("What's blooming?", "Was blüht gerade auf?")} <Flower2 size={22} aria-hidden="true" className="news-heading-flower" />
 				</h2>
 			</div>
 			<div className="news-grid">
