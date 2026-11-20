@@ -45,6 +45,8 @@ type Match = {
 	scoreB: number;
 	status: string;
 	scheduledAt: string | null;
+	bracket?: string;
+	matchType?: string;
 };
 
 const statusLabel = {
@@ -84,7 +86,7 @@ export default function TournamentDetailPage() {
 
 	const tournament = data.tournament;
 	const teams = teamData?.teams || [];
-	const nextMatch = (matchData?.matches || []).find((match) => match.status !== "completed" && match.teamAId && match.teamBId);
+	const nextMatch = (matchData?.matches || []).find((match) => match.status === "scheduled" && match.teamAId && match.teamBId);
 	const teamNames = new Map(teams.map((team) => [team.id, team.name]));
 	const date = tournament.date
 		? new Intl.DateTimeFormat(intlLocale, { weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(
@@ -130,7 +132,11 @@ export default function TournamentDetailPage() {
 							? text("Your place in the tournament is waiting.", "Dein Platz im Turnier wartet.")
 							: isAnnouncement
 								? text("Registration will bloom soon.", "Die Anmeldung blüht bald auf.")
-								: text("The teams are set. Now the tournament is waiting to begin.", "Die Teams stehen. Jetzt wartet das Turnier auf seinen Start.")}
+								: tournament.status === "live"
+									? text("The tournament is on. Good luck to every team.", "Das Turnier läuft. Viel Glück an alle Teams.")
+									: tournament.status === "completed"
+										? text("The tournament is over. Congratulations to the champions.", "Das Turnier ist vorbei. Glückwunsch an das Siegerteam.")
+										: text("The teams are set. Now the tournament is waiting to begin.", "Die Teams stehen. Jetzt wartet das Turnier auf seinen Start.")}
 					</h2>
 					<p>
 						{tournament.registrationOpen
@@ -185,7 +191,11 @@ export default function TournamentDetailPage() {
 					{nextMatch ? (
 						<>
 							<small>
-								{text("Round", "Runde")} {nextMatch.round}
+								{nextMatch.matchType === "grand_final"
+									? "Grand Final"
+									: nextMatch.matchType === "bracket_reset"
+										? "Grand Final Reset"
+										: `${nextMatch.bracket === "upper" ? "Winner Bracket · " : nextMatch.bracket === "lower" ? "Loser Bracket · " : ""}${text("Round", "Runde")} ${nextMatch.round}`}
 							</small>
 							<div className="next-match-teams">
 								<strong>{teamNames.get(nextMatch.teamAId || "") || "Team A"}</strong>
