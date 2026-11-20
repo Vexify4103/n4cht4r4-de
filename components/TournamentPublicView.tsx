@@ -118,7 +118,11 @@ function BracketLane({ matches, names }: { matches: Match[]; names: Map<string, 
 									? "Grand Final"
 									: "Reset"
 								: roundIndex === rounds.length - 1
-									? text("Final", "Finale")
+									? matches[0]?.bracket === "upper"
+										? text("Winner final", "Winner-Finale")
+										: matches[0]?.bracket === "lower"
+											? text("Loser final", "Loser-Finale")
+											: text("Final", "Finale")
 									: rounds.length === 2
 										? text("Semifinal", "Halbfinale")
 										: `${text("Round", "Runde")} ${round}`}
