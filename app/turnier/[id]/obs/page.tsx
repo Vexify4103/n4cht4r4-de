@@ -8,7 +8,30 @@ import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 type Team = { id: string; name: string };
-type Match = { teamAId: string | null; teamBId: string | null; scoreA: number; scoreB: number; status: string; round: number };
+type Match = {
+	teamAId: string | null;
+	teamBId: string | null;
+	scoreA: number;
+	scoreB: number;
+	status: string;
+	round: number;
+	stage?: "group" | "playoff";
+	placement?: "third_place";
+	bracket?: "upper" | "lower" | "finals";
+	matchType?: "standard" | "grand_final" | "bracket_reset";
+};
+
+function stageLabel(match: Match, finalRound: number, text: (en: string, de: string) => string) {
+	if (match.placement === "third_place") return text("Third-place match", "Spiel um Platz 3");
+	if (match.matchType === "grand_final") return "Grand Final";
+	if (match.matchType === "bracket_reset") return "Grand Final Reset";
+	if (match.bracket === "upper") return `Winner Bracket · ${text("Round", "Runde")} ${match.round}`;
+	if (match.bracket === "lower") return `Loser Bracket · ${text("Round", "Runde")} ${match.round}`;
+	if (match.stage === "group") return `${text("Group stage", "Gruppenphase")} · ${text("Round", "Runde")} ${match.round}`;
+	if (match.round === finalRound) return text("Final", "Finale");
+	if (match.round === finalRound - 1) return text("Semifinal", "Halbfinale");
+	return `${text("Round", "Runde")} ${match.round}`;
+}
 
 function OBSContent() {
 	const { text } = useLocale();
@@ -26,7 +49,10 @@ function OBSContent() {
 	const team = teams.find((entry) => entry.id === teamId);
 	const played = matches.filter((match) => teamId && match.status === "completed" && (match.teamAId === teamId || match.teamBId === teamId));
 	const wins = played.filter((match) => (match.teamAId === teamId ? match.scoreA > match.scoreB : match.scoreB > match.scoreA)).length;
-	const next = matches.find((match) => teamId && match.status !== "completed" && (match.teamAId === teamId || match.teamBId === teamId));
+	const { data: tournamentData } = useSWR<{ tournament?: { seriesBestOf?: number | null } }>(`/api/tournaments/${id}`, fetcher, { refreshInterval: 300_000 });
+	const bestOf = tournamentData?.tournament?.seriesBestOf || 1;
+	const finalRound = Math.max(0, ...matches.filter((match) => match.stage !== "group" && !match.bracket).map((match) => match.round));
+	const next = matches.find((match) => teamId && match.status === "scheduled" && (match.teamAId === teamId || match.teamBId === teamId));
 	const opponentId = next?.teamAId === teamId ? next.teamBId : next?.teamAId;
 	const opponent = teams.find((entry) => entry.id === opponentId);
 
@@ -43,7 +69,11 @@ function OBSContent() {
 					<div>
 						<span>{text("Next opponent", "Nächster Gegner")}</span>
 						<strong>{opponent?.name || text("To be determined", "Wird bestimmt")}</strong>
-						{next && <small>{next.round === 1 ? text("Semifinal", "Halbfinale") : text("Final", "Finale")} · Best of 3</small>}
+						{next && (
+							<small>
+								{stageLabel(next, finalRound, text)} · Best of {bestOf}
+							</small>
+						)}
 					</div>
 				</div>
 				<div className="obs-card-stat">
