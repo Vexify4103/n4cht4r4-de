@@ -270,16 +270,22 @@ export function TournamentPublicView({ view }: { view: View }) {
 				{view === "rules" &&
 					((tournamentData?.tournament.rules || []).length ? (
 						<div className="tournament-rules">
-							{(tournamentData?.tournament.rules || []).map((rule, index) =>
-								rule.startsWith("## ") ? (
-									<h2 key={`${rule}-${index}`}>{rule.slice(3)}</h2>
-								) : (
-									<div className="rule-item" key={`${rule}-${index}`}>
-										<span className="rule-number">{String(index + 1).padStart(2, "0")}</span>
-										<span className="rule-text">{rule}</span>
-									</div>
-								)
-							)}
+							{(() => {
+								let ruleNumber = 0;
+								return (tournamentData?.tournament.rules || []).map((rule, index) => {
+									if (rule.startsWith("## ")) {
+										ruleNumber = 0;
+										return <h2 key={`${rule}-${index}`}>{rule.slice(3)}</h2>;
+									}
+									ruleNumber += 1;
+									return (
+										<div className="rule-item" key={`${rule}-${index}`}>
+											<span className="rule-number">{String(ruleNumber).padStart(2, "0")}</span>
+											<span className="rule-text">{rule}</span>
+										</div>
+									);
+								});
+							})()}
 						</div>
 					) : (
 						<Empty

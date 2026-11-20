@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 			.filter((rule) => typeof rule === "string")
 			.map((rule) => rule.trim())
 			.filter(Boolean)
-			.slice(0, 50);
+			.slice(0, 150);
 	if (update.seriesBestOf !== undefined && update.seriesBestOf !== null && ![1, 3, 5].includes(Number(update.seriesBestOf)))
 		return NextResponse.json({ error: "Für eine Serie sind nur Best of 1, 3 oder 5 erlaubt." }, { status: 400 });
 	if (update.maxTeams !== undefined && update.maxTeams !== null && (!Number.isInteger(Number(update.maxTeams)) || Number(update.maxTeams) < 2 || Number(update.maxTeams) > 128))

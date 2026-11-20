@@ -64,6 +64,7 @@ type Tournament = {
 	wishGroupMode?: "disabled" | "duo" | "team";
 	rosterPublishedAt?: string | null;
 	rosterDirty?: boolean;
+	rules?: string[];
 };
 
 function dateTimeLocalValue(value?: string | null) {
@@ -526,6 +527,22 @@ export function AdminTournamentWorkspace() {
 			setNotice(text("Application window saved. Opening and closing happen automatically.", "Bewerbungsfenster gespeichert. Öffnung und Schließung laufen automatisch."));
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : text("The application window could not be saved.", "Das Bewerbungsfenster konnte nicht gespeichert werden."));
+		}
+	}
+
+	async function saveRules(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = new FormData(event.currentTarget);
+		const rules = String(form.get("rules") || "")
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+		try {
+			await request(`/api/admin/tournaments/${id}`, "PATCH", { rules });
+			await refreshTournament();
+			setNotice(text(`Rules saved (${rules.length} lines).`, `Regelwerk gespeichert (${rules.length} Zeilen).`));
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("The rules could not be saved.", "Das Regelwerk konnte nicht gespeichert werden."));
 		}
 	}
 
@@ -1273,6 +1290,37 @@ export function AdminTournamentWorkspace() {
 								</label>
 								<button className="button button-primary" type="submit">
 									<Check size={15} /> {text("Save match format", "Spielformat speichern")}
+								</button>
+							</div>
+						</form>
+
+						<form className="admin-settings-section" onSubmit={saveRules}>
+							<div className="admin-settings-number">04</div>
+							<div className="admin-settings-heading">
+								<ClipboardList size={22} />
+								<div>
+									<span className="kicker">{text("Rules", "Regelwerk")}</span>
+									<h3>{text("Rules on the tournament page", "Regeln auf der Turnierseite")}</h3>
+								</div>
+							</div>
+							<label className="settings-note">
+								{text(
+									"One rule per line. Start a line with ## to make it a section heading. Empty lines are ignored.",
+									"Eine Regel pro Zeile. Eine Zeile mit ## beginnen, um sie zur Abschnittsüberschrift zu machen. Leere Zeilen werden ignoriert."
+								)}
+								<textarea
+									name="rules"
+									rows={18}
+									defaultValue={(tournament.rules || []).join("\n")}
+									placeholder={"## 1. Turnierformat\nEs nehmen insgesamt 8 Teams teil.\nJedes Match wird als Best of 1 gespielt."}
+								/>
+							</label>
+							<div className="admin-settings-footer">
+								<span className="muted-note">
+									{(tournament.rules || []).filter((rule) => !rule.startsWith("## ")).length} {text("rules saved", "Regeln gespeichert")}
+								</span>
+								<button className="button button-primary" type="submit">
+									<Check size={15} /> {text("Save rules", "Regelwerk speichern")}
 								</button>
 							</div>
 						</form>
