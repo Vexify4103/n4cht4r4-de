@@ -39,6 +39,9 @@ const registrationLabels = {
 	unavailable: { en: "No application", de: "Keine Bewerbung" },
 };
 
+// The archive grows with every test and past event; the newest few are enough at a glance.
+const ARCHIVE_PREVIEW = 3;
+
 function formatDate(value: string | null | undefined, locale: Locale) {
 	if (!value) return locale === "en" ? "Date open" : "Termin offen";
 	const date = new Date(value);
@@ -54,6 +57,7 @@ export default function AdminTournamentsPage() {
 	const [creating, setCreating] = useState(false);
 	const [createError, setCreateError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const [showFullArchive, setShowFullArchive] = useState(false);
 	const canCreate = access?.role === "owner" || access?.role === "tournament_admin";
 
 	// New tournaments start hidden ("In Vorbereitung"); everything else is set on the tournament's own admin page.
@@ -77,7 +81,7 @@ export default function AdminTournamentsPage() {
 		return (
 			<section className="content-band">
 				<div className="empty-state">
-					<ShieldAlert size={40} />
+					<ShieldAlert size={40} aria-hidden="true" />
 					<h3>{text("No tournament access", "Kein Turnierzugriff")}</h3>
 					<p>
 						{text(
@@ -98,16 +102,19 @@ export default function AdminTournamentsPage() {
 	const tournaments = data?.tournaments || [];
 	const chapters = [
 		{
+			archive: false,
 			title: text("Important now", "Gerade wichtig"),
 			copy: text("Live tournaments and open application phases", "Laufende Turniere und geöffnete Bewerbungsphasen"),
 			records: tournaments.filter((item) => item.status === "live" || item.registrationState === "open"),
 		},
 		{
+			archive: false,
 			title: text("In preparation", "In Vorbereitung"),
 			copy: text("Announcements, dates, and upcoming application windows", "Ankündigungen, Termine und kommende Bewerbungsfenster"),
 			records: tournaments.filter((item) => item.status !== "completed" && item.status !== "live" && item.registrationState !== "open"),
 		},
 		{
+			archive: true,
 			title: text("In the archive", "Im Archiv"),
 			copy: text("Completed tournaments with results and full records", "Beendete Turniere mit Ergebnissen und vollständiger Turnierakte"),
 			records: tournaments.filter((item) => item.status === "completed"),
@@ -116,8 +123,8 @@ export default function AdminTournamentsPage() {
 	return (
 		<main className="admin-sanctuary">
 			<section className="admin-welcome">
-				<span className="admin-seal">
-					<Flower2 size={31} />
+				<span className="admin-seal" aria-hidden="true">
+					<Flower2 size={31} aria-hidden="true" />
 				</span>
 				<div>
 					<span className="kicker">
@@ -126,38 +133,38 @@ export default function AdminTournamentsPage() {
 					<h1>{text("Tournament records", "Die Turnierakte")}</h1>
 					<p>
 						{text(
-							"A calm workspace for rosters, pairings, and results. Public pages update from the same data.",
-							"Ein ruhiger Arbeitsbereich für Kader, Paarungen und Ergebnisse. Öffentliche Seiten aktualisieren sich aus denselben Daten."
+							"Rosters, pairings, and results in one place. Public pages update from the same data.",
+							"Kader, Paarungen und Ergebnisse an einem Ort. Öffentliche Seiten aktualisieren sich aus denselben Daten."
 						)}
 					</p>
+					<nav className="admin-area-links" aria-label={text("Other staff areas", "Weitere Bereiche")}>
+						<Link href="/admin/content">
+							<Flower2 size={16} aria-hidden="true" /> {text("News & applications", "News & Bewerbungen")}
+						</Link>
+						<Link href="/admin/community">
+							<MessageCircleHeart size={16} aria-hidden="true" /> Community
+						</Link>
+						<Link href="/admin/challenges">
+							<Sparkles size={16} aria-hidden="true" /> Challenges
+						</Link>
+					</nav>
 				</div>
 			</section>
 
 			<section className="admin-ledger">
-				<header>
+				<header className="admin-ledger-head">
 					<div>
 						<span className="kicker">{text("Your events", "Deine Events")}</span>
 						<h2>{text("Published and planned tournaments", "Veröffentlichte und geplante Turniere")}</h2>
+						<p className="admin-ledger-meta">
+							{tournaments.length} {tournaments.length === 1 ? text("tournament", "Turnier") : text("tournaments", "Turniere")}
+						</p>
 					</div>
-					<div className="admin-ledger-tools">
-						<Link className="button button-secondary button-small" href="/admin/content">
-							<Flower2 size={16} /> {text("News & applications", "News & Bewerbungen")}
-						</Link>
-						<Link className="button button-secondary button-small" href="/admin/community">
-							<MessageCircleHeart size={14} /> Community
-						</Link>
-						<Link className="button button-secondary button-small" href="/admin/challenges">
-							<Sparkles size={14} /> Challenges
-						</Link>
-						{canCreate && (
-							<button className="button button-primary button-small" type="button" onClick={() => setCreating(true)}>
-								<Plus size={15} /> {text("New tournament", "Turnier anlegen")}
-							</button>
-						)}
-						<span className="admin-ledger-count">
-							{tournaments.length} {text("entries", "Einträge")}
-						</span>
-					</div>
+					{canCreate && (
+						<button className="button button-primary" type="button" onClick={() => setCreating(true)}>
+							<Plus size={16} aria-hidden="true" /> {text("New tournament", "Turnier anlegen")}
+						</button>
+					)}
 				</header>
 				<div className="admin-ledger-lines admin-tournament-chapters">
 					{chapters.map((chapter) => (
@@ -167,38 +174,45 @@ export default function AdminTournamentsPage() {
 									<span className="kicker">{chapter.title}</span>
 									<p>{chapter.copy}</p>
 								</div>
-								<strong>{chapter.records.length}</strong>
+								<strong aria-label={`${chapter.records.length} ${text("tournaments", "Turniere")}`}>{chapter.records.length}</strong>
 							</header>
-							{chapter.records.map((tournament, index) => (
+							{(chapter.archive && !showFullArchive ? chapter.records.slice(0, ARCHIVE_PREVIEW) : chapter.records).map((tournament, index) => (
 								<Link className="admin-ledger-entry" href={`/admin/tournaments/${tournament.id}`} key={tournament.id}>
-									<span className="ledger-index">{String(index + 1).padStart(2, "0")}</span>
+									<span className="ledger-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
 									<div className="ledger-title">
 										<strong>{tournament.title}</strong>
 										<small>
-											<Trophy size={13} /> {tournament.format}
+											<Trophy size={14} aria-hidden="true" /> {tournament.format}
 										</small>
 									</div>
 									<div className="ledger-timing">
 										<span>
-											<CalendarDays size={14} /> {formatDate(tournament.startsAt || tournament.date, locale)}
+											<CalendarDays size={14} aria-hidden="true" /> {formatDate(tournament.startsAt || tournament.date, locale)}
 										</span>
 										<small className={tournament.registrationState === "open" ? "is-open" : ""}>
 											{registrationLabels[tournament.registrationState || "closed"][locale]}
 										</small>
 									</div>
 									<span className="ledger-teams">
-										<Users size={14} />{" "}
+										<Users size={14} aria-hidden="true" />{" "}
 										{tournament.maxTeams ? `${tournament.currentTeams} / ${tournament.maxTeams}` : `${tournament.currentTeams} / ${text("open", "offen")}`}
 									</span>
 									<span className="ledger-status">{labels[tournament.status as keyof typeof labels]?.[locale] || tournament.status}</span>
-									<ArrowRight className="ledger-arrow" size={18} />
+									<ArrowRight className="ledger-arrow" size={18} aria-hidden="true" />
 								</Link>
 							))}
+							{chapter.archive && chapter.records.length > ARCHIVE_PREVIEW && (
+								<button className="admin-archive-toggle" type="button" aria-expanded={showFullArchive} onClick={() => setShowFullArchive((value) => !value)}>
+									{showFullArchive
+										? text("Show fewer", "Weniger anzeigen")
+										: text(`Show all ${chapter.records.length}`, `Alle ${chapter.records.length} anzeigen`)}
+								</button>
+							)}
 						</section>
 					))}
 					{tournaments.length === 0 && (
 						<div className="admin-ledger-empty">
-							<Crown size={28} />
+							<Crown size={28} aria-hidden="true" />
 							<h3>{text("No tournament records yet", "Noch keine Turnierakte")}</h3>
 							<p>
 								{text(
@@ -215,15 +229,15 @@ export default function AdminTournamentsPage() {
 					<form className="roster-form" onSubmit={createTournament}>
 						<label>
 							{text("Title", "Titel")}
-							<input name="title" required autoFocus maxLength={100} placeholder="ARAM Mayhem – Bloom in Chaos" />
+							<input name="title" required autoFocus maxLength={100} placeholder={text("e.g. ARAM Mayhem – Bloom in Chaos", "z. B. ARAM Mayhem – Bloom in Chaos")} autoComplete="off" />
 						</label>
 						<label>
 							Format
-							<input name="format" required maxLength={80} placeholder="3v3 · Double Elimination" />
+							<input name="format" required maxLength={80} placeholder={text("e.g. 3v3 · Double Elimination", "z. B. 3v3 · Double Elimination")} autoComplete="off" />
 						</label>
 						<label>
 							{text("Team limit (optional)", "Teamlimit (optional)")}
-							<input name="maxTeams" type="number" min={2} max={128} placeholder="8" />
+							<input name="maxTeams" type="number" inputMode="numeric" min={2} max={128} placeholder="8" autoComplete="off" />
 						</label>
 						<p className="muted-note">
 							{text(
@@ -233,7 +247,7 @@ export default function AdminTournamentsPage() {
 						</p>
 						{createError && <p className="form-error">{createError}</p>}
 						<button className="button button-primary" type="submit" disabled={busy}>
-							{busy ? text("Creating...", "Wird angelegt...") : text("Create tournament", "Turnier anlegen")}
+							{busy ? text("Creating…", "Wird angelegt…") : text("Create tournament", "Turnier anlegen")}
 						</button>
 					</form>
 				</Modal>

@@ -438,17 +438,6 @@
 	border-left: 1px dotted var(--line-strong);
 }
 
-.admin-welcome::after {
-	content: "TURNIERLEITUNG";
-	position: absolute;
-	right: 0;
-	bottom: 18px;
-	color: var(--faint);
-	font-family: Georgia, "Times New Roman", serif;
-	font-size: 11px;
-	letter-spacing: 2px;
-}
-
 .admin-seal {
 	position: absolute;
 	left: 0;
@@ -10313,4 +10302,107 @@ html[data-theme="sakura-night"] .member-profile-hero {
 .publish-warning-list span {
 	color: var(--muted);
 	font-size: 13px;
+}
+
+/* Global interaction defaults: visible keyboard focus, no double-tap zoom delay, balanced headings. */
+:where(a, button, summary, [tabindex]):focus-visible {
+	outline: 2px solid var(--blossom);
+	outline-offset: 3px;
+}
+
+:where(a, button, label, summary) {
+	touch-action: manipulation;
+}
+
+:where(h1, h2, h3) {
+	text-wrap: balance;
+}
+
+/* Tournament staff list: area links in the hero, one heading row with the create action. */
+.admin-area-links {
+	margin-top: 20px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 24px;
+}
+
+.admin-area-links a {
+	min-height: 32px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: color 150ms ease;
+}
+
+.admin-area-links a:hover {
+	color: var(--blossom);
+}
+
+.admin-area-links svg {
+	color: var(--blossom);
+}
+
+.admin-sanctuary .admin-ledger > header.admin-ledger-head {
+	margin-bottom: 24px;
+	align-items: flex-end;
+	flex-wrap: wrap;
+	gap: 16px 24px;
+}
+
+.admin-ledger-head h2 {
+	margin: 4px 0 0;
+}
+
+.admin-ledger-meta {
+	margin: 8px 0 0;
+	color: var(--muted);
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+
+.admin-ledger-head .button {
+	white-space: nowrap;
+}
+
+.admin-sanctuary .ledger-title {
+	min-width: 0;
+}
+
+.admin-sanctuary .ledger-title strong {
+	overflow-wrap: anywhere;
+}
+
+.admin-sanctuary .ledger-timing,
+.admin-sanctuary .ledger-teams,
+.admin-event-chapter > header > strong {
+	font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 680px) {
+	.admin-sanctuary .admin-ledger > header.admin-ledger-head {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}
+
+.admin-archive-toggle {
+	min-height: 44px;
+	margin-top: 8px;
+	padding: 0 4px;
+	border: 0;
+	color: var(--blossom);
+	background: transparent;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.admin-archive-toggle:hover {
+	text-decoration: underline;
+	text-underline-offset: 3px;
 }
