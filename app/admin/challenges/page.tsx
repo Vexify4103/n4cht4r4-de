@@ -1,10 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import useSWR, { mutate as globalMutate } from "swr";
 import { ArrowLeft, Check, ChevronDown, Flower2, Gauge, Plus, ShieldAlert, Sparkles } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
+import { DiscordRolePicker, ROLE_PICKER_KEY, type RolePickerData } from "@/components/DiscordRolePicker";
+import { CREATE_ROLE } from "@/lib/role-picker";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -38,10 +40,6 @@ type Challenge = {
 	badge?: { id: string; name: string; nameEn?: string; description: string; descriptionEn?: string; icon: string; rarity: string };
 };
 
-type RoleOption = { id: string; name: string; color: number; assignable: boolean };
-type RolePickerData = { configured: boolean; roles: RoleOption[]; error?: string };
-const CREATE_ROLE = "__create__";
-
 function localDate(value: string) {
 	const date = new Date(value);
 	return Number.isNaN(date.getTime()) ? "" : new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -50,7 +48,7 @@ function localDate(value: string) {
 export default function AdminChallengesPage() {
 	const { text } = useLocale();
 	const { data, error, mutate } = useSWR<{ challenges: Challenge[]; queues: { riot: number; discord: number } }>("/api/admin/challenges", fetcher);
-	const { data: rolePicker } = useSWR<RolePickerData>(data ? "/api/admin/discord/roles" : null, fetcher);
+	const { data: rolePicker } = useSWR<RolePickerData>(data ? ROLE_PICKER_KEY : null, fetcher);
 	const [notice, setNotice] = useState("");
 	const [creating, setCreating] = useState(false);
 
@@ -75,7 +73,7 @@ export default function AdminChallengesPage() {
 			setCreating(false);
 			await mutate();
 			// A newly created role must show up in every picker.
-			if (payload.discordRoleId === CREATE_ROLE) await globalMutate("/api/admin/discord/roles");
+			if (payload.discordRoleId === CREATE_ROLE) await globalMutate(ROLE_PICKER_KEY);
 		}
 	}
 
@@ -293,7 +291,16 @@ function ChallengeForm({
 					{text("Badge description (English)", "Badge-Beschreibung (Englisch)")}
 					<input name="badgeDescriptionEn" defaultValue={challenge?.badge?.descriptionEn} />
 				</label>
-				<RolePicker challenge={challenge} picker={rolePicker} />
+				<DiscordRolePicker
+					currentId={challenge?.discordRoleId}
+					currentName={challenge?.discordRoleName}
+					newRoleName={challenge?.title}
+					picker={rolePicker}
+					hint={text(
+						"Players get this role when they finish the challenge. Roles above the bot's own role cannot be given out.",
+						"Spieler bekommen diese Rolle, wenn sie die Challenge schaffen. Rollen über der Bot-Rolle kann der Bot nicht vergeben."
+					)}
+				/>
 				<label className="wide">
 					{text("Meta prerequisites", "Meta-Voraussetzungen")}
 					<input
@@ -313,68 +320,3 @@ function ChallengeForm({
 	);
 }
 
-/** Pick a server role (or create one on save). Falls back to typing the ID when the bot is not configured. */
-function RolePicker({ challenge, picker }: { challenge?: Challenge; picker?: RolePickerData }) {
-	const { text } = useLocale();
-	const [selected, setSelected] = useState(challenge?.discordRoleId || "");
-	const [newName, setNewName] = useState(challenge?.title || "");
-	// After saving, follow the stored role so a second save does not create the role again.
-	useEffect(() => setSelected(challenge?.discordRoleId || ""), [challenge?.discordRoleId]);
-	if (!picker?.configured)
-		return (
-			<>
-				<label>
-					{text("Discord role ID", "Discord-Rollen-ID")}
-					<input name="discordRoleId" defaultValue={challenge?.discordRoleId} inputMode="numeric" autoComplete="off" spellCheck={false} />
-				</label>
-				<label>
-					{text("Discord role name", "Discord-Rollenname")}
-					<input name="discordRoleName" defaultValue={challenge?.discordRoleName} autoComplete="off" />
-				</label>
-			</>
-		);
-	const current = picker.roles.find((role) => role.id === selected);
-	const unknownCurrent = selected && selected !== CREATE_ROLE && !current;
-	return (
-		<>
-			<label className="wide">
-				{text("Discord role reward", "Discord-Rolle als Belohnung")}
-				<select name="discordRoleId" value={selected} onChange={(event) => setSelected(event.target.value)}>
-					<option value="">{text("No role", "Keine Rolle")}</option>
-					<option value={CREATE_ROLE}>{text("+ Create new role…", "+ Neue Rolle erstellen…")}</option>
-					{unknownCurrent && (
-						<option value={selected}>
-							{selected.startsWith("managed:")
-								? text(`Created automatically (${challenge?.discordRoleName || selected})`, `Wird automatisch erstellt (${challenge?.discordRoleName || selected})`)
-								: text(`Unknown role ${selected}`, `Unbekannte Rolle ${selected}`)}
-						</option>
-					)}
-					{picker.roles.map((role) => (
-						<option key={role.id} value={role.id} disabled={!role.assignable}>
-							{role.name}
-							{role.assignable ? "" : text(" (above the bot)", " (über dem Bot)")}
-						</option>
-					))}
-				</select>
-				{picker.error && <small className="form-error">{picker.error}</small>}
-				<small className="muted-note">
-					{text(
-						"Players get this role when they finish the challenge. Roles above the bot's own role cannot be given out.",
-						"Spieler bekommen diese Rolle, wenn sie die Challenge schaffen. Rollen über der Bot-Rolle kann der Bot nicht vergeben."
-					)}
-				</small>
-			</label>
-			{selected === CREATE_ROLE ? (
-				<label className="wide">
-					{text("Name of the new role", "Name der neuen Rolle")}
-					<input name="discordRoleName" value={newName} onChange={(event) => setNewName(event.target.value)} maxLength={80} required autoComplete="off" />
-					<small className="muted-note">
-						{text("The role is created on Discord when you save.", "Die Rolle wird beim Speichern auf Discord erstellt.")}
-					</small>
-				</label>
-			) : (
-				<input type="hidden" name="discordRoleName" value={current?.name || (unknownCurrent ? challenge?.discordRoleName || "" : "")} />
-			)}
-		</>
-	);
-}

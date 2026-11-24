@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { ArrowRight, CalendarDays, Crown, Flower2, MessageCircleHeart, Plus, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Crown, Flower2, Gamepad2, MessageCircleHeart, Plus, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
 import { Modal } from "@/components/AdminTournamentWorkspace";
 import { useLocale, type Locale } from "@/components/LocaleProvider";
 
@@ -143,6 +143,9 @@ export default function AdminTournamentsPage() {
 						</Link>
 						<Link href="/admin/community">
 							<MessageCircleHeart size={16} aria-hidden="true" /> Community
+						</Link>
+						<Link href="/admin/community?tab=projects">
+							<Gamepad2 size={16} aria-hidden="true" /> {text("Projects", "Projekte")}
 						</Link>
 						<Link href="/admin/challenges">
 							<Sparkles size={16} aria-hidden="true" /> Challenges

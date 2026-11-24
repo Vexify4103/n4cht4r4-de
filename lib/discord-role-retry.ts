@@ -43,7 +43,12 @@ export async function retryRolesForNewMembers(db: Db) {
 				.toArray()
 		).map((tournament) => tournament.id)
 	);
-	const teamTargets = failedTeamJobs.filter((job) => openTournamentIds.has(job.tournamentId) && job.payload?.discordId);
+	const failedProjectJobs = await db
+		.collection("discord_queue")
+		.find({ type: "project.assign-role", status: "failed", updatedAt: { $gte: since } })
+		.project<{ id: string; tournamentId: string; payload?: { discordId?: string } }>({ _id: 0, id: 1, tournamentId: 1, payload: 1 })
+		.toArray();
+	const teamTargets = [...failedTeamJobs.filter((job) => openTournamentIds.has(job.tournamentId)), ...failedProjectJobs].filter((job) => job.payload?.discordId);
 
 	const discordIds = [...new Set([...grantTargets.map((target) => target.discordId), ...teamTargets.map((job) => String(job.payload?.discordId))])];
 	if (!discordIds.length) return { checked: 0, rewards: 0, teamRoles: 0 };

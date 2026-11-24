@@ -2,11 +2,11 @@ import { hasTournamentPermission } from "@/lib/tournament-admin";
 import client from "@/lib/db";
 import { ChallengeDef, ChallengeType, ensureChallengeDefinitions } from "@/lib/challenges";
 import { createGuildRole } from "@/lib/discord-roles";
+import { CREATE_ROLE } from "@/lib/role-picker";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 const TYPES: ChallengeType[] = ["matches", "wins", "kills", "watchtime", "community", "meta"];
-const CREATE_ROLE = "__create__";
 const REQUIREMENTS: NonNullable<ChallengeDef["requirement"]>[] = ["discord", "twitch", "riot", "community"];
 
 function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {

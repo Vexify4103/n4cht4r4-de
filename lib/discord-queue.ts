@@ -13,7 +13,8 @@ export type DiscordQueueJobType =
 	| "team.rename-text-channel"
 	| "team.rename-voice-channel"
 	| "notification.send-dm"
-	| "reward.assign-role";
+	| "reward.assign-role"
+	| "project.assign-role";
 
 export type DiscordQueueJob = {
 	id: string;
@@ -182,6 +183,12 @@ export async function enqueueDiscordNotification(db: Db, notificationId: string,
 export async function queueChallengeRoleGrant(db: Db, grantId: string, discordId: string, roleId: string) {
 	if (!getDiscordGuildConfig()) return null;
 	return enqueueDiscordJob(db, "reward.assign-role", null, null, { grantId, discordId, roleId });
+}
+
+/** Gives an accepted applicant the Discord role of a community project. teamId carries the project ID. */
+export async function queueProjectRoleGrant(db: Db, projectId: string, discordId: string, roleId: string) {
+	if (!getDiscordGuildConfig()) return null;
+	return enqueueDiscordJob(db, "project.assign-role", null, projectId, { discordId, roleId });
 }
 
 export async function queueTeamProvisioning(db: Db, tournamentId: string, teamId: string) {
@@ -416,7 +423,17 @@ export async function processNextDiscordQueueJob(db: Db) {
 		if (!botConfig) throw new DiscordRequestError("Discord Bot Token ist nicht konfiguriert.");
 		let status;
 		if (job.type === "notification.send-dm") status = await processNotificationJob(db, job, botConfig);
-		else if (job.type === "reward.assign-role") {
+		else if (job.type === "project.assign-role") {
+			const guildConfig = getDiscordGuildConfig();
+			if (!guildConfig) throw new DiscordRequestError("Discord Guild ist nicht konfiguriert.", undefined, false);
+			const discordId = typeof job.payload.discordId === "string" ? job.payload.discordId : "";
+			const roleId = typeof job.payload.roleId === "string" ? job.payload.roleId : "";
+			if (!discordId || !roleId) status = "skipped" as const;
+			else {
+				await discordRequest(guildConfig, `/guilds/${guildConfig.guildId}/members/${discordId}/roles/${roleId}`, "PUT");
+				status = "completed" as const;
+			}
+		} else if (job.type === "reward.assign-role") {
 			const guildConfig = getDiscordGuildConfig();
 			if (!guildConfig) throw new DiscordRequestError("Discord Guild ist nicht konfiguriert.", undefined, false);
 			status = await processRewardRoleJob(db, job, guildConfig);

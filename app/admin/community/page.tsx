@@ -3,12 +3,13 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import {
 	AlertTriangle,
 	ArrowLeft,
 	Brush,
 	Check,
+	ChevronDown,
 	ClipboardCheck,
 	Flower2,
 	Gamepad2,
@@ -23,6 +24,8 @@ import {
 } from "lucide-react";
 import type { CommunityPostKind, CommunityPostStatus, CommunityProject } from "@/lib/community";
 import { useLocale } from "@/components/LocaleProvider";
+import { DiscordRolePicker, ROLE_PICKER_KEY, type RolePickerData } from "@/components/DiscordRolePicker";
+import { CREATE_ROLE } from "@/lib/role-picker";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -43,15 +46,45 @@ type ModerationPost = {
 	createdAt: string;
 };
 
-function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSaved: () => Promise<unknown> }) {
+const APPLICATION_OPTIONS = [
+	{ value: "minecraft", en: "Minecraft SMP application", de: "Minecraft-SMP-Bewerbung" },
+	{ value: "game-team", en: "League Flex team application", de: "League-Flex-Team-Bewerbung" },
+	{ value: "jobs", en: "Community team application", de: "Community-Team-Bewerbung" },
+];
+
+function ProjectEditor({ project, rolePicker, onSaved }: { project: CommunityProject; rolePicker?: RolePickerData; onSaved: () => Promise<unknown> }) {
 	const { text } = useLocale();
 	const [notice, setNotice] = useState("");
 	const [saving, setSaving] = useState(false);
+	const [open, setOpen] = useState(false);
+	const [imageUrl, setImageUrl] = useState(project.imageUrl);
+	const [uploading, setUploading] = useState(false);
+	// Older projects only stored a link; a link to one of our application forms maps back to its type.
+	const linkedType = APPLICATION_OPTIONS.find((option) => project.applicationHref === `/bewerbungen/${option.value}`)?.value;
+	const [application, setApplication] = useState(project.applicationType || linkedType || (project.applicationHref ? "custom" : ""));
+	useEffect(() => setImageUrl(project.imageUrl), [project.imageUrl]);
+
+	async function uploadImage(file: File | undefined) {
+		if (!file) return;
+		setUploading(true);
+		setNotice("");
+		const form = new FormData();
+		form.append("image", file);
+		const response = await fetch("/api/admin/community/projects/media", { method: "POST", body: form }).catch(() => null);
+		const result = response ? await response.json().catch(() => ({})) : {};
+		setUploading(false);
+		if (!response) return setNotice(text("The image could not be uploaded.", "Das Bild konnte nicht hochgeladen werden."));
+		if (!response.ok) return setNotice(result.error || text("The image could not be uploaded.", "Das Bild konnte nicht hochgeladen werden."));
+		setImageUrl(result.url);
+		setNotice(text("Image uploaded. Save the project to use it.", "Bild hochgeladen. Speichere das Projekt, um es zu übernehmen."));
+	}
+
 	async function save(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setSaving(true);
 		setNotice("");
 		const form = new FormData(event.currentTarget);
+		const lines = (name: string) => String(form.get(name) || "").split("\n");
 		const response = await fetch("/api/admin/community/projects", {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
@@ -63,9 +96,17 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 				details: form.get("details"),
 				status: form.get("status"),
 				statusLabel: form.get("statusLabel"),
-				imageUrl: form.get("imageUrl"),
-				applicationHref: form.get("applicationHref") || null,
-				rules: String(form.get("rules") || "").split("\n"),
+				titleEn: form.get("titleEn"),
+				summaryEn: form.get("summaryEn"),
+				detailsEn: form.get("detailsEn"),
+				statusLabelEn: form.get("statusLabelEn"),
+				rulesEn: lines("rulesEn"),
+				imageUrl,
+				applicationType: application && application !== "custom" ? application : null,
+				applicationHref: application === "custom" ? form.get("applicationHref") || null : null,
+				discordRoleId: form.get("discordRoleId"),
+				discordRoleName: form.get("discordRoleName"),
+				rules: lines("rules"),
 				order: Number(form.get("order") || 100),
 				published: form.get("published") === "on",
 			}),
@@ -74,29 +115,35 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 		setSaving(false);
 		if (!response.ok) return setNotice(result.error || text("The project could not be saved.", "Projekt konnte nicht gespeichert werden."));
 		setNotice(text("Project saved.", "Projekt gespeichert."));
+		if (form.get("discordRoleId") === CREATE_ROLE) await globalMutate(ROLE_PICKER_KEY);
 		await onSaved();
 	}
 
 	return (
 		<form className="community-project-editor" onSubmit={save}>
 			<header>
-				{project.imageUrl ? (
-					<Image src={project.imageUrl} alt="" width={96} height={54} />
+				{imageUrl ? (
+					<Image src={imageUrl} alt="" width={96} height={54} unoptimized={imageUrl.startsWith("/api/")} />
 				) : (
 					<span>
-						<ImageIcon size={22} />
+						<ImageIcon size={22} aria-hidden="true" />
 					</span>
 				)}
 				<div>
 					<small>{project.game}</small>
 					<h2>{project.title}</h2>
 				</div>
-				<label className="project-publish-toggle">
-					<input name="published" type="checkbox" defaultChecked={project.published} />
-					<span>{text("Public", "Öffentlich")}</span>
-				</label>
+				<div className="challenge-admin-head-actions">
+					<button className="challenge-admin-toggle" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+						{open ? text("Fold", "Zuklappen") : text("Edit", "Bearbeiten")} <ChevronDown size={16} aria-hidden="true" />
+					</button>
+					<label className="project-publish-toggle">
+						<input name="published" type="checkbox" defaultChecked={project.published} />
+						<span>{text("Public", "Öffentlich")}</span>
+					</label>
+				</div>
 			</header>
-			<div className="community-project-editor-fields">
+			<div className="community-project-editor-fields" hidden={!open}>
 				<label>
 					{text("Title", "Titel")}
 					<input name="title" defaultValue={project.title} required />
@@ -123,8 +170,11 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 					<input name="order" type="number" min="0" max="10000" defaultValue={project.order} />
 				</label>
 				<label>
-					{text("Image path or URL", "Bildpfad oder URL")}
-					<input name="imageUrl" defaultValue={project.imageUrl} />
+					{text("Project image", "Projektbild")}
+					<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading} onChange={(event) => void uploadImage(event.target.files?.[0])} />
+					<small className="muted-note">
+						{uploading ? text("Uploading…", "Wird hochgeladen…") : text("PNG, JPG, WEBP or GIF, up to 6 MB.", "PNG, JPG, WEBP oder GIF, bis 6 MB.")}
+					</small>
 				</label>
 				<label className="wide">
 					{text("Short description", "Kurzbeschreibung")}
@@ -139,18 +189,65 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 					<textarea name="rules" defaultValue={project.rules.join("\n")} />
 				</label>
 				<label className="wide">
-					{text("Application link", "Bewerbungslink")}
-					<input
-						name="applicationHref"
-						defaultValue={project.applicationHref || ""}
-						placeholder={text("Leave empty if applications are not available yet", "Leer lassen, wenn es noch keine Bewerbung gibt")}
-					/>
+					{text("Application", "Bewerbung")}
+					<select value={application} onChange={(event) => setApplication(event.target.value)}>
+						<option value="">{text("No application yet", "Noch keine Bewerbung")}</option>
+						{APPLICATION_OPTIONS.map((option) => (
+							<option key={option.value} value={option.value}>
+								{text(option.en, option.de)}
+							</option>
+						))}
+						<option value="custom">{text("Custom link…", "Eigener Link…")}</option>
+					</select>
 				</label>
+				{application === "custom" && (
+					<label className="wide">
+						{text("Application link", "Bewerbungslink")}
+						<input name="applicationHref" defaultValue={project.applicationHref || ""} placeholder={text("https://… or /path", "https://… oder /pfad")} autoComplete="off" />
+					</label>
+				)}
+				<DiscordRolePicker
+					currentId={project.discordRoleId}
+					currentName={project.discordRoleName}
+					newRoleName={project.title}
+					picker={rolePicker}
+					hint={
+						application && application !== "custom"
+							? text(
+									"Accepted applicants get this role automatically, for example to see the project's channels.",
+									"Angenommene Bewerber bekommen diese Rolle automatisch, zum Beispiel für die Projekt-Kanäle."
+								)
+							: text("Pick an application above; the role is given out when an application is accepted.", "Wähle oben eine Bewerbung; die Rolle wird beim Annehmen einer Bewerbung vergeben.")
+					}
+				/>
+				<fieldset className="project-english-fields">
+					<legend>{text("English version (optional)", "Englische Fassung (optional)")}</legend>
+					<label>
+						{text("Title", "Titel")}
+						<input name="titleEn" defaultValue={project.titleEn} />
+					</label>
+					<label>
+						{text("Status text", "Status-Text")}
+						<input name="statusLabelEn" defaultValue={project.statusLabelEn} />
+					</label>
+					<label className="wide">
+						{text("Short description", "Kurzbeschreibung")}
+						<textarea name="summaryEn" defaultValue={project.summaryEn} />
+					</label>
+					<label className="wide">
+						{text("Detailed information", "Ausführliche Infos")}
+						<textarea name="detailsEn" defaultValue={project.detailsEn} />
+					</label>
+					<label className="wide">
+						{text("Rules · one per line", "Regeln · eine pro Zeile")}
+						<textarea name="rulesEn" defaultValue={(project.rulesEn || []).join("\n")} />
+					</label>
+				</fieldset>
 			</div>
-			<footer>
-				<span>{notice}</span>
-				<button className="button button-primary button-small" disabled={saving} type="submit">
-					<Save size={14} /> {saving ? text("Saving…", "Speichert ...") : text("Save project", "Projekt speichern")}
+			<footer hidden={!open && !notice}>
+				<span aria-live="polite">{notice}</span>
+				<button className="button button-primary button-small" disabled={saving || uploading} type="submit" hidden={!open}>
+					<Save size={14} aria-hidden="true" /> {saving ? text("Saving…", "Speichert…") : text("Save project", "Projekt speichern")}
 				</button>
 			</footer>
 		</form>
@@ -175,6 +272,11 @@ export default function AdminCommunityPage() {
 		access ? "/api/admin/community/projects" : null,
 		fetcher
 	);
+	const { data: rolePicker } = useSWR<RolePickerData>(access && tab === "projects" ? ROLE_PICKER_KEY : null, fetcher);
+	// Deep link: /admin/community?tab=projects opens the projects tab (linked from the staff area).
+	useEffect(() => {
+		if (new URLSearchParams(window.location.search).get("tab") === "projects") setTab("projects");
+	}, []);
 
 	useEffect(() => {
 		if (!deleteTarget) return;
@@ -468,7 +570,7 @@ export default function AdminCommunityPage() {
 						)}
 						<div className="community-project-editor-list">
 							{projectData?.projects.map((project) => (
-								<ProjectEditor project={project} onSaved={refreshProjects} key={project.id} />
+								<ProjectEditor project={project} rolePicker={rolePicker} onSaved={refreshProjects} key={project.id} />
 							))}
 						</div>
 					</div>

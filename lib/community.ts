@@ -17,7 +17,34 @@ export type CommunityProject = {
 	rules: string[];
 	order: number;
 	published: boolean;
+	titleEn?: string;
+	summaryEn?: string;
+	detailsEn?: string;
+	statusLabelEn?: string;
+	rulesEn?: string[];
+	/** Application type whose accepted applicants get `discordRoleId`; also sets `applicationHref`. */
+	applicationType?: string | null;
+	discordRoleId?: string;
+	discordRoleName?: string;
 };
+
+const PROJECT_APPLICATION_TYPES = ["minecraft", "game-team", "jobs"];
+
+function cleanText(value: unknown, max: number) {
+	return String(value ?? "")
+		.trim()
+		.slice(0, max);
+}
+
+function cleanRules(value: unknown) {
+	return Array.isArray(value)
+		? value
+				.filter((rule): rule is string => typeof rule === "string")
+				.map((rule) => rule.trim())
+				.filter(Boolean)
+				.slice(0, 20)
+		: [];
+}
 
 export const defaultCommunityProjects: CommunityProject[] = [
 	{
@@ -100,7 +127,8 @@ export function cleanCommunityProject(value: Record<string, unknown>, fallbackId
 	const rawImageUrl = String(value.imageUrl || "")
 		.trim()
 		.slice(0, 300);
-	const rawApplicationHref = value.applicationHref ? String(value.applicationHref).trim().slice(0, 300) : "";
+	const applicationType = PROJECT_APPLICATION_TYPES.includes(String(value.applicationType)) ? String(value.applicationType) : null;
+	const rawApplicationHref = applicationType ? `/bewerbungen/${applicationType}` : value.applicationHref ? String(value.applicationHref).trim().slice(0, 300) : "";
 	return {
 		id,
 		title,
@@ -116,15 +144,17 @@ export function cleanCommunityProject(value: Record<string, unknown>, fallbackId
 		imageUrl: rawImageUrl.startsWith("/") && !rawImageUrl.startsWith("//") ? rawImageUrl : "",
 		applicationHref:
 			rawApplicationHref.startsWith("/") && !rawApplicationHref.startsWith("//") ? rawApplicationHref : rawApplicationHref.startsWith("https://") ? rawApplicationHref : null,
-		rules: Array.isArray(value.rules)
-			? value.rules
-					.filter((rule): rule is string => typeof rule === "string")
-					.map((rule) => rule.trim())
-					.filter(Boolean)
-					.slice(0, 20)
-			: [],
+		rules: cleanRules(value.rules),
 		order: Number.isFinite(Number(value.order)) ? Math.max(0, Math.min(10_000, Number(value.order))) : 100,
 		published: value.published !== false,
+		titleEn: cleanText(value.titleEn, 100) || undefined,
+		summaryEn: cleanText(value.summaryEn, 300) || undefined,
+		detailsEn: cleanText(value.detailsEn, 1_500) || undefined,
+		statusLabelEn: cleanText(value.statusLabelEn, 80) || undefined,
+		rulesEn: cleanRules(value.rulesEn),
+		applicationType,
+		discordRoleId: cleanText(value.discordRoleId, 32) || undefined,
+		discordRoleName: cleanText(value.discordRoleName, 80) || undefined,
 	};
 }
 

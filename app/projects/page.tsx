@@ -18,6 +18,7 @@ const statusLabels = {
 
 export default function ProjectsPage() {
 	const { locale, text } = useLocale();
+	const english = locale === "en";
 	const { data, isLoading } = useSWR<{ projects: CommunityProject[] }>("/api/community/projects", fetcher, { revalidateOnFocus: false });
 	const projects = data?.projects || [];
 
@@ -60,28 +61,29 @@ export default function ProjectsPage() {
 								<div className="community-project-art">
 									<Image
 										src={project.imageUrl || "/images/hanami-light-v1.png"}
-										alt={`${project.title} ${text("project preview", "Projektansicht")}`}
+										alt={`${english ? project.titleEn || project.title : project.title} ${text("project preview", "Projektansicht")}`}
 										fill
 										sizes="(max-width: 820px) 100vw, 55vw"
 										priority={index === 0}
+										unoptimized={Boolean(project.imageUrl?.startsWith("/api/"))}
 									/>
 									<span className={`community-project-status ${project.status}`}>
-										<Radio size={12} /> {project.statusLabel || statusLabels[project.status][locale]}
+										<Radio size={12} /> {(english ? project.statusLabelEn : undefined) || project.statusLabel || statusLabels[project.status][locale]}
 									</span>
 								</div>
 								<div className="community-project-copy">
 									<span className="project-game">
 										{String(index + 1).padStart(2, "0")} · {project.game}
 									</span>
-									<h2>{project.title}</h2>
-									<p className="project-summary">{project.summary}</p>
-									<p>{project.details}</p>
+									<h2>{english ? project.titleEn || project.title : project.title}</h2>
+									<p className="project-summary">{english ? project.summaryEn || project.summary : project.summary}</p>
+									<p>{english ? project.detailsEn || project.details : project.details}</p>
 									{project.rules.length > 0 && (
 										<div className="project-rule-notes">
 											<span>
 												<BookOpenCheck size={15} /> {text("What matters to us", "Das ist uns wichtig")}
 											</span>
-											{project.rules.map((rule) => (
+											{(english && project.rulesEn?.length ? project.rulesEn : project.rules).map((rule) => (
 												<small key={rule}>
 													<Flower2 size={10} /> {rule}
 												</small>

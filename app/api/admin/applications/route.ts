@@ -3,7 +3,27 @@ import client from "@/lib/db";
 import { getApplicationTypes, isApplicationType } from "@/lib/applications";
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import { recordCommunityAudit } from "@/lib/community";
+import { queueProjectRoleGrant } from "@/lib/discord-queue";
+import { userIdCandidates } from "@/lib/tournament-community";
 import { NextResponse } from "next/server";
+
+/** Accepted applicants get the Discord role of every project linked to their application type. */
+async function queueProjectRoles(db: ReturnType<typeof client.db>, applicationId: string) {
+	const application = await db.collection("applications").findOne({ _id: new ObjectId(applicationId) });
+	if (!application?.userId || !application.type) return 0;
+	const projects = await db
+		.collection("community_projects")
+		.find({ applicationType: application.type, discordRoleId: { $regex: "^[0-9]{15,22}$" } })
+		.project<{ id: string; discordRoleId: string }>({ _id: 0, id: 1, discordRoleId: 1 })
+		.toArray();
+	if (!projects.length) return 0;
+	const account = await db.collection("accounts").findOne({ userId: { $in: userIdCandidates(String(application.userId)) }, provider: "discord" });
+	const discordId = typeof account?.providerAccountId === "string" ? account.providerAccountId : "";
+	if (!discordId) return 0;
+	let queued = 0;
+	for (const project of projects) if (await queueProjectRoleGrant(db, project.id, discordId, project.discordRoleId)) queued++;
+	return queued;
+}
 
 export async function GET() {
 	if (!(await hasTournamentPermission("tournament_admin"))) return NextResponse.json({ error: "Kein Zugriff." }, { status: 403 });
@@ -33,6 +53,14 @@ export async function PATCH(request: Request) {
 			.updateOne({ _id: new ObjectId(body.id) }, { $set: { status: body.status, reviewNote: note, reviewedBy: staff.userId, reviewedAt: new Date() } });
 		if (!result.matchedCount) return NextResponse.json({ error: "Antrag nicht gefunden." }, { status: 404 });
 		await recordCommunityAudit(db, staff, "application.reviewed", { id: body.id, status: body.status });
+		if (body.status === "accepted") {
+			// The decision is already saved; a Discord hiccup must not turn it into an error.
+			const rolesQueued = await queueProjectRoles(db, body.id).catch((error) => {
+				console.error("[applications] project role queue failed:", error);
+				return 0;
+			});
+			return NextResponse.json({ ok: true, rolesQueued });
+		}
 	}
 	return NextResponse.json({ ok: true });
 }
