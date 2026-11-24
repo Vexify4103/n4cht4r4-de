@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { ArrowRight, CalendarDays, Crown, Flower2, MessageCircleHeart, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Crown, Flower2, MessageCircleHeart, Plus, ShieldAlert, Sparkles, Trophy, Users } from "lucide-react";
+import { Modal } from "@/components/AdminTournamentWorkspace";
 import { useLocale, type Locale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) =>
@@ -47,6 +50,28 @@ export default function AdminTournamentsPage() {
 	const { locale, text } = useLocale();
 	const { data: access, error } = useSWR<{ role: string }>("/api/admin/access", fetcher);
 	const { data } = useSWR<{ tournaments: Tournament[] }>(access ? "/api/admin/tournaments" : null, fetcher);
+	const router = useRouter();
+	const [creating, setCreating] = useState(false);
+	const [createError, setCreateError] = useState<string | null>(null);
+	const [busy, setBusy] = useState(false);
+	const canCreate = access?.role === "owner" || access?.role === "tournament_admin";
+
+	// New tournaments start hidden ("In Vorbereitung"); everything else is set on the tournament's own admin page.
+	async function createTournament(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = new FormData(event.currentTarget);
+		setBusy(true);
+		setCreateError(null);
+		const response = await fetch("/api/admin/tournaments", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: form.get("title"), format: form.get("format"), maxTeams: form.get("maxTeams") || null }),
+		});
+		const result = await response.json().catch(() => ({}));
+		setBusy(false);
+		if (!response.ok) return setCreateError(result.error || text("The tournament could not be created.", "Das Turnier konnte nicht angelegt werden."));
+		router.push(`/admin/tournaments/${result.tournament.id}`);
+	}
 
 	if (error)
 		return (
@@ -124,6 +149,11 @@ export default function AdminTournamentsPage() {
 						<Link className="button button-secondary button-small" href="/admin/challenges">
 							<Sparkles size={14} /> Challenges
 						</Link>
+						{canCreate && (
+							<button className="button button-primary button-small" type="button" onClick={() => setCreating(true)}>
+								<Plus size={15} /> {text("New tournament", "Turnier anlegen")}
+							</button>
+						)}
 						<span className="admin-ledger-count">
 							{tournaments.length} {text("entries", "Einträge")}
 						</span>
@@ -172,14 +202,42 @@ export default function AdminTournamentsPage() {
 							<h3>{text("No tournament records yet", "Noch keine Turnierakte")}</h3>
 							<p>
 								{text(
-									"The first event will appear here once it has been created in the database.",
-									"Das erste Event erscheint hier, sobald es in der Datenbank angelegt ist."
+									"Create the first event with “New tournament”.",
+									"Lege das erste Event über „Turnier anlegen“ an."
 								)}
 							</p>
 						</div>
 					)}
 				</div>
 			</section>
+			{creating && (
+				<Modal title={text("New tournament", "Turnier anlegen")} onClose={() => setCreating(false)}>
+					<form className="roster-form" onSubmit={createTournament}>
+						<label>
+							{text("Title", "Titel")}
+							<input name="title" required autoFocus maxLength={100} placeholder="ARAM Mayhem – Bloom in Chaos" />
+						</label>
+						<label>
+							Format
+							<input name="format" required maxLength={80} placeholder="3v3 · Double Elimination" />
+						</label>
+						<label>
+							{text("Team limit (optional)", "Teamlimit (optional)")}
+							<input name="maxTeams" type="number" min={2} max={128} placeholder="8" />
+						</label>
+						<p className="muted-note">
+							{text(
+								"The tournament starts hidden in preparation. Date, bracket, team size, rules, and the application window are set on its admin page next.",
+								"Das Turnier startet versteckt „In Vorbereitung“. Termin, Turnierbaum, Teamgröße, Regeln und Bewerbungszeitraum stellst du danach auf seiner Admin-Seite ein."
+							)}
+						</p>
+						{createError && <p className="form-error">{createError}</p>}
+						<button className="button button-primary" type="submit" disabled={busy}>
+							{busy ? text("Creating...", "Wird angelegt...") : text("Create tournament", "Turnier anlegen")}
+						</button>
+					</form>
+				</Modal>
+			)}
 		</main>
 	);
 }

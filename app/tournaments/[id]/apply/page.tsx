@@ -8,6 +8,7 @@ import useSWR, { mutate } from "swr";
 import { CalendarClock, CheckCircle2, ClipboardList, ShieldCheck } from "lucide-react";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { DiscordMark } from "@/components/DiscordMark";
+import { site } from "@/lib/site";
 import { useLocale } from "@/components/LocaleProvider";
 import { MY_APPLICATIONS_KEY, MyApplicationStatus, useMyApplication } from "@/components/MyApplicationStatus";
 
@@ -129,6 +130,25 @@ export default function TournamentApplyPage() {
 							{profile?.riotVerified && <CheckCircle2 size={18} />}
 						</div>
 					)}
+					{requiresDiscord && (
+						<div className="requirement-row">
+							<span className="discord-requirement-mark">
+								<DiscordMark size={13} variant="white" />
+							</span>
+							<div>
+								<strong>{text("Join the Discord server", "Discord-Server beitreten")}</strong>
+								<span>
+									{text(
+										"Only then can the bot message you and you can see your team channel.",
+										"Nur so erreicht dich der Bot und du siehst deinen Teamchannel."
+									)}
+								</span>
+							</div>
+							<a className="text-link" href={site.discordUrl} target="_blank" rel="noreferrer">
+								{text("Join", "Beitreten")}
+							</a>
+						</div>
+					)}
 					{session && !connectionsReady && (
 						<Link className="button button-secondary" href="/me">
 							{text("Set up connections", "Verbindungen einrichten")}
@@ -235,15 +255,15 @@ export default function TournamentApplyPage() {
 							</div>
 						)}
 						<label className="form-checkbox">
-							<input name="discordDmOptIn" type="checkbox" />
+							<input name="discordDmOptIn" type="checkbox" defaultChecked />
 							<span>
 								<strong className="form-checkbox-heading">
-									Discord-DMs <span className="field-optional">{text("Optional", "Optional")}</span>
+									{text("Messages from the bot", "Nachrichten vom Bot")} <span className="field-optional">{text("Recommended", "Empfohlen")}</span>
 								</strong>
 								<span className="form-checkbox-copy">
 									{text(
-										"The N4cht4r4 Discord bot may send me messages about team assignment and important tournament changes. I can change this later on",
-										"Der N4cht4r4 Discord-Bot darf mir Nachrichten zu Team-Zuteilung und wichtigen Änderungen dieses Turniers senden. Das kann ich später auf"
+										"The N4cht4r4 Discord bot may message me about my team assignment and important changes to this tournament. This only works while I am on the N4cht4r4 Discord server. I can switch it off here or later on",
+										"Der N4cht4r4-Discord-Bot darf mir zu meiner Teamzuteilung und wichtigen Änderungen dieses Turniers schreiben. Das klappt nur, solange ich auf dem N4cht4r4-Discord-Server bin. Ich kann das hier oder später auf"
 									)}{" "}
 									<Link href="/me">/me</Link>
 									{text(".", " ändern.")}

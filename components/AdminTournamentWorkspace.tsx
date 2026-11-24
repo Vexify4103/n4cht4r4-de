@@ -164,7 +164,7 @@ function matchLabel(match: Match, locale: "de" | "en") {
 	return locale === "en" ? "Final" : "Finale";
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
 	const { text } = useLocale();
 	return (
 		<div className="roster-modal-backdrop" onMouseDown={onClose}>
