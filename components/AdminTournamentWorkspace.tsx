@@ -31,6 +31,7 @@ import {
 	UserPlus,
 	Users,
 	UsersRound,
+	WifiOff,
 	X,
 } from "lucide-react";
 import { averageLeagueRank, leagueRankScore } from "@/lib/rank";
@@ -137,6 +138,15 @@ type Application = {
 	status: "pending" | "accepted" | "waitlisted" | "rejected" | "banned";
 	createdAt: string;
 };
+type DeliveryStatus = {
+	applicationId: string;
+	discordId: string | null;
+	inGuild: boolean | null;
+	checkedAt: string | null;
+	dmOptIn: boolean;
+	dm: "sent" | "failed" | "disabled" | "pending" | null;
+	role: "completed" | "failed" | "queued" | "processing" | null;
+};
 type WishGroup = {
 	id: string;
 	name: string;
@@ -162,6 +172,31 @@ function matchLabel(match: Match, locale: "de" | "en") {
 	if (match.bracket === "upper") return `Winner Bracket · ${locale === "en" ? "Round" : "Runde"} ${match.round}`;
 	if (match.round === 1) return locale === "en" ? "Semifinal" : "Halbfinale";
 	return locale === "en" ? "Final" : "Finale";
+}
+
+/** Small Discord reachability marker; `detailed` also shows the last DM and team-role result. */
+function DiscordBadge({ player, detailed = false }: { player?: DeliveryStatus; detailed?: boolean }) {
+	const { text } = useLocale();
+	if (!player) return null;
+	const parts: { label: string; bad: boolean }[] = [];
+	if (player.inGuild === false) parts.push({ label: text("Not on Discord", "Nicht auf Discord"), bad: true });
+	else if (detailed && player.inGuild === true) parts.push({ label: text("On Discord", "Auf Discord"), bad: false });
+	else if (detailed && player.inGuild === null) parts.push({ label: text("Discord not checked", "Discord ungeprüft"), bad: false });
+	if (!player.dmOptIn) parts.push({ label: text("DMs off", "DMs aus"), bad: true });
+	if (detailed && player.dm === "sent") parts.push({ label: text("DM sent", "DM zugestellt"), bad: false });
+	if (player.dm === "failed") parts.push({ label: text("DM failed", "DM fehlgeschlagen"), bad: true });
+	if (player.role === "failed") parts.push({ label: text("Role failed", "Rolle fehlgeschlagen"), bad: true });
+	if (detailed && player.role === "completed") parts.push({ label: text("Team role set", "Teamrolle vergeben"), bad: false });
+	if (!parts.length) return null;
+	return (
+		<span className="discord-badges">
+			{parts.map((part) => (
+				<em className={part.bad ? "is-bad" : ""} key={part.label}>
+					{part.label}
+				</em>
+			))}
+		</span>
+	);
 }
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -190,7 +225,13 @@ export function AdminTournamentWorkspace() {
 	const [tab, setTab] = useState<Tab>("teams");
 	const [notice, setNotice] = useState("");
 	const [dialog, setDialog] = useState<
-		"team" | { edit: Team } | { team: Team; role: string } | { application: Application; applicationAction: "remove" | "ban" | "unban" } | { riotRefresh: true } | null
+		| "team"
+		| { edit: Team }
+		| { team: Team; role: string }
+		| { application: Application; applicationAction: "remove" | "ban" | "unban" }
+		| { riotRefresh: true }
+		| { publishWarning: { name: string; reason: string }[] }
+		| null
 	>(null);
 	const [publishing, setPublishing] = useState(false);
 	const [riotRefreshBusy, setRiotRefreshBusy] = useState(false);
@@ -205,6 +246,12 @@ export function AdminTournamentWorkspace() {
 		access ? `/api/admin/tournaments/${id}/applications` : null,
 		fetcher
 	);
+	const { data: discordStatus, mutate: refreshDiscordStatus } = useSWR<{ configured: boolean; players: DeliveryStatus[] }>(
+		access ? `/api/admin/tournaments/${id}/discord-status` : null,
+		fetcher
+	);
+	const deliveryByApplication = new Map((discordStatus?.players || []).map((player) => [player.applicationId, player]));
+	const [checkingDiscord, setCheckingDiscord] = useState(false);
 	const { data: riotRefresh, mutate: refreshRiotRefresh } = useSWR<RiotRefreshState>(access ? `/api/admin/tournaments/${id}/riot-refresh` : null, fetcher, {
 		refreshInterval: (latest) => (latest?.active ? 5_000 : 0),
 		onSuccess: (latest) => {
@@ -371,11 +418,47 @@ export function AdminTournamentWorkspace() {
 		}
 	}
 
+	/** Re-checks Discord membership for all applicants; returns the fresh per-player status. */
+	async function checkDiscord(): Promise<DeliveryStatus[] | null> {
+		setCheckingDiscord(true);
+		try {
+			const result = await request(`/api/admin/tournaments/${id}/discord-status`, "POST", {});
+			await refreshDiscordStatus(result, { revalidate: false });
+			return result.players as DeliveryStatus[];
+		} catch (error) {
+			setNotice(error instanceof Error ? error.message : text("Discord could not be checked.", "Discord konnte nicht geprüft werden."));
+			return null;
+		} finally {
+			setCheckingDiscord(false);
+		}
+	}
+
+	/** Before publishing: name every rostered player who will not get the DM or cannot see the team channel. */
+	async function confirmPublish() {
+		const players = await checkDiscord();
+		// Without a fresh check we cannot warn, so do not publish silently; the notice shows the error.
+		if (!players) return;
+		const byApplication = new Map(players.map((player) => [player.applicationId, player]));
+		const problems = teams.flatMap((team) =>
+			team.members.flatMap((member) => {
+				const player = member.applicationId ? byApplication.get(member.applicationId) : undefined;
+				if (!player) return [];
+				if (player.inGuild === false)
+					return [{ name: `${member.name} (${team.name})`, reason: text("not on the Discord server: no DM, no team channel", "nicht auf dem Discord-Server: keine DM, kein Teamchannel") }];
+				if (!player.dmOptIn) return [{ name: `${member.name} (${team.name})`, reason: text("bot messages switched off: no DM", "Bot-Nachrichten ausgeschaltet: keine DM") }];
+				return [];
+			})
+		);
+		if (problems.length) setDialog({ publishWarning: problems });
+		else await publishRoster("publish");
+	}
+
 	async function publishRoster(action: "publish" | "renotify") {
+		setDialog(null);
 		setPublishing(true);
 		try {
 			const result = await request(`/api/admin/tournaments/${id}/roster`, "POST", { action });
-			await Promise.all([refreshTeams(), refreshTournament()]);
+			await Promise.all([refreshTeams(), refreshTournament(), refreshDiscordStatus()]);
 			setNotice(
 				action === "publish"
 					? text(
@@ -519,16 +602,36 @@ export function AdminTournamentWorkspace() {
 	async function saveEventSettings(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = new FormData(event.currentTarget);
+		const nextStart = localDateTimeToIso(form.get("startsAt"));
+		const previousStart = tournament?.startsAt ? Math.floor(new Date(tournament.startsAt).getTime() / 60000) * 60000 : null;
+		const activeApplicants = applications.filter((application) => ["pending", "accepted", "waitlisted"].includes(application.status)).length;
+		// Moving an existing date messages every active applicant, so ask once before saving.
+		if (nextStart && previousStart && new Date(nextStart).getTime() !== previousStart && activeApplicants > 0) {
+			const ok = window.confirm(
+				text(
+					`The start date changes. ${activeApplicants} applicants will be notified on the website and, if they allowed it, by Discord DM. Save?`,
+					`Der Starttermin ändert sich. ${activeApplicants} Bewerber werden auf der Website und, falls erlaubt, per Discord-DM benachrichtigt. Speichern?`
+				)
+			);
+			if (!ok) return;
+		}
 		try {
-			await request(`/api/admin/tournaments/${id}`, "PATCH", {
+			const result = await request(`/api/admin/tournaments/${id}`, "PATCH", {
 				title: form.get("title"),
 				status: form.get("status"),
-				startsAt: localDateTimeToIso(form.get("startsAt")),
+				startsAt: nextStart,
 				date: form.get("startsAt") ? undefined : null,
 				published: form.get("published") === "on",
 			});
 			await refreshTournament();
-			setNotice(text("Tournament schedule and visibility saved.", "Turnierfahrplan und Sichtbarkeit wurden gespeichert."));
+			setNotice(
+				result.rescheduleNotices
+					? text(
+							`Saved. ${result.rescheduleNotices} applicants were notified about the new date.`,
+							`Gespeichert. ${result.rescheduleNotices} Bewerber wurden über den neuen Termin benachrichtigt.`
+						)
+					: text("Tournament schedule and visibility saved.", "Turnierfahrplan und Sichtbarkeit wurden gespeichert.")
+			);
 		} catch (error) {
 			setNotice(error instanceof Error ? error.message : text("The tournament schedule could not be saved.", "Der Turnierfahrplan konnte nicht gespeichert werden."));
 		}
@@ -665,7 +768,17 @@ export function AdminTournamentWorkspace() {
 									<RefreshCw size={16} /> {text("Retry Discord roles", "Discord-Rollen erneut vergeben")}
 								</button>
 							)}
-							<button className="button button-primary" disabled={publishing || !teams.length} onClick={() => publishRoster("publish")}>
+							{discordStatus?.configured && (
+								<button
+									className="button button-secondary"
+									disabled={checkingDiscord}
+									onClick={() => void checkDiscord()}
+									title={text("Checks who is on the N4cht4r4 Discord server", "Prüft, wer auf dem N4cht4r4-Discord-Server ist")}
+								>
+									<WifiOff size={16} /> {checkingDiscord ? text("Checking...", "Wird geprüft...") : text("Check Discord", "Discord prüfen")}
+								</button>
+							)}
+							<button className="button button-primary" disabled={publishing || checkingDiscord || !teams.length} onClick={confirmPublish}>
 								<Send size={16} />{" "}
 								{tournament.rosterPublishedAt
 									? text("Publish & notify", "Veröffentlichen & informieren")
@@ -724,6 +837,7 @@ export function AdminTournamentWorkspace() {
 											<span>
 												{application.role || text("Any role", "Rolle frei")} · {application.currentRank || "Unranked"}
 											</span>
+											<DiscordBadge player={deliveryByApplication.get(application.id)} />
 											{group && (
 												<small title={group.inviteCode}>
 													<Flower2 size={12} /> {group.name}
@@ -794,6 +908,7 @@ export function AdminTournamentWorkspace() {
 													<button className={`admin-role-slot ${member ? "filled" : ""}`} key={role} onClick={() => setDialog({ team, role })}>
 														<span>{role}</span>
 														<strong>{member?.name || text("Fill open slot", "Freien Platz besetzen")}</strong>
+														{member?.applicationId && <DiscordBadge player={deliveryByApplication.get(member.applicationId)} />}
 														{group ? (
 															<small>
 																<Flower2 size={11} /> {group.name}
@@ -934,6 +1049,7 @@ export function AdminTournamentWorkspace() {
 													: ""}
 											</small>
 											<h2>{application.riotId}</h2>
+											<DiscordBadge player={deliveryByApplication.get(application.id)} detailed />
 										</div>
 										<span
 											className={`status-pill ${application.status === "accepted" ? "registration" : application.status === "rejected" ? "completed" : "announcement"}`}
@@ -1399,6 +1515,34 @@ export function AdminTournamentWorkspace() {
 					</form>
 				</Modal>
 			)}
+			{dialog && typeof dialog === "object" && "publishWarning" in dialog && (
+				<Modal title={text("Not everyone can be reached", "Nicht alle sind erreichbar")} onClose={() => setDialog(null)}>
+					<div className="roster-form">
+						<p className="muted-note">
+							{text(
+								"These players will not get the Discord message about their team. Players who are not on the server also cannot see their team channel until they join (then use “Retry Discord roles”).",
+								"Diese Spieler bekommen keine Discord-Nachricht zu ihrem Team. Wer nicht auf dem Server ist, sieht außerdem den Teamchannel erst nach dem Beitreten (danach „Discord-Rollen erneut vergeben“)."
+							)}
+						</p>
+						<ul className="publish-warning-list">
+							{dialog.publishWarning.map((entry) => (
+								<li key={entry.name}>
+									<strong>{entry.name}</strong>
+									<span>{entry.reason}</span>
+								</li>
+							))}
+						</ul>
+						<div className="dialog-actions">
+							<button className="button button-secondary" type="button" onClick={() => setDialog(null)}>
+								{text("Cancel", "Abbrechen")}
+							</button>
+							<button className="button button-primary" type="button" disabled={publishing} onClick={() => void publishRoster("publish")}>
+								<Send size={15} /> {text("Publish anyway", "Trotzdem veröffentlichen")}
+							</button>
+						</div>
+					</div>
+				</Modal>
+			)}
 			{dialog && typeof dialog === "object" && "riotRefresh" in dialog && (
 				<Modal title={text("Update all Riot profiles", "Alle Riot-Profile aktualisieren")} onClose={() => setDialog(null)}>
 					<div className="roster-form">
@@ -1552,6 +1696,7 @@ export function AdminTournamentWorkspace() {
 													{application.role || text("Any role", "Rolle frei")} · {application.currentRank || "Unranked"}
 													{group ? ` · ${group.name}` : ""}
 												</small>
+												<DiscordBadge player={deliveryByApplication.get(application.id)} />
 											</span>
 											<UserPlus size={16} />
 										</button>

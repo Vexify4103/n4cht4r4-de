@@ -10268,3 +10268,49 @@ html[data-theme="sakura-night"] .member-profile-hero {
 	gap: 12px;
 	margin-top: 4px;
 }
+
+/* Discord reachability markers in the admin roster builder (DiscordBadge in AdminTournamentWorkspace). */
+.discord-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.discord-badges em {
+	padding: 1px 7px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--muted);
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.discord-badges em.is-bad {
+	border-color: color-mix(in srgb, var(--danger) 60%, transparent);
+	background: color-mix(in srgb, var(--danger) 16%, transparent);
+	color: var(--ink-strong);
+}
+
+.publish-warning-list {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.publish-warning-list li {
+	display: grid;
+	gap: 2px;
+	padding: 8px 10px;
+	border-left: 3px solid var(--danger);
+	border-radius: 6px;
+	background: var(--surface-soft);
+}
+
+.publish-warning-list span {
+	color: var(--muted);
+	font-size: 13px;
+}

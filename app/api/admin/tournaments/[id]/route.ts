@@ -1,8 +1,10 @@
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import { recordTournamentAudit } from "@/lib/tournament-audit";
 import client from "@/lib/db";
-import { resolveTournament } from "@/lib/tournament-slugs";
+import { publicTournamentId, resolveTournament } from "@/lib/tournament-slugs";
 import { registrationWindowState } from "@/lib/tournament-registration";
+import { createTournamentNotification } from "@/lib/tournament-notifications";
+import { ACTIVE_APPLICATION_STATUSES } from "@/lib/tournament-community";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -89,5 +91,36 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 	const result = await db.collection("tournaments").findOneAndUpdate({ id }, { $set: update }, { returnDocument: "after", projection: { _id: 0 } });
 	if (!result) return NextResponse.json({ error: "Turnier nicht gefunden." }, { status: 404 });
 	await recordTournamentAudit(db, staff, id, "tournament.updated", { fields: Object.keys(update) });
-	return NextResponse.json({ tournament: result });
+	// A moved start date reaches every active applicant (rostered or not) on the site and, if allowed, by Discord DM.
+	// Compared per minute: the form only sends minutes, so stored seconds must not count as a move.
+	const toMinute = (value: unknown) => (value ? Math.floor(new Date(String(value)).getTime() / 60000) * 60000 : null);
+	const previousStart = toMinute(tournament.startsAt);
+	const nextStart = toMinute(update.startsAt);
+	let rescheduleNotices = 0;
+	if (nextStart && previousStart && nextStart !== previousStart && result.status !== "completed") {
+		const when = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", dateStyle: "full", timeStyle: "short" }).format(new Date(nextStart));
+		const applicants = await db
+			.collection("tournament_applications")
+			.find({ tournamentId: id, status: { $in: [...ACTIVE_APPLICATION_STATUSES] } })
+			.project({ _id: 0, userId: 1 })
+			.toArray();
+		// One failed notice must not turn the already saved date change into an error response.
+		const notices = await Promise.allSettled(
+			[...new Set(applicants.map((applicant) => String(applicant.userId)))].map((userId) =>
+				createTournamentNotification(db, {
+					userId,
+					tournamentId: id,
+					type: "tournament.rescheduled",
+					title: `Neuer Termin: ${result.title}`,
+					body: `Das Turnier startet jetzt am ${when} Uhr. Deine Anmeldung bleibt bestehen. Falls du zum neuen Termin nicht kannst, sag bitte der Turnierleitung Bescheid.`,
+					href: `/tournaments/${publicTournamentId(result)}`,
+				})
+			)
+		);
+		rescheduleNotices = notices.filter((notice) => notice.status === "fulfilled").length;
+		const failed = notices.length - rescheduleNotices;
+		if (failed) console.error(`[tournament] ${failed} reschedule notices failed for ${id}`);
+		await recordTournamentAudit(db, staff, id, "tournament.rescheduled", { from: new Date(previousStart).toISOString(), to: new Date(nextStart).toISOString(), notified: rescheduleNotices });
+	}
+	return NextResponse.json({ tournament: result, rescheduleNotices });
 }
