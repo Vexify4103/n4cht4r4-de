@@ -214,8 +214,8 @@ export default function CommunityPage() {
 									required
 									placeholder={
 										composeKind === "fanart"
-											? text("Tell us a little about your fan art...", "Erzähl kurz etwas zu deinem Fanart ...")
-											: text("A kind message for Nachtara and the community...", "Ein lieber Gruß an Nachtara und die Community ...")
+											? text("Tell us a little about your fan art…", "Erzähl kurz etwas zu deinem Fanart ...")
+											: text("A kind message for Nachtara and the community…", "Ein lieber Gruß an Nachtara und die Community ...")
 									}
 								/>
 							</label>

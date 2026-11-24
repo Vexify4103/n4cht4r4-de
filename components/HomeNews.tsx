@@ -4,16 +4,10 @@ import Link from "next/link";
 import useSWR from "swr";
 import { ArrowUpRight, Flower2, Megaphone, Trophy, Youtube, Heart, Users } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
-import type { NewsItem } from "@/lib/news";
+import { newsCategoryLabels, type NewsItem } from "@/lib/news";
 
 const icons = { youtube: Youtube, tournament: Trophy, applications: Users, kofi: Heart, community: Flower2 };
-const labels = {
-	youtube: ["YouTube", "YouTube"],
-	tournament: ["Tournament", "Turnier"],
-	applications: ["Applications", "Bewerbungen"],
-	kofi: ["Ko-fi", "Ko-fi"],
-	community: ["Community", "Community"],
-};
+const labels = newsCategoryLabels;
 export function HomeNews() {
 	const { locale, text } = useLocale();
 	const { data } = useSWR<{ news: NewsItem[] }>("/api/news", (url: string) => fetch(url).then((r) => r.json()), { revalidateOnFocus: false });

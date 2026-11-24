@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { ArrowLeft, Check, Flower2, Gauge, Plus, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Flower2, Gauge, Plus, ShieldAlert, Sparkles } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) =>
@@ -140,6 +140,8 @@ export default function AdminChallengesPage() {
 
 function ChallengeForm({ challenge, onSubmit }: { challenge?: Challenge; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
 	const { text } = useLocale();
+	// Folded fields stay mounted (only hidden), so nothing is lost from the form.
+	const [open, setOpen] = useState(!challenge);
 	return (
 		<form className={`challenge-admin-form ${challenge?.enabled === false ? "disabled" : ""}`} onSubmit={onSubmit}>
 			<header>
@@ -150,12 +152,19 @@ function ChallengeForm({ challenge, onSubmit }: { challenge?: Challenge; onSubmi
 						<h3>{challenge?.title || text("New challenge", "Neue Challenge")}</h3>
 					</div>
 				</div>
-				<label className="switch-control">
-					<input name="enabled" type="checkbox" defaultChecked={challenge?.enabled !== false} />
-					<span />
-				</label>
+				<div className="challenge-admin-head-actions">
+					{challenge && (
+						<button className="challenge-admin-toggle" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+							{open ? text("Fold", "Zuklappen") : text("Edit", "Bearbeiten")} <ChevronDown size={16} aria-hidden="true" />
+						</button>
+					)}
+					<label className="switch-control" aria-label={text("Active", "Aktiv")}>
+						<input name="enabled" type="checkbox" defaultChecked={challenge?.enabled !== false} />
+						<span />
+					</label>
+				</div>
 			</header>
-			<div className="challenge-admin-fields">
+			<div className="challenge-admin-fields" hidden={!open}>
 				<label>
 					{text("Title (German)", "Titel")}
 					<input name="title" defaultValue={challenge?.title} required />
@@ -286,7 +295,7 @@ function ChallengeForm({ challenge, onSubmit }: { challenge?: Challenge; onSubmi
 					/>
 				</label>
 			</div>
-			<footer>
+			<footer hidden={!open}>
 				<code>{challenge?.id || text("generated automatically", "wird automatisch erzeugt")}</code>
 				<button className="button button-secondary button-small" type="submit">
 					<Check size={14} /> {text("Save", "Speichern")}

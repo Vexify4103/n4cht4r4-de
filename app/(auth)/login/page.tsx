@@ -22,7 +22,7 @@ export default function LoginPage() {
 				<div className="login-card">
 					<div className="login-header">
 						<Flower2 size={28} />
-						<h1>{text("Preparing your place...", "Dein Platz wird vorbereitet...")}</h1>
+						<h1>{text("Preparing your place…", "Dein Platz wird vorbereitet…")}</h1>
 					</div>
 				</div>
 			</section>

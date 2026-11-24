@@ -2,6 +2,14 @@ import type { Db } from "mongodb";
 
 export const newsCategories = ["youtube", "tournament", "applications", "kofi", "community"] as const;
 export type NewsCategory = (typeof newsCategories)[number];
+/** Display names per category as [English, German]. */
+export const newsCategoryLabels: Record<NewsCategory, [string, string]> = {
+	youtube: ["YouTube", "YouTube"],
+	tournament: ["Tournament", "Turnier"],
+	applications: ["Applications", "Bewerbungen"],
+	kofi: ["Ko-fi", "Ko-fi"],
+	community: ["Community", "Community"],
+};
 export type NewsItem = {
 	id: string;
 	category: NewsCategory;

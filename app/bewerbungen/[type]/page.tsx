@@ -214,7 +214,7 @@ export default function ApplicationTypePage() {
 						</label>
 						<button className="button button-primary" disabled={!ready || submitting} type="submit">
 							{submitting
-								? text("Sending...", "Wird gesendet...")
+								? text("Sending…", "Wird gesendet…")
 								: type === "appeal"
 									? text("Submit appeal", "Antrag absenden")
 									: text("Submit application", "Bewerbung absenden")}{" "}

@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { ArrowLeft, Check, Flower2, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import type { ApplicationDefinition, ApplicationType } from "@/lib/applications";
-import { newsCategories, type NewsItem } from "@/lib/news";
+import { newsCategories, newsCategoryLabels, type NewsItem } from "@/lib/news";
 
 async function fetcher(url: string) {
 	const response = await fetch(url);
@@ -211,7 +211,7 @@ export default function ContentAdminPage() {
 								<select name="category" defaultValue={item?.category || "community"}>
 									{newsCategories.map((category) => (
 										<option key={category} value={category}>
-											{category}
+											{text(...newsCategoryLabels[category])}
 										</option>
 									))}
 								</select>
@@ -259,7 +259,7 @@ export default function ContentAdminPage() {
 						{newsData?.news.map((news) => (
 							<article className="content-review" key={news.id}>
 								<span className="kicker">
-									{news.category} · {news.published ? text("Published", "Veröffentlicht") : text("Draft", "Entwurf")}
+									{newsCategoryLabels[news.category] ? text(...newsCategoryLabels[news.category]) : news.category} · {news.published ? text("Published", "Veröffentlicht") : text("Draft", "Entwurf")}
 									{news.pinned ? " · 📌" : ""}
 								</span>
 								<h3>{news.title}</h3>

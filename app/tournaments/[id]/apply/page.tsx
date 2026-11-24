@@ -284,7 +284,7 @@ export default function TournamentApplyPage() {
 							</span>
 						</label>
 						<button className="button button-primary" disabled={submitting || !connectionsReady} type="submit">
-							{submitting ? text("Sending...", "Wird gesendet...") : text("Submit application", "Bewerbung absenden")}
+							{submitting ? text("Sending…", "Wird gesendet…") : text("Submit application", "Bewerbung absenden")}
 						</button>
 					</form>
 				)}

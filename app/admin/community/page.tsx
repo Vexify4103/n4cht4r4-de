@@ -150,7 +150,7 @@ function ProjectEditor({ project, onSaved }: { project: CommunityProject; onSave
 			<footer>
 				<span>{notice}</span>
 				<button className="button button-primary button-small" disabled={saving} type="submit">
-					<Save size={14} /> {saving ? text("Saving...", "Speichert ...") : text("Save project", "Projekt speichern")}
+					<Save size={14} /> {saving ? text("Saving…", "Speichert ...") : text("Save project", "Projekt speichern")}
 				</button>
 			</footer>
 		</form>
@@ -294,7 +294,7 @@ export default function AdminCommunityPage() {
 								{text("Cancel", "Abbrechen")}
 							</button>
 							<button className="button button-danger-soft" type="button" disabled={deleting} onClick={deletePost}>
-								<Trash2 size={15} /> {deleting ? text("Deleting...", "Wird gelöscht ...") : text("Delete permanently", "Endgültig löschen")}
+								<Trash2 size={15} /> {deleting ? text("Deleting…", "Wird gelöscht ...") : text("Delete permanently", "Endgültig löschen")}
 							</button>
 						</footer>
 					</section>

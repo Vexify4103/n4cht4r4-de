@@ -775,7 +775,7 @@ export function AdminTournamentWorkspace() {
 									onClick={() => void checkDiscord()}
 									title={text("Checks who is on the N4cht4r4 Discord server", "Prüft, wer auf dem N4cht4r4-Discord-Server ist")}
 								>
-									<WifiOff size={16} /> {checkingDiscord ? text("Checking...", "Wird geprüft...") : text("Check Discord", "Discord prüfen")}
+									<WifiOff size={16} /> {checkingDiscord ? text("Checking…", "Wird geprüft…") : text("Check Discord", "Discord prüfen")}
 								</button>
 							)}
 							<button className="button button-primary" disabled={publishing || checkingDiscord || !teams.length} onClick={confirmPublish}>
@@ -1569,7 +1569,7 @@ export function AdminTournamentWorkspace() {
 								{text("Cancel", "Abbrechen")}
 							</button>
 							<button className="button button-primary" type="button" disabled={riotRefreshBusy} onClick={startRiotRefresh}>
-								<RefreshCw size={15} /> {riotRefreshBusy ? text("Queuing...", "Wird eingereiht...") : text("Start safe update", "Sichere Aktualisierung starten")}
+								<RefreshCw size={15} /> {riotRefreshBusy ? text("Queuing…", "Wird eingereiht…") : text("Start safe update", "Sichere Aktualisierung starten")}
 							</button>
 						</div>
 					</div>

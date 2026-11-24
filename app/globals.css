@@ -287,16 +287,6 @@
 }
 
 .challenge-journal-band::before,
-.admin-workbench::before {
-	content: "✿";
-	position: absolute;
-	top: 18px;
-	right: 22px;
-	color: var(--blossom);
-	font-size: 18px;
-	opacity: 0.72;
-}
-
 .challenge-journal-heading {
 	max-width: 700px;
 	margin: 34px 0 22px;
@@ -10405,4 +10395,72 @@ html[data-theme="sakura-night"] .member-profile-hero {
 .admin-archive-toggle:hover {
 	text-decoration: underline;
 	text-underline-offset: 3px;
+}
+
+/* Tournament workspace: tabs on their own row, actions below aligned right, nothing wraps mid-label. */
+.admin-workbench .admin-workbench-bar {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 16px;
+}
+
+.admin-workbench .admin-workbench-bar .tab-nav {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.admin-workbench .tab-btn {
+	white-space: nowrap;
+}
+
+.admin-workbench .admin-roster-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.admin-workbench .admin-roster-actions .button {
+	white-space: nowrap;
+}
+
+/* Challenge garden: folded cards with an edit toggle next to the active switch. */
+.challenge-admin-head-actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.challenge-admin-toggle {
+	min-height: 36px;
+	padding: 0 4px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 0;
+	color: var(--muted);
+	background: transparent;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.challenge-admin-toggle:hover {
+	color: var(--blossom);
+}
+
+.challenge-admin-toggle svg {
+	transition: transform 150ms ease;
+}
+
+.challenge-admin-toggle[aria-expanded="true"] svg {
+	transform: rotate(180deg);
+}
+
+.challenge-admin-form [hidden] {
+	display: none !important;
 }

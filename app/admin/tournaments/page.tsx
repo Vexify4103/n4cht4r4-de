@@ -92,7 +92,7 @@ export default function AdminTournamentsPage() {
 				</div>
 			</section>
 		);
-	if (!access)
+	if (!access || !data)
 		return (
 			<section className="content-band">
 				<div className="skeleton admin-workspace-skeleton" />
