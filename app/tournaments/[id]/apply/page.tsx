@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { CalendarClock, CheckCircle2, ClipboardList, ShieldCheck } from "lucide-react";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { DiscordMark } from "@/components/DiscordMark";
 import { useLocale } from "@/components/LocaleProvider";
+import { MY_APPLICATIONS_KEY, MyApplicationStatus, useMyApplication } from "@/components/MyApplicationStatus";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
@@ -36,6 +37,7 @@ export default function TournamentApplyPage() {
 		fetcher
 	);
 	const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
+	const myApplication = useMyApplication(id);
 	const [submitting, setSubmitting] = useState(false);
 	const hasDiscord = profile?.providers.includes("discord");
 	const tournament = tournamentData?.tournament;
@@ -62,6 +64,8 @@ export default function TournamentApplyPage() {
 		});
 		const result = await response.json();
 		setSubmitting(false);
+		// Reload the player's applications so the form turns into the status card right away.
+		if (response.ok) await mutate(MY_APPLICATIONS_KEY);
 		setNotice(
 			response.ok
 				? {
@@ -132,7 +136,9 @@ export default function TournamentApplyPage() {
 					)}
 				</aside>
 
-				{closed ? (
+				{myApplication ? (
+					<MyApplicationStatus tournamentId={id} />
+				) : closed ? (
 					<div className="empty-state">
 						{tournament?.registrationState === "scheduled" ? <CalendarClock size={38} /> : <ClipboardList size={38} />}
 						<h3>

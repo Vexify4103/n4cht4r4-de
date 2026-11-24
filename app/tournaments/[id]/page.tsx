@@ -8,6 +8,7 @@ import { DiscordMark } from "@/components/DiscordMark";
 import { TournamentHeader } from "@/components/TournamentHeader";
 import { PublicTeam, TournamentTeamCard } from "@/components/TournamentTeamCard";
 import { useLocale } from "@/components/LocaleProvider";
+import { MyApplicationStatus, useMyApplication } from "@/components/MyApplicationStatus";
 
 const fetcher = (url: string) =>
 	fetch(url).then(async (response) => {
@@ -63,6 +64,7 @@ export default function TournamentDetailPage() {
 	const { data, error } = useSWR<{ tournament: Tournament }>(`/api/tournaments/${id}`, fetcher);
 	const { data: teamData } = useSWR<{ teams: PublicTeam[] }>(`/api/tournaments/${id}/teams`, fetcher);
 	const { data: matchData } = useSWR<{ matches: Match[] }>(`/api/tournaments/${id}/matches`, fetcher);
+	const myApplication = useMyApplication(id);
 
 	if (error)
 		return (
@@ -171,7 +173,8 @@ export default function TournamentDetailPage() {
 							)}
 						</div>
 					)}
-					{tournament.registrationOpen ? (
+					{myApplication && <MyApplicationStatus tournamentId={id} />}
+					{myApplication && (tournament.registrationOpen || isAnnouncement) ? null : tournament.registrationOpen ? (
 						<Link className="button button-primary" href={`/tournaments/${id}/apply`}>
 							<Check size={16} /> {text("Apply now", "Jetzt bewerben")}
 						</Link>
