@@ -262,10 +262,10 @@ export default function TournamentApplyPage() {
 								</strong>
 								<span className="form-checkbox-copy">
 									{text(
-										"The N4cht4r4 Discord bot may message me about my team assignment and important changes to this tournament. This only works while I am on the N4cht4r4 Discord server. I can switch it off here or later on",
-										"Der N4cht4r4-Discord-Bot darf mir zu meiner Teamzuteilung und wichtigen Änderungen dieses Turniers schreiben. Das klappt nur, solange ich auf dem N4cht4r4-Discord-Server bin. Ich kann das hier oder später auf"
+										"The N4cht4r4 Discord bot may message me about my team assignment and important changes to this tournament. This only works while I am on the N4cht4r4 Discord server. I can switch it off here or later in",
+										"Der N4cht4r4-Discord-Bot darf mir zu meiner Teamzuteilung und wichtigen Änderungen dieses Turniers schreiben. Das klappt nur, solange ich auf dem N4cht4r4-Discord-Server bin. Ich kann das hier oder später in"
 									)}{" "}
-									<Link href="/me">/me</Link>
+									<Link href="/me">{text("your profile", "deinem Profil")}</Link>
 									{text(".", " ändern.")}
 								</span>
 							</span>

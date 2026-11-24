@@ -3248,6 +3248,23 @@ select:focus {
 	display: block;
 }
 
+/* Inline links in form copy and status notes must look clickable (the global reset strips colour and underline). */
+.form-checkbox a,
+.wish-group-disclosure a,
+.my-application p a {
+	color: var(--blossom);
+	font-weight: 700;
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+.form-checkbox a:hover,
+.wish-group-disclosure a:hover,
+.my-application p a:hover {
+	color: var(--blossom-strong);
+}
+
 .form-error,
 .form-success,
 .admin-notice {
