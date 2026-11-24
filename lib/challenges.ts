@@ -339,9 +339,14 @@ export async function getChallengeDefinitions(db: Db, options: { activeOnly?: bo
 	return options.activeOnly === false ? definitions : definitions.filter((challenge) => isChallengeActive(challenge));
 }
 
+/** Riot queue IDs played on the Howling Abyss: ARAM (450), ARAM Clash (720), Butcher's Bridge (100), ARAM: Mayhem (2400). */
+const ARAM_QUEUE_IDS = [100, 450, 720, 2400];
+
 export function matchMatchesChallenge(challenge: ChallengeDef, match: { gameMode: string; queueId: number; gameStartTimestamp?: number }): boolean {
 	if (match.gameStartTimestamp && match.gameStartTimestamp < new Date(challenge.startsAt).getTime()) return false;
 	if (match.gameStartTimestamp && match.gameStartTimestamp > new Date(challenge.endsAt).getTime()) return false;
+	// ARAM variants (ARAM: Mayhem is queue 2400) report their own game mode, so ARAM challenges match by queue too.
+	if (challenge.gameMode === "ARAM" && !challenge.queueId) return match.gameMode === "ARAM" || ARAM_QUEUE_IDS.includes(match.queueId);
 	if (challenge.gameMode) return match.gameMode === challenge.gameMode;
 	if (challenge.queueId) return match.queueId === challenge.queueId;
 	return true;

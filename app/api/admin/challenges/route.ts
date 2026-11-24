@@ -1,10 +1,12 @@
 import { hasTournamentPermission } from "@/lib/tournament-admin";
 import client from "@/lib/db";
 import { ChallengeDef, ChallengeType, ensureChallengeDefinitions } from "@/lib/challenges";
+import { createGuildRole } from "@/lib/discord-roles";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 const TYPES: ChallengeType[] = ["matches", "wins", "kills", "watchtime", "community", "meta"];
+const CREATE_ROLE = "__create__";
 const REQUIREMENTS: NonNullable<ChallengeDef["requirement"]>[] = ["discord", "twitch", "riot", "community"];
 
 function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
@@ -125,6 +127,13 @@ function challengeInput(body: Record<string, unknown>, current?: ChallengeDef) {
 	};
 }
 
+/** The role picker sends "__create__" for a new role; create it only after the rest of the input is valid. */
+async function withResolvedRole<T extends { title: string; discordRoleId?: string; discordRoleName?: string }>(input: T): Promise<T> {
+	if (input.discordRoleId !== CREATE_ROLE) return input;
+	const name = (input.discordRoleName || input.title).slice(0, 80);
+	return { ...input, discordRoleId: await createGuildRole(name), discordRoleName: name };
+}
+
 export async function GET() {
 	const staff = await hasTournamentPermission("tournament_admin");
 	if (!staff) return NextResponse.json({ error: "Keine Berechtigung für die Challenge-Verwaltung." }, { status: 403 });
@@ -146,7 +155,7 @@ export async function POST(request: Request) {
 	if (!body) return NextResponse.json({ error: "Challenge-Daten fehlen." }, { status: 400 });
 	try {
 		const now = new Date();
-		const challenge = { id: `challenge_${crypto.randomUUID()}`, ...challengeInput(body), systemVersion: 2, createdAt: now, updatedAt: now };
+		const challenge = { id: `challenge_${crypto.randomUUID()}`, ...(await withResolvedRole(challengeInput(body))), systemVersion: 2, createdAt: now, updatedAt: now };
 		await client.connect();
 		await client.db().collection("challenge_definitions").insertOne(challenge);
 		return NextResponse.json({ challenge }, { status: 201 });
@@ -167,7 +176,7 @@ export async function PATCH(request: Request) {
 	try {
 		const challenge = await db
 			.collection<ChallengeDef>("challenge_definitions")
-			.findOneAndUpdate({ id: current.id }, { $set: { ...challengeInput(body, current), updatedAt: new Date() } }, { returnDocument: "after", projection: { _id: 0 } });
+			.findOneAndUpdate({ id: current.id }, { $set: { ...(await withResolvedRole(challengeInput(body, current))), updatedAt: new Date() } }, { returnDocument: "after", projection: { _id: 0 } });
 		return NextResponse.json({ challenge });
 	} catch (error) {
 		return NextResponse.json({ error: error instanceof Error ? error.message : "Challenge konnte nicht gespeichert werden." }, { status: 400 });

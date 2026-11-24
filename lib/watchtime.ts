@@ -302,13 +302,15 @@ export async function trackWatchTime(): Promise<WatchTimeResult> {
 		return { status: "skipped", reason: "stream_offline", matchedUsers: 0, incrementMinutes: 0 };
 	}
 
-	const chatters = await getChatters();
-	if (chatters === null) {
+	const allChatters = await getChatters();
+	if (allChatters === null) {
 		return { status: "skipped", reason: "chatters_credentials_missing", matchedUsers: 0, incrementMinutes: 0 };
 	}
-	if (chatters.length === 0) {
+	if (allChatters.length === 0) {
 		return { status: "skipped", reason: "chatters_unavailable", matchedUsers: 0, incrementMinutes: 0 };
 	}
+	// The streamer is always in her own chat; her time is not watchtime and would inflate the community goal.
+	const chatters = allChatters.filter((chatter) => chatter.userId !== BROADCASTER_ID);
 
 	await client.connect();
 	const db = client.db();

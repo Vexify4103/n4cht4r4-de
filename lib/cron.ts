@@ -3,9 +3,11 @@ import client from "@/lib/db";
 import { enqueueRiotChallengeSync } from "@/lib/riot-sync-queue";
 import { startWatchTimeTracker, stopWatchTimeTracker } from "@/lib/watchtime";
 import { syncStreamElementsDonations } from "@/lib/streamelements";
+import { retryRolesForNewMembers } from "@/lib/discord-role-retry";
 
 let challengeJob: CronJob | null = null;
 let donationJob: CronJob | null = null;
+let roleRetryJob: CronJob | null = null;
 
 async function runChallengeUpdate() {
 	if (!process.env.RIOT_API_KEY) return;
@@ -45,11 +47,22 @@ async function runDonationSync() {
 	}
 }
 
+async function runRoleRetry() {
+	try {
+		await client.connect();
+		const result = await retryRolesForNewMembers(client.db());
+		if (result.rewards || result.teamRoles) console.log(`[Cron] Discord roles re-queued for new members: ${result.rewards} rewards, ${result.teamRoles} team roles`);
+	} catch (error) {
+		console.error("[Cron] Discord role retry failed:", error);
+	}
+}
+
 export function startChallengeCron() {
 	if (challengeJob) return;
 
 	challengeJob = new CronJob("*/15 * * * *", runChallengeUpdate, null, true, "Europe/Berlin");
 	donationJob = new CronJob("0 * * * *", runDonationSync, null, true, "Europe/Berlin");
+	roleRetryJob = new CronJob("30 * * * *", runRoleRetry, null, true, "Europe/Berlin");
 	void runChallengeUpdate();
 	void runDonationSync();
 	startWatchTimeTracker();
@@ -62,5 +75,7 @@ export function stopChallengeCron() {
 	challengeJob = null;
 	donationJob?.stop();
 	donationJob = null;
+	roleRetryJob?.stop();
+	roleRetryJob = null;
 	stopWatchTimeTracker();
 }
